@@ -1,6 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/restaurante/:slug*", "destination": "/index.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}
