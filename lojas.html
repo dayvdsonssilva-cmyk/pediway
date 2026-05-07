@@ -607,6 +607,48 @@ const IBGE = 'https://servicodados.ibge.gov.br/api/v1/localidades';
 const { createClient } = supabase;
 const db = createClient(SUPA_URL, SUPA_KEY);
 
+// ── PUSH NOTIFICATIONS ────────────────────────────────────────────────────────
+const VAPID_PUBLIC_KEY = 'BCJEaYAZTbr7qY6KXR1JQC5zYC3IvjAxKO5JcMol_S2y1g3DKDK_qB7VFAd9rJRVDi3aYeQv6tyiNIcEWOrtsOc';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw     = window.atob(base64);
+  return Uint8Array.from(raw, c => c.charCodeAt(0));
+}
+
+async function registrarPush(whatsapp) {
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+
+    const sw  = await navigator.serviceWorker.ready;
+    let sub   = await sw.pushManager.getSubscription();
+
+    if (!sub) {
+      sub = await sw.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+
+    const subJson = sub.toJSON();
+    // Salva subscription no Supabase
+    await db.from('push_subscriptions').upsert({
+      endpoint:        sub.endpoint,
+      p256dh:          subJson.keys.p256dh,
+      auth:            subJson.keys.auth,
+      user_identifier: whatsapp || null,
+    }, { onConflict: 'endpoint' });
+
+    console.log('[Push] Subscription registrada');
+  } catch(e) {
+    console.warn('[Push] Erro ao registrar:', e.message);
+  }
+}
+window.registrarPush = registrarPush;
+
 // ── Sanitização HTML — evita XSS com dados do banco ──────────────────────────
 function esc(s){
   return String(s||'')
@@ -812,6 +854,13 @@ async function init() {
   _pollingId = setInterval(pollarPedidos, 3000);
 
   iniciarRealtime();
+
+  // Tenta re-registrar push (mantém subscription ativa)
+  setTimeout(() => {
+    if (Notification.permission === 'granted') {
+      registrarPush(_user?.whatsapp || null);
+    }
+  }, 3000);
 }
 
 // ═══════════════════════════════════════════════════════
