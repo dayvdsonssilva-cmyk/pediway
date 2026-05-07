@@ -211,12 +211,23 @@ export async function initDashboard() {
     } catch(e) { console.log('Sync estab:', e); }
   }
 
-  // Mostra card de boas-vindas para novos usuários (sem produtos ainda)
+  // Mostra card de boas-vindas APENAS na primeira vez (após cadastro)
   try {
     var boasVindas = document.getElementById('card-boas-vindas');
     if (boasVindas) {
-      var visto = localStorage.getItem('pw_bv_' + estab.id);
-      if (!visto) boasVindas.style.display = 'block';
+      var chave = 'pw_bv_visto_' + estab.id;
+      var visto = localStorage.getItem(chave);
+      if (!visto) {
+        // Verifica se é conta nova (criada há menos de 10 minutos)
+        var criadoEm = estab.created_at ? new Date(estab.created_at) : null;
+        var agora    = new Date();
+        var minutos  = criadoEm ? (agora - criadoEm) / 60000 : 999;
+        if (minutos < 10) {
+          boasVindas.style.display = 'block';
+        }
+        // Marca como visto para não aparecer mais
+        localStorage.setItem(chave, '1');
+      }
     }
   } catch(e) {}
 
@@ -1785,6 +1796,9 @@ function iniciarRealtime() {
           }
           return;
         }
+        // ── Atualiza caixa em tempo real ao receber pedido ──────────────
+        if (_caixaAberto) { atualizarResumoCaixa(); }
+
         // ── Pedido normal (delivery/retirada) — aparece na aba Pedidos ─
         if (pedidosConhecidos.has(p.id)) return;
         pedidosConhecidos.add(p.id);
@@ -1805,6 +1819,7 @@ function iniciarRealtime() {
         const p = payload.new;
         if (!p || p.estabelecimento_id !== estab.id) return;
         await renderPedidos(); // atualiza visão geral (stat-pedidos, stat-faturamento)
+        if (_caixaAberto) { atualizarResumoCaixa(); }
         // Financeiro em tempo real — recarrega se a aba estiver ativa
         if (document.querySelector('#tab-financeiro.active') ||
             document.querySelector('[data-tab="financeiro"].active')) {
@@ -3529,6 +3544,13 @@ window.selecionarPagamentoComanda = function(metodo) {
     const btnC = document.getElementById('pgto-btn-CARTÃO');
     if (btnC) { btnC.style.borderColor='#C0392B'; btnC.style.background='#fff5f5'; btnC.style.color='#C0392B'; }
   }
+  // Esconde submenu crédito/débito se selecionou PIX ou DINHEIRO
+  if (metodo === 'PIX' || metodo === 'DINHEIRO') {
+    const sub = document.getElementById('pgto-cartao-submenu');
+    if (sub) sub.style.display = 'none';
+    const btnC = document.getElementById('pgto-btn-CARTÃO');
+    if (btnC) { btnC.style.borderColor='#e0dbd5'; btnC.style.background='#fff'; btnC.style.color='#555'; }
+  }
   const aviso = document.getElementById('pgto-aviso');
   if (aviso) aviso.style.display = 'none';
 };
@@ -4212,46 +4234,63 @@ window.reimprirCaixa = function(idx) {
     var h = hist[idx];
     if (!h) return;
     var fmt = function(v){return 'R$ ' + Number(v||0).toFixed(2).replace('.',',');};
-    var nl  = '\n';
-    var sep = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-    var corpo = [
-      '█████████████████████████████████',
-      '     FECHAMENTO DE CAIXA',
-      '   (REIMPRESSÃO)',
-      '█████████████████████████████████',
-      (estab.nome||'Estabelecimento').toUpperCase(),
-      estab.endereco||'',
-      estab.telefone_contato ? 'Tel: ' + estab.telefone_contato : '',
-      estab.cpf_cnpj ? 'CNPJ: ' + estab.cpf_cnpj : '',
-      sep,
-      'Operador:   ' + (h.operador||'Operador'),
-      'Abertura:   ' + new Date(h.aberturaEm).toLocaleString('pt-BR'),
-      'Fechamento: ' + new Date(h.fechadoEm).toLocaleString('pt-BR'),
-      sep,
-      'Fundo inicial: ' + fmt(h.valorAbertura||0),
-      sep,
-      '  RECEBIMENTOS:',
-      '  PIX:        ' + fmt(h.totalPix),
-      '  Cartão:     ' + fmt(h.totalCartao),
-      '  Dinheiro:   ' + fmt(h.totalDinheiro),
-      sep,
-      '  TOTAL EM CAIXA:  ' + fmt(h.totalGeral),
-      sep,
-      '  Pedidos: ' + (h.numPedidos||0),
-      sep,
-      'Gerado em: ' + new Date().toLocaleString('pt-BR'),
-      'PEDIWAY · Plataforma de delivery',
-    ].filter(function(l){return l!=='';}).join(nl);
+    var estabNome = (estab.nome||'Estabelecimento').toUpperCase();
+    var estabEnd  = estab.endereco||'';
+    var estabTel  = estab.telefone_contato||estab.whatsapp||'';
+    var estabCnpj = estab.cpf_cnpj||'';
 
-    var htmlComp = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Fechamento</title>'
+    var htmlComp = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reimpressão · Fechamento de Caixa</title>'
       + '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">'
-      + '<style>*{margin:0;padding:0;box-sizing:border-box}'
-      + 'body{font-family:Poppins,monospace;font-size:12px;padding:16px;max-width:320px;margin:0 auto}'
-      + 'pre{white-space:pre-wrap;word-break:break-word;line-height:1.7;font-family:inherit}'
-      + '@media print{body{padding:2px}@page{margin:0;size:80mm auto}}</style>'
-      + '</head><body><pre>' + corpo + '</pre></body></html>';
+      + '<style>'
+      + '*{margin:0;padding:0;box-sizing:border-box}'
+      + 'body{font-family:Poppins,Arial,sans-serif;font-size:12px;background:#fff;color:#000;width:300px;max-width:300px;margin:0 auto;padding:12px 10px}'
+      + '.center{text-align:center}'
+      + '.logo{font-size:18px;font-weight:900;letter-spacing:.06em}.logo-red{color:#C0392B}'
+      + '.emp{font-size:13px;font-weight:700;margin-top:2px}'
+      + '.info{font-size:10px;color:#333;line-height:1.7;margin-top:2px}'
+      + '.sep-thick{border:none;border-top:3px solid #000;margin:8px 0}'
+      + '.sep-dash{border:none;border-top:1px dashed #888;margin:7px 0}'
+      + '.sec{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#555;border-bottom:1px solid #ccc;padding-bottom:2px;margin:7px 0 4px}'
+      + '.row{display:flex;justify-content:space-between;font-size:11px;padding:1px 0;gap:6px}'
+      + '.row .lbl{color:#555}.row .val{font-weight:700;text-align:right}'
+      + '.total-bloco{border-top:2px solid #000;border-bottom:2px solid #000;padding:5px 0;margin:5px 0;display:flex;justify-content:space-between;align-items:center}'
+      + '.total-lbl{font-size:14px;font-weight:900}'
+      + '.total-val{font-size:16px;font-weight:900;color:#16a34a}'
+      + '.reimp{background:#f5f2ef;border-radius:6px;padding:4px 10px;font-size:9px;font-weight:700;color:#888;text-align:center;margin-bottom:6px;letter-spacing:.06em}'
+      + '.rodape{font-size:9px;text-align:center;color:#888;margin-top:8px;letter-spacing:.04em}'
+      + '@media print{body{padding:4px}@page{margin:0;size:80mm auto}}'
+      + '</style></head><body>'
+      + '<div class="reimp">⟳ REIMPRESSÃO</div>'
+      + '<div class="center">'
+      + '<div class="logo">PEDI<span class="logo-red">WAY</span></div>'
+      + '<div class="emp">' + estabNome + '</div>'
+      + '<div class="info">'
+      + (estabEnd  ? estabEnd  + '<br>' : '')
+      + (estabTel  ? 'Tel: ' + estabTel + '<br>' : '')
+      + (estabCnpj ? 'CNPJ: ' + estabCnpj : '')
+      + '</div>'
+      + '</div>'
+      + '<hr class="sep-thick">'
+      + '<div class="center" style="font-size:13px;font-weight:900;letter-spacing:.05em">FECHAMENTO DE CAIXA</div>'
+      + '<hr class="sep-dash">'
+      + '<div class="sec">Período</div>'
+      + '<div class="row"><span class="lbl">Operador</span><span class="val">' + (h.operador||'Operador') + '</span></div>'
+      + '<div class="row"><span class="lbl">Abertura</span><span class="val">' + new Date(h.aberturaEm).toLocaleString('pt-BR') + '</span></div>'
+      + '<div class="row"><span class="lbl">Fechamento</span><span class="val">' + new Date(h.fechadoEm).toLocaleString('pt-BR') + '</span></div>'
+      + '<hr class="sep-dash">'
+      + '<div class="sec">Fundo de Caixa</div>'
+      + '<div class="row"><span class="lbl">Valor inicial</span><span class="val">' + fmt(h.valorAbertura||0) + '</span></div>'
+      + '<hr class="sep-dash">'
+      + '<div class="sec">Recebimentos</div>'
+      + '<div class="row"><span class="lbl">PIX</span><span class="val">' + fmt(h.totalPix) + '</span></div>'
+      + '<div class="row"><span class="lbl">Cartão</span><span class="val">' + fmt(h.totalCartao) + '</span></div>'
+      + '<div class="row"><span class="lbl">Dinheiro</span><span class="val">' + fmt(h.totalDinheiro) + '</span></div>'
+      + '<div class="row" style="margin-top:3px"><span class="lbl">Nº de pedidos</span><span class="val">' + (h.numPedidos||0) + '</span></div>'
+      + '<div class="total-bloco"><span class="total-lbl">TOTAL EM CAIXA</span><span class="total-val">' + fmt(h.totalGeral) + '</span></div>'
+      + '<div class="center rodape">Gerado em: ' + new Date().toLocaleString('pt-BR') + '<br>PEDIWAY · Plataforma de delivery independente</div>'
+      + '</body></html>';
 
-    var w = window.open('','_blank','width=400,height=600');
-    if (w) { w.document.write(htmlComp); w.document.close(); setTimeout(function(){w.print();},500); }
+    var w = window.open('','_blank','width=400,height=620');
+    if (w) { w.document.write(htmlComp); w.document.close(); setTimeout(function(){w.print();},600); }
   } catch(e) { showToast('Erro ao reimprimir.', 'error'); }
 };
