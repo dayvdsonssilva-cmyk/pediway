@@ -681,303 +681,61 @@ async function renderCardapio() {
     return;
   }
 
-  grid.innerHTML = filtrado.map(p => {
-    const emQuente = p.em_promocao && parseInt(p.desconto_percent||0) > 0;
-    const precoOrig = Number(p.preco_original || p.preco).toFixed(2).replace('.',',');
-    const precoDesc = Number(p.preco).toFixed(2).replace('.',',');
+  grid.innerHTML = filtrado.map(function(p) {
+    var emQuente  = p.em_promocao && parseInt(p.desconto_percent||0) > 0;
+    var precoOrig = Number(p.preco_original || p.preco).toFixed(2).replace('.',',');
+    var precoDesc = Number(p.preco).toFixed(2).replace('.',',');
+    var fotoHtml  = p.foto_url
+      ? '<img src="' + p.foto_url + '" style="width:100%;height:100%;object-fit:cover;display:block;">'
+      : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;">' + (p.emoji||'🍔') + '</div>';
 
-    // Card QUENTE: grande, laranja, igual ao app
+    // Card QUENTE: grande, laranja
     if (_dashSubTab === 'quente' && emQuente) {
-      return `<div style="grid-column:1/-1;border-radius:18px;overflow:hidden;background:linear-gradient(135deg,#FF6B1A 0%,#e65e32 45%,#c94820 100%);position:relative;cursor:pointer;" onclick="editarItem('${p.id}')">
-        <div style="position:absolute;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.07);top:-50px;right:-40px;pointer-events:none"></div>
-        <div style="position:absolute;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.05);bottom:-20px;left:30px;pointer-events:none"></div>
-        <div style="display:flex;align-items:center;padding:18px 20px;gap:16px;position:relative;z-index:1;">
-          <div style="flex-shrink:0;width:80px;height:80px;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.15);box-shadow:0 6px 20px rgba(0,0,0,.25);">
-            ${p.foto_url ? '<img src="'+p.foto_url+'" style="width:100%;height:100%;object-fit:cover;display:block;">'
-              : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;">'+(p.emoji||'🍔')+'</div>'}
-          </div>
-          <div style="flex:1;min-width:0;">
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-              <span style="background:#FFD166;color:#111;font-size:11px;font-weight:900;padding:3px 10px;border-radius:30px;">${p.desconto_percent}% OFF 🔥</span>
-              <span style="font-size:10px;color:rgba(255,255,255,.65);">${p.categoria||''}</span>
-            </div>
-            <div style="font-size:17px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.02em;">${p.nome}</div>
-            <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
-              <span style="font-size:12px;color:rgba(255,255,255,.45);text-decoration:line-through;">R$ ${precoOrig}</span>
-              <span style="font-size:20px;font-weight:900;color:#FFD166;">R$ ${precoDesc}</span>
-            </div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
-            <button onclick="event.stopPropagation();editarItem('${p.id}')" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:7px 12px;font-size:12px;color:#fff;cursor:pointer;font-weight:700;">✏️ Editar</button>
-            <button onclick="event.stopPropagation();deletarItem('${p.id}')" style="background:rgba(0,0,0,.15);border:1px solid rgba(0,0,0,.15);border-radius:10px;padding:7px 12px;font-size:12px;color:rgba(255,255,255,.7);cursor:pointer;font-weight:700;">🗑️</button>
-          </div>
-        </div>
-      </div>`;
+      return '<div style="grid-column:1/-1;border-radius:18px;overflow:hidden;background:linear-gradient(135deg,#FF6B1A 0%,#e65e32 45%,#c94820 100%);position:relative;" onclick="editarItem(\'' + p.id + '\')">'
+        + '<div style="position:absolute;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.07);top:-50px;right:-40px;pointer-events:none"></div>'
+        + '<div style="display:flex;align-items:center;padding:18px 20px;gap:16px;position:relative;z-index:1;">'
+        + '<div style="flex-shrink:0;width:80px;height:80px;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.15);box-shadow:0 6px 20px rgba(0,0,0,.25);">' + fotoHtml + '</div>'
+        + '<div style="flex:1;min-width:0;">'
+        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
+        + '<span style="background:#FFD166;color:#111;font-size:11px;font-weight:900;padding:3px 10px;border-radius:30px;">' + p.desconto_percent + '% OFF 🔥</span>'
+        + '<span style="font-size:10px;color:rgba(255,255,255,.65);">' + (p.categoria||'') + '</span>'
+        + '</div>'
+        + '<div style="font-size:17px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.02em;">' + p.nome + '</div>'
+        + '<div style="display:flex;align-items:center;gap:8px;margin-top:6px;">'
+        + '<span style="font-size:12px;color:rgba(255,255,255,.45);text-decoration:line-through;">R$ ' + precoOrig + '</span>'
+        + '<span style="font-size:20px;font-weight:900;color:#FFD166;">R$ ' + precoDesc + '</span>'
+        + '</div></div>'
+        + '<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">'
+        + '<button onclick="event.stopPropagation();editarItem(\'' + p.id + '\')" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:7px 12px;font-size:12px;color:#fff;cursor:pointer;font-weight:700;">✏️ Editar</button>'
+        + '<button onclick="event.stopPropagation();deletarItem(\'' + p.id + '\')" style="background:rgba(0,0,0,.15);border:1px solid rgba(0,0,0,.1);border-radius:10px;padding:7px 12px;font-size:12px;color:rgba(255,255,255,.7);cursor:pointer;font-weight:700;">🗑️</button>'
+        + '</div></div></div>';
     }
 
     // Card normal (aba Todos)
-    return `<div class="item-card">
-      <div class="item-card-img">
-        ${p.foto_url ? '<img class="item-img" src="'+(p.foto_url)+'" alt="'+(p.nome)+'">' : '<div class="item-emoji-bg">'+(p.emoji || '🍔')+'</div>'}
-        <span class="item-disponivel">${p.disponivel ? 'Disponível' : 'Indisponível'}</span>
-        ${emQuente ? '<span class="item-promo-badge" style="background:#e65e32;color:#fff;">🔥 '+p.desconto_percent+'% OFF</span>' : p.promocao ? '<span class="item-promo-badge">🔥 Promoção</span>' : ''}
-      </div>
-      <div class="item-body">
-        <div class="item-categoria">${p.categoria || 'SEM CATEGORIA'}</div>
-        <div class="item-nome">${p.nome}</div>
-        <div class="item-desc-text">${p.descricao || ''}</div>
-        <div class="item-footer">
-          <div>
-            ${emQuente
-              ? '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-size:.65rem;font-weight:800;color:#e65e32;">🔥 '+p.desconto_percent+'% OFF</span><span class="item-preco-original">R$ '+precoOrig+'</span></div><div class="item-preco" style="color:#e65e32;">R$ '+precoDesc+'</div>'
-              : p.promocao && p.preco_original
-                ? '<div class="item-preco-original">R$ '+precoOrig+'</div><div class="item-preco">R$ '+precoDesc+'</div>'
-                : '<div class="item-preco">R$ '+precoDesc+'</div>'}
-          </div>
-          <div class="item-acoes">
-            <button class="btn-icon" onclick="editarItem('${p.id}')">✏️</button>
-            <button class="btn-icon danger" onclick="deletarItem('${p.id}')">🗑️</button>
-          </div>
-        </div>
-      </div>
-    </div>`).join('');
-}
+    var badgeHtml = emQuente
+      ? '<span class="item-promo-badge" style="background:#e65e32;color:#fff;">🔥 ' + p.desconto_percent + '% OFF</span>'
+      : (p.promocao ? '<span class="item-promo-badge">🔥 Promoção</span>' : '');
+    var precoHtml = emQuente
+      ? '<div style="display:flex;align-items:center;gap:6px;"><span style="font-size:.65rem;font-weight:800;color:#e65e32;">🔥 ' + p.desconto_percent + '% OFF</span><span class="item-preco-original">R$ ' + precoOrig + '</span></div><div class="item-preco" style="color:#e65e32;">R$ ' + precoDesc + '</div>'
+      : (p.promocao && p.preco_original
+          ? '<div class="item-preco-original">R$ ' + precoOrig + '</div><div class="item-preco">R$ ' + precoDesc + '</div>'
+          : '<div class="item-preco">R$ ' + precoDesc + '</div>');
 
-function renderPedidosDemo() {
-  // Visão geral zerada — demo mostruário
-  const sp = $('stat-pedidos');     if (sp) sp.textContent = '0';
-  const sf = $('stat-faturamento'); if (sf) sf.textContent = 'R$ 0,00';
-
-  // Sem pedidos na lista
-  const lista = $('pedidos-novos-lista');
-  if (lista) {
-    lista.innerHTML = `<div style="text-align:center;padding:40px 20px;color:#aaa">
-      <div style="font-size:2.5rem;margin-bottom:10px">🎉</div>
-      <div style="font-size:.88rem;font-weight:700;color:#555;margin-bottom:6px">Nenhum pedido ainda</div>
-      <div style="font-size:.76rem">Crie sua conta e receba pedidos reais!</div>
-    </div>`;
-  }
-
-  // Badge sem notificação
-  const badgeW = $('badge-pedidos-wrap'); if (badgeW) badgeW.style.display = 'none';
-}
-
-
-function renderCardapioDemo() {
-  const grid = $('cardapio-grid'); const stat = $('stat-itens');
-  const demo = [
-    { nome:'X-Burguer Especial', categoria:'LANCHES', preco:28.90, emoji:'🍔' },
-    { nome:'X-Tudo',             categoria:'LANCHES', preco:34.90, emoji:'🍔' },
-    { nome:'Batata Frita Grande', categoria:'ACOMPANHAMENTOS', preco:14.90, emoji:'🍟' },
-    { nome:'Onion Rings',        categoria:'ACOMPANHAMENTOS', preco:12.90, emoji:'🧅' },
-    { nome:'Refrigerante 350ml', categoria:'BEBIDAS', preco:7.90, emoji:'🥤' },
-    { nome:'Suco Natural 400ml', categoria:'BEBIDAS', preco:11.90, emoji:'🥤' },
-    { nome:'Sorvete Caseiro',    categoria:'SOBREMESAS', preco:9.90, emoji:'🍦' },
-    { nome:'Combo Família',      categoria:'COMBOS', preco:89.90, emoji:'🎁' },
-  ];
-  if (stat) stat.textContent = String(demo.length);
-  if (!grid) return;
-  grid.innerHTML = demo.map(p => `
-    <div class="item-card">
-      <div class="item-card-img"><div class="item-emoji-bg">${p.emoji}</div></div>
-      <div class="item-body">
-        <div class="item-categoria">${p.categoria}</div>
-        <div class="item-nome">${p.nome}</div>
-        <div class="item-footer">
-          <div class="item-preco">R$ ${p.preco.toFixed(2).replace('.',',')}</div>
-        </div>
-      </div>
-    </div>`).join('');
-}
-
-function renderEmojiGrid() {
-  const grid = $('emoji-grid'); if (!grid) return;
-  grid.innerHTML = EMOJIS.map(e =>
-    `<button class="emoji-btn ${e === emojiSel ? 'selected' : ''}" onclick="selecionarEmoji('${e}',this)">${e}</button>`
-  ).join('');
-}
-
-// ─── Modal de item ───────────────────────────────────────────────────────────
-export function abrirModalItem() {
-  $('modal-item').classList.add('open');
-  ['item-nome','item-desc','item-cat','item-preco','item-preco-orig'].forEach(id => { const el=$(id); if(el) el.value=''; });
-  const dd=$('item-desconto-percent'); if(dd) dd.value='0';
-  const dg=$('desconto-group'); if(dg) dg.style.display='none';
-  const pr = $('item-promocao'); if (pr) pr.checked = false;
-  const pg = $('preco-orig-group'); if (pg) pg.style.display = 'none';
-  fotosFiles = []; fotosPosX = []; fotosPosY = [];
-  renderFotosGrid();
-  emojiSel = '🍔'; renderEmojiGrid();
-  // Reset botão salvar
-  const btn = document.querySelector('#modal-item .btn-primary');
-  if (btn) { btn.textContent = 'Salvar item'; btn.onclick = salvarItem; }
-}
-export function fecharModal() { $('modal-item').classList.remove('open'); }
-export function fecharModalFora(e) { if (e.target.id === 'modal-item') fecharModal(); }
-export function selecionarEmoji(emoji, btn) {
-  emojiSel = emoji;
-  document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-}
-
-// ─── Fotos com drag de posição ───────────────────────────────────────────────
-export function previewFotos(event) {
-  const file = event.target.files[0]; if (!file) return;
-  event.target.value = '';
-  // Abre modal de crop para ajuste antes de adicionar
-  abrirCropFoto(file);
-}
-export function previewFoto(e) { previewFotos(e); }
-
-
-
-// ── CROP DE FOTO DO PRODUTO ────────────────────────────────────────────────
-let _cropFotoFile  = null;
-let _cropFotoUrl   = null;
-let _cropFotoPosX  = 50;
-let _cropFotoPosY  = 50;
-let _cropFotoDragAtivo = false;
-let _cropFotoDragX = 0, _cropFotoDragY = 0;
-
-window.abrirCropFoto = function(file) {
-  _cropFotoFile = file;
-  const url = URL.createObjectURL(file);
-  const img = new Image();
-  img.onload = () => {
-    _CRP.img = img; _CRP.offX = 0; _CRP.offY = 0;
-    _CRP.canvasId = 'crop-foto-canvas'; _CRP.stageId = 'crop-foto-stage'; _CRP.safePrefix = 'cfso';
-    crpApplyMinScale(); _CRP.scale = _CRP.minScale;
-    crpInitDrag('crop-foto-stage');
-    const modal = $('modal-crop-foto');
-    if (modal) { modal.classList.add('open'); document.body.style.overflow = 'hidden'; }
-    setTimeout(() => { crpApplyMinScale(); crpDraw(); }, 50);
-  };
-  img.src = url;
-  _cropFotoUrl = url;
-};
-
-window.confirmarCropFoto = function() {
-  if (!_CRP.img) { console.warn('[crop] sem imagem'); return; }
-
-  // Crop via canvas da imagem original (mais confiável que drawImage canvas->canvas)
-  const stage  = $('crop-foto-stage');
-  const W      = stage ? stage.offsetWidth : 340;
-  const safe   = Math.floor(W * 0.82);
-  const sx     = Math.floor((W - safe) / 2);
-
-  const out    = document.createElement('canvas');
-  out.width    = safe; out.height = safe;
-  const ctx    = out.getContext('2d');
-
-  // Calcula onde a imagem está posicionada no stage
-  const iw = _CRP.img.naturalWidth, ih = _CRP.img.naturalHeight;
-  const dw = iw * _CRP.scale, dh = ih * _CRP.scale;
-  const dx = W/2 - dw/2 + _CRP.offX;
-  const dy = W/2 - dh/2 + _CRP.offY;
-
-  // Desenha a porção da imagem que está dentro da safe area
-  ctx.drawImage(_CRP.img, dx - sx, dy - sx, dw, dh);
-
-  out.toBlob(blob => {
-    if (!blob || blob.size < 100) {
-      // Fallback: salva sem crop
-      const fallbackFile = _cropFotoFile;
-      if (fallbackFile) {
-        fallbackFile._urlExistente = null;
-        fotosFiles.push(fallbackFile); fotosPosX.push(50); fotosPosY.push(50);
-      }
-    } else {
-      const file = new File([blob], _cropFotoFile?.name || 'foto.jpg', { type:'image/jpeg' });
-      file._urlExistente = null;
-      const editIdx = window._cropFotoEditIdx;
-      if (editIdx != null && editIdx >= 0 && editIdx < fotosFiles.length) {
-        fotosFiles[editIdx] = file; fotosPosX[editIdx] = 50; fotosPosY[editIdx] = 50;
-        window._cropFotoEditIdx = null;
-      } else {
-        fotosFiles.push(file); fotosPosX.push(50); fotosPosY.push(50);
-      }
-    }
-
-    renderFotosGrid();
-    const modal = $('modal-crop-foto');
-    if (modal) { modal.classList.remove('open'); document.body.style.overflow = ''; }
-    _CRP.img = null;
-
-    if (_fotoQueue && _fotoQueue.length > 0) {
-      const next = _fotoQueue.shift(); _cropFotoFile = next;
-      setTimeout(() => window.abrirCropFoto(next), 200);
-    }
-  }, 'image/jpeg', 0.92);
-};
-
-// Função chamada pelo foto-input (modal de item)
-window.adicionarFotos = function(event) {
-  const files = Array.from(event.target.files || []);
-  if (!files.length) return;
-  event.target.value = '';
-  // Processa um arquivo de cada vez via fila
-  let idx = 0;
-  const next = () => {
-    if (idx >= files.length) return;
-    _cropFotoFile = files[idx++];
-    window.abrirCropFoto(_cropFotoFile);
-    // Após confirmar, se houver mais arquivos, o próximo será aberto
-    // via _fotoQueue que guardamos aqui
-    _fotoQueue = files.slice(idx);
-  };
-  _fotoQueue = files.slice(1);
-  window.abrirCropFoto(files[0]);
-  _cropFotoFile = files[0];
-};
-
-let _fotoQueue = [];
-
-window.fecharCropFoto = function() {
-  const m = $('modal-crop-foto'); if (m) m.classList.remove('open');
-  document.body.style.overflow = '';
-  _cropFotoFile = null;
-  crpCleanup();
-};
-
-// Drag no modal de crop
-
-
-function renderFotosGrid() {
-  const grid = $('fotos-grid'); if (!grid) return;
-
-  if (!fotosFiles.length) {
-    grid.innerHTML = `<div class="foto-add-btn" onclick="document.getElementById('foto-input').click()">
-      <span style="font-size:1.5rem">📷</span>
-      <span style="font-size:0.72rem;color:#aaa">Adicionar foto</span>
-    </div>`;
-    return;
-  }
-
-  let html = fotosFiles.map((f, i) => {
-    const url = f._urlExistente || URL.createObjectURL(f);
-    const px  = fotosPosX[i] ?? 50;
-    const py  = fotosPosY[i] ?? 50;
-    const isExist = !!f._urlExistente;
-    return `<div class="foto-thumb-wrap" id="foto-wrap-${i}">
-      <div style="position:relative;width:100%;aspect-ratio:1/1;max-height:280px;border-radius:14px;overflow:hidden;background:#f0ebe4;border:2px solid var(--border);margin-bottom:8px;cursor:grab;touch-action:none" id="foto-drag-${i}">
-        <img src="${url}" id="foto-img-${i}" draggable="false"
-          style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:${px}% ${py}%;pointer-events:none;user-select:none">
-        ${i===0 ? '<div style="position:absolute;top:8px;left:8px;background:var(--red);color:#fff;font-size:.62rem;font-weight:800;padding:3px 10px;border-radius:50px;z-index:3;letter-spacing:.04em">PRINCIPAL</div>' : ''}
-        <div style="position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;pointer-events:none;z-index:2">
-          <div style="background:rgba(0,0,0,.55);color:#fff;font-size:.62rem;font-weight:600;padding:4px 12px;border-radius:50px;backdrop-filter:blur(6px)">
-            ✋ Arraste para reposicionar
-          </div>
-        </div>
-        <div style="position:absolute;bottom:10px;right:10px;width:44px;height:44px;border-radius:8px;overflow:hidden;background:rgba(0,0,0,.6);border:2px solid rgba(255,255,255,.35);z-index:3">
-          <img src="${url}" style="width:100%;height:100%;object-fit:cover;opacity:.7">
-          <div id="foto-pin-${i}" style="position:absolute;width:8px;height:8px;background:#fff;border-radius:50%;border:1.5px solid var(--red);transform:translate(-50%,-50%);left:${px}%;top:${py}%;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>
-        </div>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <span style="font-size:.65rem;color:#aaa">${isExist ? '📎 Existente' : '✨ Nova'}</span>
-        <button onclick="removerFotoItem(${i})" style="background:none;border:1px solid #e0dbd5;color:#aaa;padding:4px 12px;border-radius:8px;font-size:.7rem;font-weight:600;cursor:pointer" onmouseover="this.style.borderColor='var(--red)';this.style.color='var(--red)'" onmouseout="this.style.borderColor='#e0dbd5';this.style.color='#aaa'">🗑 Remover</button>
-      </div>
-    </div>`;
+    return '<div class="item-card">'
+      + '<div class="item-card-img">'
+      + (p.foto_url ? '<img class="item-img" src="' + p.foto_url + '" alt="' + p.nome + '">' : '<div class="item-emoji-bg">' + (p.emoji||'🍔') + '</div>')
+      + '<span class="item-disponivel">' + (p.disponivel ? 'Disponível' : 'Indisponível') + '</span>'
+      + badgeHtml
+      + '</div>'
+      + '<div class="item-body">'
+      + '<div class="item-categoria">' + (p.categoria||'SEM CATEGORIA') + '</div>'
+      + '<div class="item-nome">' + p.nome + '</div>'
+      + '<div class="item-desc-text">' + (p.descricao||'') + '</div>'
+      + '<div class="item-footer"><div>' + precoHtml + '</div>'
+      + '<div class="item-acoes">'
+      + '<button class="btn-icon" onclick="editarItem(\'' + p.id + '\')">✏️</button>'
+      + '<button class="btn-icon danger" onclick="deletarItem(\'' + p.id + '\')">🗑️</button>'
+      + '</div></div></div></div>';
   }).join('');
 
   html += `<div class="foto-add-btn" onclick="document.getElementById('foto-input').click()">
@@ -3685,27 +3443,26 @@ window.abrirModalQuente = async function() {
   // Duração da promoção
   const durWrap = document.getElementById('quente-duracao-wrap');
   if (durWrap) {
-    durWrap.innerHTML = `
-      <div style="margin-top:14px;">
-        <div style="font-size:12px;font-weight:700;color:#555;margin-bottom:8px;">⏱️ Duração da promoção</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          ${[
-            {h:1,  l:'1h'},
-            {h:2,  l:'2h'},
-            {h:4,  l:'4h'},
-            {h:8,  l:'8h'},
-            {h:24, l:'1 dia'},
-            {h:0,  l:'Sem limite'}
-          ].map(o => `<button onclick="selecionarDuracaoQuente(${o.h})" id="qdur-${o.h}"
-            style="padding:7px 14px;border-radius:30px;border:2px solid ${o.h===_quenteHoras?'#e65e32':'#e0dbd5'};
-                   background:${o.h===_quenteHoras?'#e65e32':'#fff'};
-                   color:${o.h===_quenteHoras?'#fff':'#555'};
-                   font-family:'Poppins',sans-serif;font-weight:700;font-size:.78rem;cursor:pointer;transition:all .15s">
-            ${o.l}
-          </button>`).join('')}
-        </div>
-        <div id="quente-expira-info" style="font-size:11px;color:#aaa;margin-top:8px;"></div>
-      </div>`;
+    var duracoes = [
+      {h:1, l:'1h'}, {h:2, l:'2h'}, {h:4, l:'4h'},
+      {h:8, l:'8h'}, {h:24, l:'1 dia'}, {h:0, l:'Sem limite'}
+    ];
+    var btns = duracoes.map(function(o) {
+      var ativo = o.h === _quenteHoras;
+      return '<button onclick="selecionarDuracaoQuente(' + o.h + ')" id="qdur-' + o.h + '"'
+        + ' style="padding:7px 14px;border-radius:30px;border:2px solid ' + (ativo ? '#e65e32' : '#e0dbd5') + ';'
+        + 'background:' + (ativo ? '#e65e32' : '#fff') + ';'
+        + 'color:' + (ativo ? '#fff' : '#555') + ';'
+        + 'font-family:Poppins,sans-serif;font-weight:700;font-size:.78rem;cursor:pointer;transition:all .15s">'
+        + o.l + '</button>';
+    }).join('');
+    durWrap.innerHTML = '<div style="margin-top:14px;">'
+      + '<div style="font-size:12px;font-weight:700;color:#555;margin-bottom:8px;">⏱️ Duração da promoção</div>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap;">' + btns + '</div>'
+      + '<div id="quente-expira-info" style="font-size:11px;color:#aaa;margin-top:8px;"></div>'
+      + '</div>';
+    // Mostra info inicial
+    selecionarDuracaoQuente(_quenteHoras);
   }
   // Mostra preview
   atualizarPreviewQuente();
