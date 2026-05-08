@@ -681,13 +681,46 @@ async function renderCardapio() {
     return;
   }
 
-  grid.innerHTML = filtrado.map(p => `
-    <div class="item-card">
-      <div class="item-card-img">
-        ${p.foto_url           ? '<img class="item-img" src="'+(p.foto_url)+'" alt="'+(p.nome)+'">'           : '<div class="item-emoji-bg">'+(p.emoji || '🍔')+'</div>'}
-        <span class="item-disponivel">${p.disponivel ? 'Disponível' : 'Indisponível'}</span>
-        ${p.promocao ? '<span class="item-promo-badge">🔥 Promoção</span>' : ''}
+  grid.innerHTML = filtrado.map(p => {
+    const emQuente = p.em_promocao && parseInt(p.desconto_percent||0) > 0;
+    const precoOrig = Number(p.preco_original || p.preco).toFixed(2).replace('.',',');
+    const precoDesc = Number(p.preco).toFixed(2).replace('.',',');
 
+    // Card QUENTE: grande, laranja, igual ao app
+    if (_dashSubTab === 'quente' && emQuente) {
+      return `<div style="grid-column:1/-1;border-radius:18px;overflow:hidden;background:linear-gradient(135deg,#FF6B1A 0%,#e65e32 45%,#c94820 100%);position:relative;cursor:pointer;" onclick="editarItem('${p.id}')">
+        <div style="position:absolute;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.07);top:-50px;right:-40px;pointer-events:none"></div>
+        <div style="position:absolute;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.05);bottom:-20px;left:30px;pointer-events:none"></div>
+        <div style="display:flex;align-items:center;padding:18px 20px;gap:16px;position:relative;z-index:1;">
+          <div style="flex-shrink:0;width:80px;height:80px;border-radius:14px;overflow:hidden;background:rgba(0,0,0,.15);box-shadow:0 6px 20px rgba(0,0,0,.25);">
+            ${p.foto_url ? '<img src="'+p.foto_url+'" style="width:100%;height:100%;object-fit:cover;display:block;">'
+              : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2rem;">'+(p.emoji||'🍔')+'</div>'}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+              <span style="background:#FFD166;color:#111;font-size:11px;font-weight:900;padding:3px 10px;border-radius:30px;">${p.desconto_percent}% OFF 🔥</span>
+              <span style="font-size:10px;color:rgba(255,255,255,.65);">${p.categoria||''}</span>
+            </div>
+            <div style="font-size:17px;font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.02em;">${p.nome}</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+              <span style="font-size:12px;color:rgba(255,255,255,.45);text-decoration:line-through;">R$ ${precoOrig}</span>
+              <span style="font-size:20px;font-weight:900;color:#FFD166;">R$ ${precoDesc}</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+            <button onclick="event.stopPropagation();editarItem('${p.id}')" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:7px 12px;font-size:12px;color:#fff;cursor:pointer;font-weight:700;">✏️ Editar</button>
+            <button onclick="event.stopPropagation();deletarItem('${p.id}')" style="background:rgba(0,0,0,.15);border:1px solid rgba(0,0,0,.15);border-radius:10px;padding:7px 12px;font-size:12px;color:rgba(255,255,255,.7);cursor:pointer;font-weight:700;">🗑️</button>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    // Card normal (aba Todos)
+    return `<div class="item-card">
+      <div class="item-card-img">
+        ${p.foto_url ? '<img class="item-img" src="'+(p.foto_url)+'" alt="'+(p.nome)+'">' : '<div class="item-emoji-bg">'+(p.emoji || '🍔')+'</div>'}
+        <span class="item-disponivel">${p.disponivel ? 'Disponível' : 'Indisponível'}</span>
+        ${emQuente ? '<span class="item-promo-badge" style="background:#e65e32;color:#fff;">🔥 '+p.desconto_percent+'% OFF</span>' : p.promocao ? '<span class="item-promo-badge">🔥 Promoção</span>' : ''}
       </div>
       <div class="item-body">
         <div class="item-categoria">${p.categoria || 'SEM CATEGORIA'}</div>
@@ -695,7 +728,11 @@ async function renderCardapio() {
         <div class="item-desc-text">${p.descricao || ''}</div>
         <div class="item-footer">
           <div>
-            ${p.em_promocao && p.desconto_percent > 0               ? '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">                   <span class="item-promo-badge" style="background:var(--red);color:#fff;font-size:.65rem;font-weight:800;padding:2px 8px;border-radius:6px;">🔥 '+(p.desconto_percent)+'% OFF</span>                   <span class="item-preco-original">R$ '+(Number(p.preco_original||p.preco).toFixed(2).replace('.',','))+'</span>                 </div>                 <div class="item-preco" style="color:var(--red);">R$ '+(Number(p.preco).toFixed(2).replace('.',','))+'</div>'               : p.promocao && p.preco_original                 ? '<div class="item-preco-original">R$ '+(Number(p.preco_original).toFixed(2).replace('.',','))+'</div>                    <div class="item-preco">R$ '+(Number(p.preco).toFixed(2).replace('.',','))+'</div>'                 : '<div class="item-preco">R$ '+(Number(p.preco).toFixed(2).replace('.',','))+'</div>'}
+            ${emQuente
+              ? '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-size:.65rem;font-weight:800;color:#e65e32;">🔥 '+p.desconto_percent+'% OFF</span><span class="item-preco-original">R$ '+precoOrig+'</span></div><div class="item-preco" style="color:#e65e32;">R$ '+precoDesc+'</div>'
+              : p.promocao && p.preco_original
+                ? '<div class="item-preco-original">R$ '+precoOrig+'</div><div class="item-preco">R$ '+precoDesc+'</div>'
+                : '<div class="item-preco">R$ '+precoDesc+'</div>'}
           </div>
           <div class="item-acoes">
             <button class="btn-icon" onclick="editarItem('${p.id}')">✏️</button>
@@ -3626,6 +3663,7 @@ window.toggleTaxaEntrega = function(ativo) {
 // 🔥 MODAL QUENTE — Promoção por percentual
 // ═══════════════════════════════════════════════════════════════════════════════
 let _quentePct = 10;
+let _quenteHoras = 2; // duração padrão: 2h
 
 window.abrirModalQuente = async function() {
   const modal = document.getElementById('modal-quente');
@@ -3644,6 +3682,31 @@ window.abrirModalQuente = async function() {
       </button>`).join('');
   }
 
+  // Duração da promoção
+  const durWrap = document.getElementById('quente-duracao-wrap');
+  if (durWrap) {
+    durWrap.innerHTML = `
+      <div style="margin-top:14px;">
+        <div style="font-size:12px;font-weight:700;color:#555;margin-bottom:8px;">⏱️ Duração da promoção</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          ${[
+            {h:1,  l:'1h'},
+            {h:2,  l:'2h'},
+            {h:4,  l:'4h'},
+            {h:8,  l:'8h'},
+            {h:24, l:'1 dia'},
+            {h:0,  l:'Sem limite'}
+          ].map(o => `<button onclick="selecionarDuracaoQuente(${o.h})" id="qdur-${o.h}"
+            style="padding:7px 14px;border-radius:30px;border:2px solid ${o.h===_quenteHoras?'#e65e32':'#e0dbd5'};
+                   background:${o.h===_quenteHoras?'#e65e32':'#fff'};
+                   color:${o.h===_quenteHoras?'#fff':'#555'};
+                   font-family:'Poppins',sans-serif;font-weight:700;font-size:.78rem;cursor:pointer;transition:all .15s">
+            ${o.l}
+          </button>`).join('')}
+        </div>
+        <div id="quente-expira-info" style="font-size:11px;color:#aaa;margin-top:8px;"></div>
+      </div>`;
+  }
   // Mostra preview
   atualizarPreviewQuente();
 
@@ -3670,6 +3733,26 @@ window.selecionarPctQuente = function(pct) {
     const desc = base * (1 - _quentePct / 100);
     el.textContent = 'R$ ' + desc.toFixed(2).replace('.', ',');
   });
+};
+
+window.selecionarDuracaoQuente = function(horas) {
+  _quenteHoras = horas;
+  [0,1,2,4,8,24].forEach(h => {
+    const b = document.getElementById('qdur-'+h);
+    if (!b) return;
+    b.style.background  = h === horas ? '#e65e32' : '#fff';
+    b.style.borderColor = h === horas ? '#e65e32' : '#e0dbd5';
+    b.style.color       = h === horas ? '#fff'    : '#555';
+  });
+  const info = document.getElementById('quente-expira-info');
+  if (info) {
+    if (horas === 0) {
+      info.textContent = 'Promoção fica ativa até você remover manualmente.';
+    } else {
+      const exp = new Date(Date.now() + horas * 3600000);
+      info.textContent = 'Expira hoje às ' + exp.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}) + '.';
+    }
+  }
 };
 
 function atualizarPreviewQuente() {
@@ -3755,12 +3838,25 @@ window.salvarQuente = async function() {
     }).eq('id', cb.value);
   }
 
-  // Atualiza flag da loja
+  // Atualiza flag da loja com expiração
   if (estab?.id) {
+    const expiraEm = (_quenteHoras > 0 && marcados.length > 0)
+      ? new Date(Date.now() + _quenteHoras * 3600000).toISOString()
+      : null;
     await getSupa().from('estabelecimentos').update({
       promocao_ativa:   marcados.length > 0,
       desconto_percent: marcados.length > 0 ? pct : 0,
+      promo_expira_em:  expiraEm,
     }).eq('id', estab.id);
+
+    // Agenda expiração local (para o dono ver o aviso sem recarregar)
+    if (_quenteHoras > 0 && marcados.length > 0) {
+      clearTimeout(window._quenteExpiraTimer);
+      window._quenteExpiraTimer = setTimeout(async function() {
+        showToast('⏰ Promoção QUENTE expirou! Renovar?', '#e65e32', 5000);
+        atualizarFireDash();
+      }, _quenteHoras * 3600000);
+    }
   }
 
   fecharModalQuente();
