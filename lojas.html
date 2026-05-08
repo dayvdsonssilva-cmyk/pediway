@@ -3016,69 +3016,107 @@ document.addEventListener('DOMContentLoaded',()=>{
 </style>
 
 <script>
+/* ═══════════════════════════════════════════════
+   PEDIWAY — Sistema de Localização
+   GPS • ViaCEP • Google Places (quando ativado)
+═══════════════════════════════════════════════ */
 (function () {
-  var M = null; // modal element
 
+  // ─── Coloque sua API Key do Google aqui ─────
+  var GOOGLE_KEY = ''; // ex: 'AIzaSy...'
+  // ────────────────────────────────────────────
+
+  var _autocomplete = null;
+
+  /* UI helpers */
   function el(id) { return document.getElementById(id); }
 
   function showModal() {
-    M = el('gps-modal');
-    if (M) M.style.display = 'block';
+    var m = el('gps-modal');
+    if (m) m.style.display = 'block';
+    // Inicia Google Places se tiver key
+    if (GOOGLE_KEY && !_autocomplete) iniciarGooglePlaces();
   }
 
   function hideModal() {
-    if (M) { M.style.display = 'none'; }
+    var m = el('gps-modal');
+    if (m) m.style.display = 'none';
   }
 
   function setLoading(on) {
-    var btn = el('gps-btn-loc');
+    var btn  = el('gps-btn-loc');
     var spin = el('gps-loading');
-    var err = el('gps-error');
+    var err  = el('gps-error');
     if (btn)  { btn.style.opacity = on ? '0.5' : '1'; btn.style.pointerEvents = on ? 'none' : 'auto'; }
-    if (spin) spin.style.display = on ? 'block' : 'none';
-    if (err)  err.style.display = 'none';
+    if (spin) spin.style.display  = on ? 'block' : 'none';
+    if (err)  err.style.display   = 'none';
   }
 
   function setError(msg) {
     setLoading(false);
-    var err = el('gps-error');
-    var msgEl = el('gps-error-msg');
+    var err = el('gps-error'), msgEl = el('gps-error-msg');
     if (msgEl) msgEl.textContent = msg;
-    if (err) err.style.display = 'block';
+    if (err)   err.style.display = 'block';
   }
 
-  // Salva e aplica localização no app
+  /* Aplica localização no app */
   function aplicar(lat, lng, label) {
-    try {
-      localStorage.setItem('pw_gps', JSON.stringify({ lat: lat, lng: lng, label: label, ts: Date.now() }));
-    } catch (e) {}
-
-    // Atualiza variáveis globais do app
+    setLoading(false);
+    try { localStorage.setItem('pw_gps', JSON.stringify({ lat: lat, lng: lng, label: label, ts: Date.now() })); } catch (e) {}
     if (typeof _userLat !== 'undefined') { _userLat = lat; _userLng = lng; _geoOk = true; }
-
-    // Atualiza header com cidade
-    var cidadeEl = el('home-cidade');
-    if (cidadeEl && label) { cidadeEl.textContent = '📍 ' + label; cidadeEl.style.display = 'block'; }
-
-    // Remove banner vermelho de GPS
+    var cidEl = el('home-cidade');
+    if (cidEl && label) { cidEl.textContent = '📍 ' + label; cidEl.style.display = 'block'; }
     var banner = el('gps-banner');
     if (banner) banner.innerHTML = '';
-
-    // Re-renderiza lojas
     if (typeof renderHome === 'function') renderHome();
-
     hideModal();
-
-    if (typeof toast === 'function') {
-      setTimeout(function () { toast('📍 ' + label); }, 250);
-    }
+    if (typeof toast === 'function') setTimeout(function () { toast('📍 ' + label); }, 250);
   }
 
-  // ─── GPS do navegador ─────────────────────────────────────────
+  /* ── Google Places Autocomplete ─────────────── */
+  function iniciarGooglePlaces() {
+    var inp = el('gps-addr-input');
+    if (!inp || !window.google || !google.maps) return;
+    try {
+      _autocomplete = new google.maps.places.Autocomplete(inp, {
+        componentRestrictions: { country: 'BR' },
+        fields: ['geometry', 'formatted_address', 'address_components'],
+        types: ['geocode']
+      });
+      _autocomplete.addListener('place_changed', function () {
+        var place = _autocomplete.getPlace();
+        if (!place.geometry) { setError('Selecione um endereço da lista.'); return; }
+        var lat   = place.geometry.location.lat();
+        var lng   = place.geometry.location.lng();
+        var label = place.formatted_address || inp.value;
+        // Simplifica label: pega cidade/estado
+        var comps = place.address_components || [];
+        var city  = (comps.find(function(c){ return c.types.includes('administrative_area_level_2'); }) || {}).long_name;
+        var state = (comps.find(function(c){ return c.types.includes('administrative_area_level_1'); }) || {}).short_name;
+        if (city && state) label = city + ' - ' + state;
+        aplicar(lat, lng, label);
+      });
+    } catch (e) { console.warn('Google Places error:', e); }
+  }
+
+  /* Carrega SDK do Google se tiver key */
+  function carregarGoogleMaps() {
+    if (!GOOGLE_KEY) return;
+    if (window.google && google.maps) { iniciarGooglePlaces(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://maps.googleapis.com/maps/api/js?key=' + GOOGLE_KEY + '&libraries=places&language=pt-BR&region=BR&callback=__pwGoogleReady';
+    s.async = true; s.defer = true;
+    window.__pwGoogleReady = function () { iniciarGooglePlaces(); };
+    document.head.appendChild(s);
+  }
+
+  /* ── GPS do navegador ────────────────────────── */
   window.gpsUsarLocalizacao = function () {
+
+    // Sem suporte a GPS → mostra campo
     if (!navigator.geolocation) {
-      setError('GPS não disponível. Digite seu CEP ou cidade abaixo.');
       gpsDigitarEndereco();
+      setError('GPS não disponível. Digite seu CEP ou cidade.');
       return;
     }
 
@@ -3086,126 +3124,122 @@ document.addEventListener('DOMContentLoaded',()=>{
 
     var done = false;
 
-    // Timeout máximo de 5 segundos no total
-    var killer = setTimeout(function () {
-      if (!done) {
-        done = true;
-        // Aceita sem nome de cidade — app funciona mesmo assim
-        aplicar(0, 0, 'Localização ativa');
-      }
-    }, 5000);
+    // Kill absoluto: 6 segundos e encerra tudo
+    var hardKill = setTimeout(function () {
+      if (done) return;
+      done = true;
+      // Aceita localização genérica — não fica preso
+      setLoading(false);
+      setError('GPS demorou demais. Tente novamente ou digite seu CEP.');
+      gpsDigitarEndereco();
+    }, 6000);
 
     navigator.geolocation.getCurrentPosition(
+      /* sucesso */
       function (pos) {
         if (done) return;
-        clearTimeout(killer);
         done = true;
+        clearTimeout(hardKill);
 
         var lat = pos.coords.latitude;
         var lng = pos.coords.longitude;
 
-        // Tenta ViaCEP reverse por lat/lng via BrasilAPI (rápido, sem CORS)
-        // Se falhar em 2s, usa lat/lng sem nome
-        var nameTimer = setTimeout(function () {
-          aplicar(lat, lng, 'Localização ativa');
-        }, 2000);
+        // Busca nome da cidade com ViaCEP por coords (via IBGE)
+        // Timeout de 3s — se falhar usa "Localização ativa"
+        var nameKill = setTimeout(function () { aplicar(lat, lng, 'Localização ativa'); }, 3000);
 
-        // Usa API pública brasileira para nome da cidade
-        fetch('https://brasilapi.com.br/api/ibge/municipios/v1?latitude=' + lat + '&longitude=' + lng)
+        // Usa IBGE para achar município por lat/lng
+        fetch('https://servicodados.ibge.gov.br/api/v1/localidades/municipios')
+          .catch(function () { return null; });
+        
+        // Abordagem mais simples: bigdatacloud (sem CORS, gratuito)
+        fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + lat + '&longitude=' + lng + '&localityLanguage=pt')
           .then(function (r) { return r.json(); })
           .then(function (d) {
-            clearTimeout(nameTimer);
-            var nome = (d && d.nome) ? d.nome : 'Localização ativa';
-            aplicar(lat, lng, nome);
+            clearTimeout(nameKill);
+            if (done && d.city) return; // já aplicou
+            var city = d.city || d.locality || d.principalSubdivision || 'Localização ativa';
+            aplicar(lat, lng, city);
           })
           .catch(function () {
-            clearTimeout(nameTimer);
+            clearTimeout(nameKill);
             aplicar(lat, lng, 'Localização ativa');
           });
       },
+      /* erro */
       function (err) {
-        clearTimeout(killer);
         if (done) return;
         done = true;
+        clearTimeout(hardKill);
 
-        if (err.code === 1) {
-          setError('Permissão negada. Digite seu CEP abaixo.');
-        } else if (err.code === 2) {
-          setError('GPS sem sinal. Digite seu CEP abaixo.');
-        } else {
-          setError('Tempo esgotado. Digite seu CEP abaixo.');
-        }
-        setTimeout(gpsDigitarEndereco, 400);
+        var msgs = {
+          1: 'Permissão negada. Ative o GPS nas configurações ou use o CEP.',
+          2: 'GPS sem sinal. Digite seu CEP abaixo.',
+          3: 'GPS demorou demais. Digite seu CEP abaixo.'
+        };
+        setError(msgs[err.code] || 'Erro de GPS. Use o CEP.');
+        setTimeout(gpsDigitarEndereco, 300);
       },
-      { timeout: 8000, maximumAge: 600000, enableHighAccuracy: false }
+      { timeout: 5000, maximumAge: 300000, enableHighAccuracy: false }
     );
   };
 
-  // ─── Exibe campo de texto ─────────────────────────────────────
+  /* ── Mostrar campo de endereço ───────────────── */
   window.gpsDigitarEndereco = function () {
     var form = el('gps-addr-form');
     if (form) form.style.display = 'block';
+    if (GOOGLE_KEY) carregarGoogleMaps();
     setTimeout(function () {
       var inp = el('gps-addr-input');
       if (inp) inp.focus();
     }, 150);
   };
 
-  // ─── Busca por CEP ou cidade ──────────────────────────────────
+  /* ── Busca por CEP ou texto ──────────────────── */
   window.gpsBuscarEndereco = function () {
-    var inp = el('gps-addr-input');
-    var q = (inp ? inp.value : '').trim();
+    var inp  = el('gps-addr-input');
+    var q    = (inp ? inp.value : '').trim();
     if (!q) { if (inp) inp.focus(); return; }
+
+    // Se Google Places está ativo, ele já tratou via autocomplete
+    if (GOOGLE_KEY && _autocomplete) return;
 
     setLoading(true);
 
-    var cepLimpo = q.replace(/\D/g, '');
-    var ehCEP = cepLimpo.length === 8;
-
-    if (ehCEP) {
-      // ── CEP via ViaCEP ─────────────────────────────────────
-      fetch('https://viacep.com.br/ws/' + cepLimpo + '/json/')
+    var nums = q.replace(/\D/g, '');
+    if (nums.length === 8) {
+      /* ── CEP via ViaCEP ────────────────────── */
+      fetch('https://viacep.com.br/ws/' + nums + '/json/')
         .then(function (r) { return r.json(); })
         .then(function (d) {
-          if (d.erro) { setError('CEP não encontrado. Verifique e tente novamente.'); return; }
-          var label = d.localidade + (d.uf ? ' - ' + d.uf : '');
-          // Salva com lat/lng 0 (sem coordenadas — não necessário se lojas não têm coords)
-          aplicar(0, 0, label);
+          if (d.erro) { setError('CEP não encontrado. Tente: 01310-100'); return; }
+          aplicar(0, 0, d.localidade + (d.uf ? ' - ' + d.uf : ''));
         })
-        .catch(function () {
-          setError('Erro ao consultar CEP. Verifique sua conexão.');
-        });
-
+        .catch(function () { setError('Erro ao consultar CEP. Verifique sua conexão.'); });
     } else {
-      // ── Cidade/bairro digitado → salva como label direto ────
-      // Não precisamos de lat/lng se as lojas não têm coordenadas cadastradas
+      /* ── Texto livre → salva direto ──────────── */
+      // Sem geocoding — funciona pq lojas não têm coords cadastradas
       aplicar(0, 0, q);
     }
   };
 
-  // Enter no campo
+  /* Enter no campo */
   document.addEventListener('DOMContentLoaded', function () {
     var inp = el('gps-addr-input');
-    if (inp) {
-      inp.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') gpsBuscarEndereco();
-      });
-    }
+    if (inp) inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') gpsBuscarEndereco(); });
   });
 
   window.gpsFecharModal = function () { hideModal(); };
 
-  // ─── Inicialização ────────────────────────────────────────────
+  /* ── Inicialização ───────────────────────────── */
   function init() {
     try {
       var saved = JSON.parse(localStorage.getItem('pw_gps') || 'null');
-      // TTL: 24 horas
       if (saved && (Date.now() - (saved.ts || 0)) < 86400000) {
         aplicar(saved.lat || 0, saved.lng || 0, saved.label || 'Localização ativa');
         return;
       }
     } catch (e) {}
-    // Sem salvo → mostra modal após 1.2s
     setTimeout(showModal, 1200);
   }
 
