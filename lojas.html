@@ -1377,7 +1377,7 @@ function renderSearchCats() {
 // ═══════════════════════════════════════════════════════
 // STORE — Abre cardápio da loja
 // ═══════════════════════════════════════════════════════
-async function abrirLoja(id) {
+window.abrirLoja = async function abrirLoja(id) {
   const loja = _lojas.find(l => l.id===id); if(!loja) return;
   _loja = loja;
   _produtos = [];
@@ -1416,7 +1416,7 @@ async function abrirLoja(id) {
 
   _produtos.forEach(p => _prodMap.set(p.id, p));
   renderStore(fresquinhos);
-}
+};
 
 function renderStore(fresquinhos=[]) {
   const l = _loja;
@@ -2759,6 +2759,8 @@ async function salvarPerfil() {
 
   _user={nome,tel,email,estado:estadoNome,estadoSigla:uf,cidade};
   localStorage.setItem('pw_cliente',JSON.stringify(_user));
+  // Após cadastro, pede localização imediatamente
+  pedirLocalizacao();
 
   // Salva no Supabase
   try { await db.from('clientes').upsert({nome,telefone:tel.replace(/\D/g,''),email,estado:estadoNome,cidade},{onConflict:'email'}); } catch(e){}
