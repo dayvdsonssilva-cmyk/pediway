@@ -1020,26 +1020,30 @@ window.abrirTelaPromos = function abrirTelaPromos(pct, itens) {
 }
 
 function filtrarLojas() {
-  const lojasComPromo = new Set(_promoItems.map(p=>p.estabelecimento_id));
+  // Comparação type-safe: converte tudo para string
+  const lojasComPromo = new Set(_promoItems.map(p => String(p.estabelecimento_id)));
 
-  // Verifica se alguma loja tem coordenadas
+  // Verifica se alguma loja tem coordenadas cadastradas
   const algumTemCoord = _lojas.some(l => l.latitude && l.longitude);
 
   return _lojas.filter(l => {
     const mb = !_busca || (l.nome||'').toLowerCase().includes(_busca.toLowerCase());
 
-    // Filtro por GPS — só aplica se tiver GPS E se as lojas tiverem coordenadas
-    if (_geoOk && _userLat !== null && algumTemCoord) {
-      if (!l.latitude || !l.longitude) return mb; // loja sem coord: mostra mesmo assim
+    // GPS só filtra se: tem GPS confirmado + usuário forneceu coord + lojas têm coord cadastrada
+    // NUNCA bloqueia loja sem coordenada — só filtra lojas que TÊM coord e estão fora do raio
+    if (_geoOk && _userLat !== null && algumTemCoord && l.latitude && l.longitude) {
       if (haversineDist(_userLat, _userLng, Number(l.latitude), Number(l.longitude)) > RAIO_KM) return false;
     }
-    // Sem GPS ou sem coordenadas: mostra todas normalmente
+
     const mc = true;
 
-    if(_catAtiva==='promo') {
-      return mc && mb && (lojasComPromo.has(l.id) || l.promocao_ativa);
+    if (_catAtiva === 'promo') {
+      // Se não há promos cadastradas, mostra todas as lojas (fallback gracioso)
+      if (lojasComPromo.size === 0 && !_lojas.some(l2 => l2.promocao_ativa)) return mc && mb;
+      // Mostra se tem item em promoção OU se a loja tem promocao_ativa
+      return mc && mb && (lojasComPromo.has(String(l.id)) || l.promocao_ativa === true);
     }
-    if(_catAtiva==='all') return mc && mb;
+    if (_catAtiva === 'all') return mc && mb;
 
     // Mapa categoria → tipo_estab values
     const catMap = {
@@ -1088,8 +1092,8 @@ let _cardStyle = 'A';
 
 function storeCardHTML(l) {
   const ab = l._aberto !== undefined ? l._aberto : calcularAberto(l);
-  const temPromo = l.promocao_ativa || _promoItems.some(p=>p.estabelecimento_id===l.id);
-  const promosDaLoja = _promoItems.filter(p=>p.estabelecimento_id===l.id).map(p=>p.desconto);
+  const temPromo = l.promocao_ativa || _promoItems.some(p=>String(p.estabelecimento_id)===String(l.id));
+  const promosDaLoja = _promoItems.filter(p=>String(p.estabelecimento_id)===String(l.id)).map(p=>p.desconto);
   const maxDesc = temPromo && promosDaLoja.length ? Math.max(...promosDaLoja, l.desconto_percent||0) : (l.desconto_percent||0);
   if(_cardStyle === 'B') return storeCardHTMLb(l, ab, temPromo);
   const hex = normalizeHex(l.cor_primaria||'#C0001A');
