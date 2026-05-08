@@ -2798,6 +2798,27 @@ ${p.observacao ? ' <hr class="sep-dash"> <div class="obs">   <div class="obs-tit
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// EMOJI + FOTOS
+// ─────────────────────────────────────────────────────────────────────────────
+function selecionarEmoji(emoji) {
+  emojiSel = emoji;
+  renderEmojiGrid();
+}
+
+function previewFotos(event) {
+  // Alias para adicionarFotos (compatibilidade)
+  if (window.adicionarFotos) window.adicionarFotos(event);
+}
+
+function previewFoto(event) {
+  // Processa uma única foto
+  if (event.target.files && event.target.files[0]) {
+    const fakeEvent = { target: event.target };
+    if (window.adicionarFotos) window.adicionarFotos(fakeEvent);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // MODAL ITEM — abrir / fechar
 // ─────────────────────────────────────────────────────────────────────────────
 function abrirModalItem() {
