@@ -2800,6 +2800,19 @@ ${p.observacao ? ' <hr class="sep-dash"> <div class="obs">   <div class="obs-tit
 // ─────────────────────────────────────────────────────────────────────────────
 // EMOJI + FOTOS
 // ─────────────────────────────────────────────────────────────────────────────
+function renderEmojiGrid() {
+  const grid = document.getElementById('emoji-grid');
+  if (!grid) return;
+  grid.innerHTML = EMOJIS.map(function(e) {
+    var sel = e === emojiSel;
+    return '<div onclick="selecionarEmoji('' + e + '')" style="'
+      + 'width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;'
+      + 'font-size:1.3rem;cursor:pointer;border:2px solid ' + (sel ? 'var(--red)' : 'transparent') + ';'
+      + 'background:' + (sel ? 'rgba(192,57,43,.08)' : '#f5f2ef') + ';transition:all .12s">'
+      + e + '</div>';
+  }).join('');
+}
+
 function selecionarEmoji(emoji) {
   emojiSel = emoji;
   renderEmojiGrid();
