@@ -1123,11 +1123,24 @@ async function renderBanner() {
     return;
   }
 
-  // Ordena por % desconto decrescente (maiores ofertas primeiro)
+  // Ordena por % desconto decrescente (maior primeiro)
   promosCidade.sort((a,b) => b.desconto - a.desconto);
 
-  // ⭐ UM SLIDE POR PROMOÇÃO (estilo mini-catálogo)
-  _carouselSlides = promosCidade.map(item => ({ item }));
+  // ⭐ AGRUPA POR % DE DESCONTO (1 slide por faixa: 5%, 10%, ..., 50% — máx 10 slides)
+  const grupos = {};
+  promosCidade.forEach(item => {
+    const pct = item.desconto;
+    if(!grupos[pct]) grupos[pct] = [];
+    grupos[pct].push(item);
+  });
+  const percentuais = Object.keys(grupos).map(Number).sort((a,b)=>b-a);
+
+  _carouselSlides = percentuais.map(pct => ({
+    pct,
+    itens:    grupos[pct],
+    qtdItens: grupos[pct].length,
+    qtdLojas: new Set(grupos[pct].map(p => String(p.estabelecimento_id))).size,
+  }));
   _bannerIdx = 0;
   buildCarousel();
   iniciarTimer();
@@ -1138,79 +1151,81 @@ function buildCarousel() {
   if(!slides.length) return;
 
   const slidesHTML = slides.map(function(s, i) {
-    var item     = s.item;
-    var loja     = _lojas.find(function(l){return String(l.id)===String(item.estabelecimento_id);})||{};
-    var pct      = item.desconto;
+    var pct      = s.pct;
+    var itens    = s.itens;
+    var qtdItens = s.qtdItens;
+    var qtdLojas = s.qtdLojas;
     var paleta   = PALETAS[pct] || { cor1:'#FF2D2D', cor2:'#C0001A', emoji:'🔥' };
-    var foto     = item.foto_url;
-    var imgSrc   = foto || _IMG_BURGER;
-    var imgStyle = foto
-      ? 'width:100%;height:100%;object-fit:cover;display:block;'
-      : 'width:100%;height:100%;object-fit:contain;display:block;padding:10px;';
-    var lojaLogoSrc = loja.logo_url || _IMG_LOGO;
-    var precoOrig   = 'R$ ' + item.preco_cheio.toFixed(2).replace('.',',');
-    var precoDesc   = 'R$ ' + item.preco_com_desc.toFixed(2).replace('.',',');
-    var economia    = (item.preco_cheio - item.preco_com_desc).toFixed(2).replace('.',',');
-    var nomeLoja    = (loja.nome||'PEDIWAY');
+
+    // Mini-cards: até 4. Se houver >4, mostra 3 + "+N mais"
+    var topItens = qtdItens > 4 ? itens.slice(0, 3) : itens.slice(0, 4);
+
+    var miniCardsHTML = topItens.map(function(it){
+      var fotoIt = it.foto_url;
+      var imgSrc = fotoIt || _IMG_BURGER;
+      var imgStyle = fotoIt
+        ? 'width:100%;height:100%;object-fit:cover;display:block;'
+        : 'width:100%;height:100%;object-fit:contain;display:block;padding:6px;';
+      var precoIt  = 'R$ ' + it.preco_com_desc.toFixed(2).replace('.',',');
+      return '<div style="flex:1;min-width:0;background:rgba(255,255,255,.1);border-radius:11px;overflow:hidden;border:1px solid rgba(255,255,255,.18);display:flex;flex-direction:column;">'
+        + '<div style="flex:1;min-height:0;background:rgba(0,0,0,.2);position:relative;overflow:hidden;">'
+          + '<img src="' + imgSrc + '" style="' + imgStyle + '" onerror="this.src=\'' + _IMG_BURGER + '\'">'
+        + '</div>'
+        + '<div style="padding:4px 4px 5px;text-align:center;background:rgba(0,0,0,.32);">'
+          + '<div style="font-size:10.5px;font-weight:900;color:#FFD166;letter-spacing:-.02em;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + precoIt + '</div>'
+        + '</div>'
+      + '</div>';
+    }).join('');
+
+    if(qtdItens > 4) {
+      miniCardsHTML += '<div style="flex:1;min-width:0;background:rgba(0,0,0,.4);border-radius:11px;overflow:hidden;border:1px solid rgba(255,255,255,.2);display:flex;flex-direction:column;align-items:center;justify-content:center;">'
+        + '<div style="font-size:20px;font-weight:900;color:#fff;letter-spacing:-.04em;line-height:1;">+' + (qtdItens-3) + '</div>'
+        + '<div style="font-size:8.5px;font-weight:800;color:rgba(255,255,255,.7);letter-spacing:.06em;text-transform:uppercase;margin-top:3px;">mais</div>'
+      + '</div>';
+    }
 
     return '<div class="promo-slide"'
-      + ' style="cursor:pointer;overflow:hidden;position:relative;border-radius:22px;padding:0;background:linear-gradient(135deg,' + paleta.cor1 + ' 0%,' + paleta.cor2 + ' 100%);box-shadow:0 12px 28px rgba(0,0,0,.28);min-height:180px;"'
-      + ' onclick="abrirLoja(\'' + (loja.id||'') + '\')">'
+      + ' style="cursor:pointer;overflow:hidden;position:relative;border-radius:22px;padding:0;background:linear-gradient(135deg,' + paleta.cor1 + ' 0%,' + paleta.cor2 + ' 100%);box-shadow:0 12px 28px rgba(0,0,0,.28);min-height:212px;"'
+      + ' onclick="verPromosSlide(' + i + ')">'
       // Blob radial decorativo
-      + '<div style="position:absolute;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.12) 0%,transparent 65%);top:-100px;right:-80px;pointer-events:none;"></div>'
+      + '<div style="position:absolute;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.13) 0%,transparent 65%);top:-100px;right:-80px;pointer-events:none;"></div>'
       // Pontilhado decorativo
-      + '<div style="position:absolute;top:14px;right:138px;width:32px;height:22px;background-image:radial-gradient(rgba(255,255,255,.32) 1.2px,transparent 1.2px);background-size:7px 7px;pointer-events:none;opacity:.7;"></div>'
-      // Container flex principal
-      + '<div style="position:relative;z-index:2;display:flex;height:180px;padding:14px;gap:12px;">'
-        // ESQUERDA — texto
-        + '<div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:space-between;">'
-          // Pill da loja
-          + '<div style="display:inline-flex;align-items:center;gap:7px;background:rgba(0,0,0,.32);border-radius:30px;padding:4px 11px 4px 4px;border:1px solid rgba(255,255,255,.12);align-self:flex-start;max-width:100%;">'
-            + '<img src="' + lojaLogoSrc + '" style="width:22px;height:22px;border-radius:50%;object-fit:cover;flex-shrink:0;" onerror="this.style.display=\'none\'">'
-            + '<span style="font-size:10px;font-weight:800;color:#fff;letter-spacing:.05em;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;">' + nomeLoja + '</span>'
+      + '<div style="position:absolute;top:18px;right:80px;width:32px;height:22px;background-image:radial-gradient(rgba(255,255,255,.3) 1.2px,transparent 1.2px);background-size:7px 7px;pointer-events:none;opacity:.7;"></div>'
+      // Container
+      + '<div style="position:relative;z-index:2;padding:12px;display:flex;flex-direction:column;height:212px;gap:10px;">'
+        // HEADER: badge MEGA + info
+        + '<div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">'
+          // ⭐ BADGE -X% OFF
+          + '<div style="filter:drop-shadow(0 6px 14px rgba(0,0,0,.5));flex-shrink:0;transform:rotate(-3deg);">'
+            + '<div style="background:linear-gradient(135deg,#FFE066 0%,#FFB800 50%,#FF8800 100%);color:#1a1a1a;padding:7px 13px;border-radius:13px;text-align:center;line-height:1;border:2.5px solid #fff;">'
+              + '<div style="font-size:8.5px;font-weight:900;letter-spacing:.1em;opacity:.85;">PROMO</div>'
+              + '<div style="font-size:23px;font-weight:900;letter-spacing:-.05em;line-height:1;margin-top:1px;">-' + pct + '%</div>'
+              + '<div style="font-size:8.5px;font-weight:900;letter-spacing:.12em;margin-top:1px;">OFF</div>'
+            + '</div>'
           + '</div>'
-          // Bloco produto (preço + economia)
-          + '<div>'
-            + '<div style="font-size:18px;font-weight:900;color:#fff;letter-spacing:-.03em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 2px 6px rgba(0,0,0,.3);">' + (item.name||'') + '</div>'
-            + '<div style="display:flex;align-items:baseline;gap:7px;margin-top:5px;flex-wrap:wrap;">'
-              + '<span style="font-size:11px;color:rgba(255,255,255,.55);text-decoration:line-through;font-weight:600;">' + precoOrig + '</span>'
-              + '<span style="font-size:22px;font-weight:900;color:#FFD166;letter-spacing:-.03em;text-shadow:0 2px 8px rgba(0,0,0,.35);line-height:1;">' + precoDesc + '</span>'
-            + '</div>'
-            + '<div style="margin-top:7px;display:inline-flex;align-items:center;gap:5px;background:rgba(0,0,0,.35);padding:3px 10px 3px 8px;border-radius:30px;border:1px solid rgba(255,255,255,.1);">'
-              + '<span style="font-size:10px;">💰</span>'
-              + '<span style="font-size:9.5px;font-weight:800;color:rgba(255,255,255,.95);text-transform:uppercase;letter-spacing:.04em;">Economize R$ ' + economia + '</span>'
-            + '</div>'
+          // Info à direita
+          + '<div style="flex:1;min-width:0;">'
+            + '<div style="font-size:18px;font-weight:900;color:#fff;letter-spacing:-.03em;line-height:1.1;text-shadow:0 2px 6px rgba(0,0,0,.3);">' + qtdItens + ' <span style="font-size:13px;font-weight:800;opacity:.85;">' + (qtdItens>1?'ofertas':'oferta') + '</span></div>'
+            + '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.7);margin-top:3px;line-height:1.25;">em ' + qtdLojas + (qtdLojas>1?' restaurantes':' restaurante') + '</div>'
           + '</div>'
         + '</div>'
-        // DIREITA — imagem com badge SOBREPOSTO
-        + '<div style="position:relative;width:118px;flex-shrink:0;">'
-          + '<div style="width:100%;height:100%;border-radius:16px;overflow:hidden;background:rgba(255,255,255,.12);box-shadow:0 10px 24px rgba(0,0,0,.4);border:2px solid rgba(255,255,255,.22);">'
-            + '<img src="' + imgSrc + '" style="' + imgStyle + '" onerror="this.src=\'' + _IMG_BURGER + '\'">'
-          + '</div>'
-          // ⭐ BADGE MEGA DESTAQUE — % OFF
-          + '<div style="position:absolute;top:-10px;right:-10px;transform:rotate(10deg);filter:drop-shadow(0 8px 16px rgba(0,0,0,.55));">'
-            + '<div style="background:linear-gradient(135deg,#FFE066 0%,#FFB800 50%,#FF8800 100%);color:#1a1a1a;padding:7px 12px;border-radius:13px;text-align:center;line-height:1;border:2.5px solid #fff;">'
-              + '<div style="font-size:9px;font-weight:900;letter-spacing:.1em;opacity:.85;">PROMO</div>'
-              + '<div style="font-size:21px;font-weight:900;letter-spacing:-.05em;line-height:1;margin-top:1px;">-' + pct + '%</div>'
-              + '<div style="font-size:9px;font-weight:900;letter-spacing:.12em;margin-top:1px;">OFF</div>'
-            + '</div>'
-          + '</div>'
+        // MINI CATÁLOGO
+        + '<div style="display:flex;gap:6px;flex:1;min-height:0;">' + miniCardsHTML + '</div>'
+        // CTA
+        + '<div style="display:flex;align-items:center;justify-content:center;gap:6px;background:rgba(0,0,0,.35);padding:7px 14px;border-radius:30px;border:1px solid rgba(255,255,255,.13);flex-shrink:0;">'
+          + '<span style="font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.06em;">Ver ' + (qtdItens>1?'todas':'oferta') + ' →</span>'
         + '</div>'
       + '</div>'
     + '</div>';
   }).join('');
 
-  // Dots — até 10 slides; acima disso vira contador "X / N PROMOÇÕES"
+  // Dots (máx 10 slides — então sempre cabem)
   var dotsHTML = '';
-  if(slides.length>1 && slides.length<=10) {
+  if(slides.length>1) {
     dotsHTML = '<div class="carousel-dots" id="carousel-dots">'
       + slides.map(function(_,i){
           return '<div class="carousel-dot" id="cdot-' + i + '" style="width:' + (i===0?'18':'6') + 'px;background:' + (i===0?'rgba(17,17,17,.5)':'rgba(17,17,17,.18)') + ';" onclick="irSlide(' + i + ')"></div>';
         }).join('')
-      + '</div>';
-  } else if(slides.length>10) {
-    dotsHTML = '<div style="text-align:center;margin-top:8px;font-size:10px;color:var(--gray);font-weight:700;letter-spacing:.04em;">'
-      + '<span id="slide-counter" style="color:var(--dark);">1</span> / ' + slides.length + ' <span style="opacity:.55;">PROMOÇÕES</span>'
       + '</div>';
   }
 
@@ -1219,6 +1234,13 @@ function buildCarousel() {
       + '<div class="promo-slides" id="promo-slides" style="transform:translateX(0%);">' + slidesHTML + '</div>'
     + '</div>'
     + dotsHTML;
+}
+
+// Abre tela com todas as promoções da faixa do slide clicado
+function verPromosSlide(idx) {
+  const s = _carouselSlides[idx];
+  if(!s) return;
+  abrirTelaPromos(s.pct, s.itens);
 }
 function irSlide(idx) {
   clearTimeout(_bannerTimer);
@@ -1236,9 +1258,6 @@ function atualizarDots(idx) {
     d.style.width      = i===idx ? '18px' : '6px';
     d.style.background = i===idx ? 'rgba(17,17,17,.5)' : 'rgba(17,17,17,.18)';
   });
-  // Atualiza contador quando há mais de 10 slides
-  const counter = $('slide-counter');
-  if(counter) counter.textContent = (idx+1);
 }
 
 function iniciarTimer() {
@@ -2676,10 +2695,10 @@ async function salvarPerfil() {
   fecharPerfil();
   // Volta para home e re-renderiza com nova cidade
   showScreen('home');
-  renderHome();
   // Reseta categoria para "Todos" ao mudar cidade
   _catAtiva = 'all';
   renderHome();
+  renderBanner(); // ⭐ Atualiza promoções para a cidade selecionada
   toast('✅ ' + cidade + ' selecionada!');
 }
 
@@ -2691,6 +2710,7 @@ function sair() {
   $('home-cidade').style.display='none';
   fecharPerfil();
   renderHome();
+  renderBanner(); // ⭐ Limpa promoções da cidade anterior
   toast('Até logo! 👋');
 }
 
