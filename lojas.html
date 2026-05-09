@@ -1150,76 +1150,98 @@ function buildCarousel() {
   const slides = _carouselSlides;
   if(!slides.length) return;
 
+  // ⭐ Artes rotativas — cada slide ganha tratamento visual único
+  var ARTES = [
+    // 0 — Listras diagonais + número amarelo sólido com sombra
+    {
+      padraoBg: 'background-image:repeating-linear-gradient(-45deg,rgba(255,255,255,.05) 0,rgba(255,255,255,.05) 1.5px,transparent 1.5px,transparent 14px);',
+      numCss:   'color:#FFE066;text-shadow:0 4px 16px rgba(0,0,0,.55);',
+      decor:    ''
+    },
+    // 1 — Pontilhado + branco com outline amarelo (sempre colorido)
+    {
+      padraoBg: 'background-image:radial-gradient(circle,rgba(255,255,255,.14) 1.5px,transparent 1.5px);background-size:18px 18px;',
+      numCss:   'color:#fff;-webkit-text-stroke:2px #FFE066;text-shadow:0 4px 14px rgba(0,0,0,.45);',
+      decor:    ''
+    },
+    // 2 — Spotlight radial + número branco com drop shadow forte
+    {
+      padraoBg: 'background-image:radial-gradient(ellipse at 75% 25%,rgba(255,255,255,.2) 0%,transparent 55%);',
+      numCss:   'color:#fff;text-shadow:0 8px 26px rgba(0,0,0,.7),0 2px 4px rgba(0,0,0,.4);',
+      decor:    '<div style="position:absolute;top:18px;right:75px;font-size:14px;color:rgba(255,255,255,.55);transform:rotate(-15deg);pointer-events:none;">✦</div><div style="position:absolute;top:36px;right:50px;font-size:9px;color:rgba(255,255,255,.4);pointer-events:none;">✦</div>'
+    },
+    // 3 — Xadrez diagonal + número amarelo com outline branco
+    {
+      padraoBg: 'background-image:linear-gradient(135deg,rgba(255,255,255,.04) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.04) 50%,rgba(255,255,255,.04) 75%,transparent 75%,transparent);background-size:22px 22px;',
+      numCss:   'color:#FFE066;-webkit-text-stroke:1.5px #fff;text-shadow:0 4px 14px rgba(0,0,0,.45);',
+      decor:    ''
+    }
+  ];
+
   const slidesHTML = slides.map(function(s, i) {
     var pct      = s.pct;
-    var itens    = s.itens;
-    var qtdItens = s.qtdItens;
     var qtdLojas = s.qtdLojas;
-    var paleta   = PALETAS[pct] || { cor1:'#FF2D2D', cor2:'#C0001A', emoji:'🔥' };
+    var paleta   = PALETAS[pct] || { cor1:'#FF2D2D', cor2:'#C0001A' };
+    var arte     = ARTES[i % ARTES.length];
 
-    // Mini-cards: até 4. Se houver >4, mostra 3 + "+N mais"
-    var topItens = qtdItens > 4 ? itens.slice(0, 3) : itens.slice(0, 4);
+    // Lojas únicas dessa faixa
+    var lojaIdsSet = new Set();
+    var lojasDoSlide = [];
+    s.itens.forEach(function(it){
+      var lid = String(it.estabelecimento_id);
+      if(!lojaIdsSet.has(lid)) {
+        lojaIdsSet.add(lid);
+        var loja = _lojas.find(function(l){return String(l.id)===lid;});
+        if(loja) lojasDoSlide.push(loja);
+      }
+    });
 
-    var miniCardsHTML = topItens.map(function(it){
-      var fotoIt = it.foto_url;
-      var imgSrc = fotoIt || _IMG_BURGER;
-      var imgStyle = fotoIt
-        ? 'width:100%;height:100%;object-fit:cover;display:block;'
-        : 'width:100%;height:100%;object-fit:contain;display:block;padding:6px;';
-      var precoIt  = 'R$ ' + it.preco_com_desc.toFixed(2).replace('.',',');
-      return '<div style="flex:1;min-width:0;background:rgba(255,255,255,.1);border-radius:11px;overflow:hidden;border:1px solid rgba(255,255,255,.18);display:flex;flex-direction:column;">'
-        + '<div style="flex:1;min-height:0;background:rgba(0,0,0,.2);position:relative;overflow:hidden;">'
-          + '<img src="' + imgSrc + '" style="' + imgStyle + '" onerror="this.src=\'' + _IMG_BURGER + '\'">'
-        + '</div>'
-        + '<div style="padding:4px 4px 5px;text-align:center;background:rgba(0,0,0,.32);">'
-          + '<div style="font-size:10.5px;font-weight:900;color:#FFD166;letter-spacing:-.02em;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + precoIt + '</div>'
-        + '</div>'
+    // Avatares empilhados (até 4)
+    var avatarsVisiveis = lojasDoSlide.slice(0, 4);
+    var sobra = qtdLojas - avatarsVisiveis.length;
+    var avatarsHTML = avatarsVisiveis.map(function(loja, idx){
+      var src = loja.logo_url || _IMG_LOGO;
+      return '<div style="width:32px;height:32px;border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.25);overflow:hidden;margin-left:' + (idx===0?'0':'-10px') + ';position:relative;z-index:' + (10-idx) + ';box-shadow:0 3px 8px rgba(0,0,0,.35);flex-shrink:0;">'
+        + '<img src="' + src + '" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display=\'none\'">'
       + '</div>';
     }).join('');
-
-    if(qtdItens > 4) {
-      miniCardsHTML += '<div style="flex:1;min-width:0;background:rgba(0,0,0,.4);border-radius:11px;overflow:hidden;border:1px solid rgba(255,255,255,.2);display:flex;flex-direction:column;align-items:center;justify-content:center;">'
-        + '<div style="font-size:20px;font-weight:900;color:#fff;letter-spacing:-.04em;line-height:1;">+' + (qtdItens-3) + '</div>'
-        + '<div style="font-size:8.5px;font-weight:800;color:rgba(255,255,255,.7);letter-spacing:.06em;text-transform:uppercase;margin-top:3px;">mais</div>'
+    if(sobra > 0) {
+      avatarsHTML += '<div style="width:32px;height:32px;border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;margin-left:-10px;position:relative;z-index:1;box-shadow:0 3px 8px rgba(0,0,0,.35);flex-shrink:0;">'
+        + '<span style="font-size:10px;font-weight:900;color:#fff;letter-spacing:-.02em;">+' + sobra + '</span>'
       + '</div>';
     }
 
     return '<div class="promo-slide"'
-      + ' style="cursor:pointer;overflow:hidden;position:relative;border-radius:22px;padding:0;background:linear-gradient(135deg,' + paleta.cor1 + ' 0%,' + paleta.cor2 + ' 100%);box-shadow:0 12px 28px rgba(0,0,0,.28);min-height:212px;"'
+      + ' style="cursor:pointer;overflow:hidden;position:relative;border-radius:22px;padding:0;background:linear-gradient(135deg,' + paleta.cor1 + ' 0%,' + paleta.cor2 + ' 100%);box-shadow:0 12px 28px rgba(0,0,0,.3);min-height:170px;"'
       + ' onclick="verPromosSlide(' + i + ')">'
-      // Blob radial decorativo
-      + '<div style="position:absolute;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.13) 0%,transparent 65%);top:-100px;right:-80px;pointer-events:none;"></div>'
-      // Pontilhado decorativo
-      + '<div style="position:absolute;top:18px;right:80px;width:32px;height:22px;background-image:radial-gradient(rgba(255,255,255,.3) 1.2px,transparent 1.2px);background-size:7px 7px;pointer-events:none;opacity:.7;"></div>'
+      // Padrão decorativo único por slide
+      + '<div style="position:absolute;inset:0;' + arte.padraoBg + 'pointer-events:none;"></div>'
+      // ⭐ MARCA D'ÁGUA — Logo PEDIWAY no fundo, bem sutil
+      + '<img src="' + _IMG_LOGO + '" style="position:absolute;width:210px;height:210px;top:50%;right:-35px;transform:translateY(-50%);opacity:.09;pointer-events:none;border-radius:42px;z-index:1;">'
+      // Blob radial sutil
+      + '<div style="position:absolute;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.08) 0%,transparent 60%);top:-90px;right:-70px;pointer-events:none;"></div>'
+      // Decoração extra (sparkles, etc) por arte
+      + arte.decor
       // Container
-      + '<div style="position:relative;z-index:2;padding:12px;display:flex;flex-direction:column;height:212px;gap:10px;">'
-        // HEADER: badge MEGA + info
-        + '<div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">'
-          // ⭐ BADGE -X% OFF
-          + '<div style="filter:drop-shadow(0 6px 14px rgba(0,0,0,.5));flex-shrink:0;transform:rotate(-3deg);">'
-            + '<div style="background:linear-gradient(135deg,#FFE066 0%,#FFB800 50%,#FF8800 100%);color:#1a1a1a;padding:7px 13px;border-radius:13px;text-align:center;line-height:1;border:2.5px solid #fff;">'
-              + '<div style="font-size:8.5px;font-weight:900;letter-spacing:.1em;opacity:.85;">PROMO</div>'
-              + '<div style="font-size:23px;font-weight:900;letter-spacing:-.05em;line-height:1;margin-top:1px;">-' + pct + '%</div>'
-              + '<div style="font-size:8.5px;font-weight:900;letter-spacing:.12em;margin-top:1px;">OFF</div>'
-            + '</div>'
-          + '</div>'
-          // Info à direita
-          + '<div style="flex:1;min-width:0;">'
-            + '<div style="font-size:18px;font-weight:900;color:#fff;letter-spacing:-.03em;line-height:1.1;text-shadow:0 2px 6px rgba(0,0,0,.3);">' + qtdItens + ' <span style="font-size:13px;font-weight:800;opacity:.85;">' + (qtdItens>1?'ofertas':'oferta') + '</span></div>'
-            + '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.7);margin-top:3px;line-height:1.25;">em ' + qtdLojas + (qtdLojas>1?' restaurantes':' restaurante') + '</div>'
-          + '</div>'
+      + '<div style="position:relative;z-index:2;padding:18px 16px 14px;display:flex;flex-direction:column;justify-content:space-between;height:170px;">'
+        // CENTRO: % SOLTO + OFF (livre, sem caixa)
+        + '<div style="display:flex;align-items:flex-end;gap:8px;">'
+          + '<div style="font-size:72px;font-weight:900;letter-spacing:-.06em;line-height:.82;' + arte.numCss + '">' + pct + '%</div>'
+          + '<div style="font-size:15px;font-weight:900;color:#fff;letter-spacing:.06em;line-height:1;padding-bottom:10px;text-shadow:0 2px 6px rgba(0,0,0,.45);">OFF</div>'
         + '</div>'
-        // MINI CATÁLOGO
-        + '<div style="display:flex;gap:6px;flex:1;min-height:0;">' + miniCardsHTML + '</div>'
-        // CTA
-        + '<div style="display:flex;align-items:center;justify-content:center;gap:6px;background:rgba(0,0,0,.35);padding:7px 14px;border-radius:30px;border:1px solid rgba(255,255,255,.13);flex-shrink:0;">'
-          + '<span style="font-size:10px;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.06em;">Ver ' + (qtdItens>1?'todas':'oferta') + ' →</span>'
+        // BOTTOM: count + avatares
+        + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">'
+          + '<div style="flex:1;min-width:0;">'
+            + '<div style="font-size:13px;font-weight:900;color:#fff;letter-spacing:-.02em;line-height:1.1;text-shadow:0 2px 5px rgba(0,0,0,.3);">' + qtdLojas + (qtdLojas>1?' restaurantes':' restaurante') + '</div>'
+            + '<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.65);margin-top:2px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">em ' + (_cidade||'sua cidade') + ' • Toque pra ver →</div>'
+          + '</div>'
+          + '<div style="display:flex;align-items:center;flex-shrink:0;">' + avatarsHTML + '</div>'
         + '</div>'
       + '</div>'
     + '</div>';
   }).join('');
 
-  // Dots (máx 10 slides — então sempre cabem)
+  // Dots (máx 10 slides — sempre cabem)
   var dotsHTML = '';
   if(slides.length>1) {
     dotsHTML = '<div class="carousel-dots" id="carousel-dots">'
@@ -2562,7 +2584,10 @@ function iniciarRealtime() {
           }
 
           // Redenriza a lista de lojas se estiver na home ou busca
-          if (_screen === 'home' || _screen === 'search') renderHome();
+          if (_screen === 'home' || _screen === 'search') {
+            renderHome();
+            renderBanner(); // ⭐ Garante que promoções respeitem a cidade
+          }
         }
       })
       .subscribe();
