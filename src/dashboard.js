@@ -3491,37 +3491,13 @@ window.abrirModalQuente = async function() {
     var ativo = p === _quentePct;
     return '<button onclick="selecionarPctQuente(' + p + ')" id="qpct-' + p + '"'
       + ' style="padding:8px 16px;border-radius:100px;border:2px solid ' + (ativo?'#e65e32':'#e0dbd5') + ';'
-      + 'background:' + (ativo?'#e65e32':'#fff') + ';'
-      + 'color:' + (ativo?'#fff':'#555') + ';'
-      + 'font-family:Poppins,sans-serif;font-weight:800;font-size:.82rem;cursor:pointer;transition:all .15s">'
+      + 'background:#fff;'
+      + 'color:' + (ativo?'#e65e32':'#555') + ';'
+      + 'font-weight:800;font-size:.82rem;cursor:pointer;transition:all .15s">'
       + p + '% OFF</button>';
   }).join('');
   }
 
-  // Duração da promoção
-  const durWrap = document.getElementById('quente-duracao-wrap');
-  if (durWrap) {
-    var duracoes = [
-      {h:1, l:'1h'}, {h:2, l:'2h'}, {h:4, l:'4h'},
-      {h:8, l:'8h'}, {h:24, l:'1 dia'}, {h:0, l:'Sem limite'}
-    ];
-    var btns = duracoes.map(function(o) {
-      var ativo = o.h === _quenteHoras;
-      return '<button onclick="selecionarDuracaoQuente(' + o.h + ')" id="qdur-' + o.h + '"'
-        + ' style="padding:7px 14px;border-radius:30px;border:2px solid ' + (ativo ? '#e65e32' : '#e0dbd5') + ';'
-        + 'background:' + (ativo ? '#e65e32' : '#fff') + ';'
-        + 'color:' + (ativo ? '#fff' : '#555') + ';'
-        + 'font-family:Poppins,sans-serif;font-weight:700;font-size:.78rem;cursor:pointer;transition:all .15s">'
-        + o.l + '</button>';
-    }).join('');
-    durWrap.innerHTML = '<div style="margin-top:14px;">'
-      + '<div style="font-size:12px;font-weight:700;color:#555;margin-bottom:8px;">⏱️ Duração da promoção</div>'
-      + '<div style="display:flex;gap:8px;flex-wrap:wrap;">' + btns + '</div>'
-      + '<div id="quente-expira-info" style="font-size:11px;color:#aaa;margin-top:8px;"></div>'
-      + '</div>';
-    // Mostra info inicial
-    selecionarDuracaoQuente(_quenteHoras);
-  }
   // Mostra preview
   atualizarPreviewQuente();
 
@@ -3533,13 +3509,13 @@ window.abrirModalQuente = async function() {
 
 window.selecionarPctQuente = function(pct) {
   _quentePct = pct;
-  // Atualiza visual dos botões
+  // Atualiza visual dos botões — apenas borda laranja, fundo sempre branco
   [5,10,15,20,25,30,35,40,45,50].forEach(p => {
     const btn = document.getElementById('qpct-'+p);
     if (!btn) return;
-    btn.style.background     = p === pct ? '#e65e32' : '#fff';
+    btn.style.background     = '#fff';
     btn.style.borderColor    = p === pct ? '#e65e32' : '#e0dbd5';
-    btn.style.color          = p === pct ? '#fff'    : '#555';
+    btn.style.color          = p === pct ? '#e65e32' : '#555';
   });
   atualizarPreviewQuente();
   // Recalcula preços nos cards de produto usando o preço BASE (nunca o descontado)
