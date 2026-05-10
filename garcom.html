@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Comandas — PEDIWAY</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -86,6 +86,51 @@
     .s-novo{color:#f59e0b;font-weight:700}.s-preparo{color:#3b82f6;font-weight:700}.s-pronto{color:#22c55e;font-weight:700}
     #gc-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:10px 20px;border-radius:50px;font-weight:700;font-size:.82rem;z-index:9999;display:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.25);pointer-events:none}
   </style>
+  <style>
+    html, body {
+      touch-action: pan-y !important;
+      overscroll-behavior-x: none !important;
+      overflow-x: hidden !important;
+    }
+    * { -webkit-user-select: none; user-select: none; }
+    input, textarea, select { -webkit-user-select: text; user-select: text; }
+  </style>
+  <script>
+    document.addEventListener('touchstart', function(e) {
+      if (e.touches.length > 1) e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('touchmove', function(e) {
+      if (e.touches.length > 1) { e.preventDefault(); return; }
+      if (e.touches.length === 1) {
+        var dx = Math.abs(e.touches[0].clientX - (window._lastTouchX || e.touches[0].clientX));
+        var dy = Math.abs(e.touches[0].clientY - (window._lastTouchY || e.touches[0].clientY));
+        if (dx > dy) e.preventDefault();
+      }
+    }, { passive: false });
+
+    document.addEventListener('touchstart', function(e) {
+      if (e.touches.length === 1) {
+        window._lastTouchX = e.touches[0].clientX;
+        window._lastTouchY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    document.addEventListener('wheel', function(e) {
+      if (e.ctrlKey) e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.ctrlKey && (e.key==='+' || e.key==='-' || e.key==='=' || e.key==='0')) e.preventDefault();
+    });
+
+    var lastTap = 0;
+    document.addEventListener('touchend', function(e) {
+      var now = Date.now();
+      if (now - lastTap < 300) e.preventDefault();
+      lastTap = now;
+    }, { passive: false });
+  </script>
 </head>
 <body>
 <div class="gc-header">
