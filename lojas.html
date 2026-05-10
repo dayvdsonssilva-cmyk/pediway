@@ -1152,31 +1152,35 @@ function buildCarousel() {
 
   // ⭐ Artes rotativas — cada slide ganha tratamento visual único
   var ARTES = [
-    // 0 — Listras diagonais + número amarelo sólido com sombra
+    // 0 — Spotlight suave + número amarelo sólido
     {
-      padraoBg: 'background-image:repeating-linear-gradient(-45deg,rgba(255,255,255,.05) 0,rgba(255,255,255,.05) 1.5px,transparent 1.5px,transparent 14px);',
+      padraoBg: 'background-image:radial-gradient(ellipse at 30% 40%,rgba(255,255,255,.12) 0%,transparent 60%);',
       numCss:   'color:#FFE066;text-shadow:0 4px 16px rgba(0,0,0,.55);',
       decor:    ''
     },
-    // 1 — Pontilhado + branco com outline amarelo (sempre colorido)
+    // 1 — Glow duplo + branco com outline amarelo
     {
-      padraoBg: 'background-image:radial-gradient(circle,rgba(255,255,255,.14) 1.5px,transparent 1.5px);background-size:18px 18px;',
+      padraoBg: 'background-image:radial-gradient(ellipse at 80% 20%,rgba(255,255,255,.1) 0%,transparent 50%),radial-gradient(ellipse at 20% 80%,rgba(255,255,255,.07) 0%,transparent 40%);',
       numCss:   'color:#fff;-webkit-text-stroke:2px #FFE066;text-shadow:0 4px 14px rgba(0,0,0,.45);',
       decor:    ''
     },
-    // 2 — Spotlight radial + número branco com drop shadow forte
+    // 2 — Spotlight forte + sparkles
     {
-      padraoBg: 'background-image:radial-gradient(ellipse at 75% 25%,rgba(255,255,255,.2) 0%,transparent 55%);',
+      padraoBg: 'background-image:radial-gradient(ellipse at 75% 25%,rgba(255,255,255,.18) 0%,transparent 55%);',
       numCss:   'color:#fff;text-shadow:0 8px 26px rgba(0,0,0,.7),0 2px 4px rgba(0,0,0,.4);',
       decor:    '<div style="position:absolute;top:18px;right:75px;font-size:14px;color:rgba(255,255,255,.55);transform:rotate(-15deg);pointer-events:none;">✦</div><div style="position:absolute;top:36px;right:50px;font-size:9px;color:rgba(255,255,255,.4);pointer-events:none;">✦</div>'
     },
-    // 3 — Xadrez diagonal + número amarelo com outline branco
+    // 3 — Gradiente suave + número amarelo com outline branco
     {
-      padraoBg: 'background-image:linear-gradient(135deg,rgba(255,255,255,.04) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.04) 50%,rgba(255,255,255,.04) 75%,transparent 75%,transparent);background-size:22px 22px;',
+      padraoBg: 'background-image:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.13) 0%,transparent 65%);',
       numCss:   'color:#FFE066;-webkit-text-stroke:1.5px #fff;text-shadow:0 4px 14px rgba(0,0,0,.45);',
       decor:    ''
     }
   ];
+
+  // Frases por dia da semana (0=Dom,1=Seg,...,6=Sab)
+  var FRASES_DIA = ['Domingo de preguiça 😴','Segundou com fome 😩','Terça da gula 🍔','Quarta das promoções 🤑','Quintou com desconto 🔥','Sexta do combo 🎉','Sábado de indulgência 🍕'];
+  var fraseDia = FRASES_DIA[new Date().getDay()];
 
   const slidesHTML = slides.map(function(s, i) {
     var pct      = s.pct;
@@ -1217,17 +1221,20 @@ function buildCarousel() {
       // Padrão decorativo único por slide
       + '<div style="position:absolute;inset:0;' + arte.padraoBg + 'pointer-events:none;"></div>'
       // ⭐ MARCA D'ÁGUA — Logo PEDIWAY no fundo, bem sutil
-      + '<img src="' + _IMG_LOGO + '" style="position:absolute;width:210px;height:210px;top:50%;right:-35px;transform:translateY(-50%);opacity:.09;pointer-events:none;border-radius:42px;z-index:1;">'
+      + '<img src="' + _IMG_LOGO + '" style="position:absolute;width:210px;height:210px;top:50%;right:-35px;transform:translateY(-50%);opacity:.18;pointer-events:none;border-radius:0;z-index:1;mix-blend-mode:screen;">'
       // Blob radial sutil
       + '<div style="position:absolute;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.08) 0%,transparent 60%);top:-90px;right:-70px;pointer-events:none;"></div>'
       // Decoração extra (sparkles, etc) por arte
       + arte.decor
       // Container
       + '<div style="position:relative;z-index:2;padding:18px 16px 14px;display:flex;flex-direction:column;justify-content:space-between;height:170px;">'
-        // CENTRO: % SOLTO + OFF (livre, sem caixa)
-        + '<div style="display:flex;align-items:flex-end;gap:8px;">'
-          + '<div style="font-size:72px;font-weight:900;letter-spacing:-.06em;line-height:.82;' + arte.numCss + '">' + pct + '%</div>'
-          + '<div style="font-size:15px;font-weight:900;color:#fff;letter-spacing:.06em;line-height:1;padding-bottom:10px;text-shadow:0 2px 6px rgba(0,0,0,.45);">OFF</div>'
+        // CENTRO: frase do dia + % SOLTO + OFF
+        + '<div>'
+          + '<div style="font-size:9px;font-weight:800;color:rgba(255,255,255,.65);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">' + fraseDia + '</div>'
+          + '<div style="display:flex;align-items:flex-end;gap:8px;">'
+            + '<div style="font-size:72px;font-weight:900;letter-spacing:-.06em;line-height:.82;' + arte.numCss + '">' + pct + '%</div>'
+            + '<div style="font-size:15px;font-weight:900;color:#fff;letter-spacing:.06em;line-height:1;padding-bottom:10px;text-shadow:0 2px 6px rgba(0,0,0,.45);">OFF</div>'
+          + '</div>'
         + '</div>'
         // BOTTOM: count + avatares
         + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">'
@@ -1420,7 +1427,7 @@ function renderStore(fresquinhos=[]) {
     <!-- Tabs -->
     <div class="store-tabs">
       <button class="store-tab active" id="tab-cardapio" onclick="storeTab('cardapio',this)">CARDÁPIO</button>
-      <button class="store-tab" id="tab-quente" onclick="storeTab('quente',this)" style="gap:5px;">
+      <button class="store-tab" id="tab-quente" onclick="storeTab('quente',this)" style="gap:5px;${!temQuente ? 'display:none;' : ''}">
         <span class="${temQuente?'fire-on':'fire-off'}">🔥</span>
         <span style="${temQuente?'color:#E8001C;font-weight:900':''}">QUENTE</span>
       </button>
