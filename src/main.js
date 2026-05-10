@@ -4,19 +4,12 @@ import { getSupa } from './supabase.js';
 import { doLogin, doRegister } from './auth.js';
 import { initDashboard } from './dashboard.js';
 
-// Intercepta goTo para footer aparecer só na landing
-const _goToOriginal = goTo;
+// Expõe goTo globalmente (s-landing removido — index.html só tem login/dash)
 window.goTo = function(screen, extra) {
-  _goToOriginal(screen, extra);
+  goTo(screen, extra);
   const footer = document.getElementById('site-footer');
-  if(footer) footer.style.display = screen === 's-landing' ? '' : 'none';
+  if (footer) footer.style.display = 'none'; // footer só existe no delivery.html
 };
-// Esconde footer imediatamente ao carregar se não for landing
-document.addEventListener('DOMContentLoaded', () => {
-  const footer = document.getElementById('site-footer');
-  const screen = localStorage.getItem('pw-screen') || 's-landing';
-  if(footer) footer.style.display = screen === 's-landing' ? '' : 'none';
-});
 window.openDemo        = openDemo;
 window.openDemoCliente = openDemoCliente;
 window.showToast       = showToast;
@@ -100,6 +93,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     await initDashboard();
   } else {
     localStorage.removeItem('pw_tela_atual');
-    goTo('s-landing');
+    goTo('s-login');
   }
 });
