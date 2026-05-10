@@ -4,11 +4,13 @@ import { getSupa } from './supabase.js';
 import { doLogin, doRegister } from './auth.js';
 import { initDashboard } from './dashboard.js';
 
-// Expõe goTo globalmente (s-landing removido — index.html só tem login/dash)
+// Expõe goTo globalmente — s-landing removido do index.html
+const _goToOriginal = goTo;
 window.goTo = function(screen, extra) {
-  goTo(screen, extra);
+  _goToOriginal(screen, extra);
+  // footer só existe no delivery.html, não no index
   const footer = document.getElementById('site-footer');
-  if (footer) footer.style.display = 'none'; // footer só existe no delivery.html
+  if (footer) footer.style.display = 'none';
 };
 window.openDemo        = openDemo;
 window.openDemoCliente = openDemoCliente;
