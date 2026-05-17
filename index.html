@@ -22,15 +22,9 @@ input, select, textarea { max-width:100%; box-sizing:border-box; }
 .cfg-section { overflow:hidden; }
 /* Bloqueia zoom em toda a plataforma */
 
-/* KDS Toggle switch */
-#cfg-usa-setores + span { background:#ddd; transition:background .25s; }
-#cfg-usa-setores:checked + span { background:var(--red) !important; }
-#cfg-usa-setores + span::before {
-  content:''; position:absolute;
-  height:18px; width:18px; left:3px; bottom:3px;
-  background:#fff; border-radius:50%; transition:transform .25s;
-}
-#cfg-usa-setores:checked + span::before { transform:translateX(20px); }
+/* KDS toggle */
+#cfg-usa-setores:checked ~ #kds-track { background:#E8001C !important; }
+#cfg-usa-setores:checked ~ #kds-thumb { transform:translateX(22px) !important; }
 
 /* Dashboard mobile */
 @media(max-width:600px) {
@@ -2518,6 +2512,38 @@ canvas, [data-touch="free"] { touch-action: none !important; }
               <div style="font-size:.65rem;color:#aaa;margin-top:4px">Compartilhe este link com seus garçons. Todos usam o mesmo link para acessar as comandas digitais.</div>
             </div>
 
+            <!-- ══ KDS ══ -->
+            <div style="border:2px solid #ffcccc;border-radius:14px;padding:16px;background:linear-gradient(135deg,#fff8f8,#fff);margin-top:4px">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:14px">
+                <div style="flex:1">
+                  <div style="font-size:.85rem;font-weight:800;color:#222;display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+                    🍳 Separar pedidos por setor (KDS)
+                    <span style="background:#E8001C;color:#fff;padding:2px 9px;border-radius:50px;font-size:.55rem;font-weight:900;letter-spacing:.04em">NOVO</span>
+                  </div>
+                  <div style="font-size:.7rem;color:#888;margin-top:4px;line-height:1.5">
+                    Ativa painéis independentes para cozinha, bar, sobremesa, etc. Cada setor vê apenas seus pedidos.
+                  </div>
+                </div>
+                <label style="position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0;cursor:pointer">
+                  <input type="checkbox" id="cfg-usa-setores" onchange="toggleUsaSetores(this.checked)"
+                    style="opacity:0;width:0;height:0;position:absolute">
+                  <span id="kds-track" style="position:absolute;cursor:pointer;inset:0;background:#ddd;border-radius:34px;transition:background .25s"></span>
+                  <span id="kds-thumb" style="position:absolute;left:4px;top:4px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .25s;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.25)"></span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Links KDS -->
+            <div id="cfg-kds-section" style="display:none;margin-top:8px">
+              <div style="font-size:.75rem;font-weight:700;color:#555;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+                📺 Links dos painéis KDS
+              </div>
+              <div id="cfg-kds-links" style="display:flex;flex-direction:column;gap:8px"></div>
+              <div style="font-size:.65rem;color:#aaa;margin-top:8px;line-height:1.6">
+                Abra cada link num tablet ou TV na área correspondente. Atualiza em tempo real.
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -3285,22 +3311,20 @@ canvas, [data-touch="free"] { touch-action: none !important; }
       <div class="form-group-light">
         <label style="display:flex;align-items:center;gap:6px">
           Setor de produção (KDS)
-          <span style="background:#fff0f0;color:var(--red);padding:1px 7px;border-radius:50px;font-size:.6rem;font-weight:800">KDS</span>
+          <span style="background:#fff0f0;color:#E8001C;padding:1px 7px;border-radius:50px;font-size:.6rem;font-weight:800">OPCIONAL</span>
         </label>
-        <div style="display:flex;gap:8px">
-          <select class="input-light" id="item-setor" style="flex:1;text-transform:capitalize">
-            <option value="">— Sem setor —</option>
-            <option value="cozinha">🍳 Cozinha</option>
-            <option value="bar">🥤 Bar</option>
-            <option value="sobremesa">🍰 Sobremesa</option>
-            <option value="cafeteria">☕ Cafeteria</option>
-            <option value="grill">🔥 Grill</option>
-            <option value="padaria">🥖 Padaria</option>
-            <option value="pizza">🍕 Pizza</option>
-            <option value="sushi">🍣 Sushi</option>
-          </select>
-        </div>
-        <div style="font-size:.65rem;color:#aaa;margin-top:4px">Onde este item é preparado. Os painéis KDS só mostram os itens do seu setor.</div>
+        <select class="input-light" id="item-setor">
+          <option value="">— Sem setor —</option>
+          <option value="cozinha">🍳 Cozinha</option>
+          <option value="bar">🥤 Bar</option>
+          <option value="sobremesa">🍰 Sobremesa</option>
+          <option value="cafeteria">☕ Cafeteria</option>
+          <option value="grill">🔥 Grill</option>
+          <option value="padaria">🥖 Padaria</option>
+          <option value="pizza">🍕 Pizza</option>
+          <option value="sushi">🍣 Sushi</option>
+        </select>
+        <div style="font-size:.65rem;color:#aaa;margin-top:4px">Onde este item é preparado no seu estabelecimento</div>
       </div>
       <div class="form-group-light">
         <label>Preço *</label>
@@ -4123,6 +4147,29 @@ window.goTo = function(screen) {
   if (_origGoTo) _origGoTo(screen);
   setTimeout(checkMobileNav, 50);
 };
+</script>
+
+<script>
+// KDS toggle — inline para funcionar independente do módulo
+window.toggleUsaSetores = window.toggleUsaSetores || async function(checked) {
+  const track = document.getElementById('kds-track');
+  const thumb = document.getElementById('kds-thumb');
+  if (track) track.style.background = checked ? '#E8001C' : '#ddd';
+  if (thumb) thumb.style.transform   = checked ? 'translateX(22px)' : 'translateX(0)';
+  // A função real está em dashboard.js — este é só o fallback visual
+  if (typeof window._toggleUsaSetoresReal === 'function') window._toggleUsaSetoresReal(checked);
+};
+// Sincroniza estado visual do toggle ao carregar
+document.addEventListener('DOMContentLoaded', function() {
+  const chk = document.getElementById('cfg-usa-setores');
+  if (!chk) return;
+  chk.addEventListener('change', function() {
+    const track = document.getElementById('kds-track');
+    const thumb = document.getElementById('kds-thumb');
+    if (track) track.style.background = chk.checked ? '#E8001C' : '#ddd';
+    if (thumb) thumb.style.transform   = chk.checked ? 'translateX(22px)' : 'translateX(0)';
+  });
+});
 </script>
 </body>
 </html>
