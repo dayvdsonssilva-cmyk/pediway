@@ -282,6 +282,15 @@ function preencherConfig(estab) {
   const ctsToggle = $('cfg-taxa-servico');
   const ctsWrap   = document.getElementById('cfg-taxa-servico-wrap');
   const ctsPerc   = $('cfg-perc-servico');
+
+  // KDS: usa_setores toggle + links
+  const kdsToggle = $('cfg-usa-setores');
+  if (kdsToggle) {
+    kdsToggle.checked = !!estab.usa_setores;
+    renderKdsLinks(estab);
+    const kdsSection = $('cfg-kds-section');
+    if (kdsSection) kdsSection.style.display = estab.usa_setores ? 'block' : 'none';
+  }
   if (ctsToggle) ctsToggle.checked = estab.taxa_servico === true;
   if (ctsWrap)   ctsWrap.style.display = estab.taxa_servico ? 'block' : 'none';
   if (ctsPerc)   ctsPerc.value = estab.perc_servico || 10;
@@ -581,10 +590,12 @@ export async function salvarConfig() {
     const aceita_cartao  = $('cfg-cartao')?.checked   !== false;
     const aceita_dinheiro= $('cfg-dinheiro')?.checked !== false;
     const taxa_servico   = $('cfg-taxa-servico')?.checked === true;
+    const usa_setores    = $('cfg-usa-setores')?.checked === true;
     const perc_servico   = parseInt($('cfg-perc-servico')?.value) || 10;
 
     const updates = {
       nome, slug, whatsapp: whats, descricao: desc, estado, cidade, endereco,
+      usa_setores,
       tempo_entrega: tempo, aberto, faz_entrega: entrega, faz_retirada: retirada,
       cor_primaria, logo_url,
       capa_url: null, capa_tipo: 'cor',
@@ -1042,10 +1053,12 @@ export async function salvarItem() {
     const foto_url = fotos_urls[0] || null;
     const promocao   = $('item-promocao')?.checked || false;
     const preco_orig = parseFloat($('item-preco-orig')?.value) || null;
+    const setor_item = $('item-setor')?.value.trim().toLowerCase() || null;
     const { error } = await getSupa().from('produtos').insert({
       estabelecimento_id: estab.id, nome,
       descricao:    $('item-desc')?.value.trim(),
       categoria:    $('item-cat')?.value.trim().toUpperCase(),
+      setor:        setor_item,
       preco, preco_original: promocao ? preco_orig : null,
       foto_url, fotos_urls, emoji: emojiSel, disponivel: true, promocao,
     });
@@ -1065,6 +1078,7 @@ export async function editarItem(id) {
     const set = (sel, val) => { const el=$(sel); if(el && val!=null) el.value=val; };
     set('item-nome', p.nome); set('item-desc', p.descricao||'');
     set('item-cat', p.categoria||'');
+    set('item-setor', p.setor||'');
     // Se tem desconto %, o campo mostra o preço ORIGINAL (o que o dono digitou)
     set('item-preco', p.em_promocao && p.preco_original ? p.preco_original : p.preco);
     set('item-preco-orig', p.preco_original||'');
@@ -1125,10 +1139,12 @@ export async function editarItem(id) {
             precoOrigU = precoBase;
             precoFinalU = parseFloat((precoBase * (1 - desconto_pct_u / 100)).toFixed(2));
           }
+          const setor_edit = $('item-setor')?.value.trim().toLowerCase() || null;
           const { error } = await getSupa().from('produtos').update({
             nome:         $('item-nome')?.value.trim(),
             descricao:    $('item-desc')?.value.trim(),
             categoria:    $('item-cat')?.value.trim().toUpperCase(),
+            setor:        setor_edit,
             preco:        precoFinalU,
             preco_original: precoOrigU,
             foto_url, fotos_urls, emoji: emojiSel, promocao,
@@ -1258,6 +1274,15 @@ async function renderPedidos() {
   const cardHtml = p => {
     const CLS = { novo:'status-novo', preparo:'status-preparo', pronto:'status-pronto', recusado:'status-recusado' };
     const LBL = { novo:'Novo', preparo:'Em preparo', pronto:'Pronto', recusado:'Recusado' };
+    // Badges de setores (se usa_setores estiver ativo)
+    const estabKds = getEstab();
+    const setoresStatusHTML = (estabKds?.usa_setores && p.setores_status)
+      ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">' +
+        Object.entries(p.setores_status).map(([s, st]) => {
+          const cores = { pendente:'#888', aceito:'#F59E0B', preparando:'#3B82F6', pronto:'#22C55E' };
+          return `<span style="font-size:.6rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:50px;background:rgba(0,0,0,.06);color:${cores[st]||'#888'}">${s}: ${st}</span>`;
+        }).join('') + '</div>'
+      : '';
     const ICONS = { novo:'🔔', preparo:'👨‍🍳', pronto:'✅', recusado:'❌' };
     const cls = CLS[p.status] || 'status-novo';
     const lbl = LBL[p.status] || 'Novo';
@@ -1339,10 +1364,23 @@ function removerCardNovo(id) {
 window.aceitarPedido = async function(id) {
   pararNotif();
   // Busca o pedido para saber o tipo antes de aceitar
-  const { data: ped } = await getSupa().from('pedidos').select('endereco').eq('id', id).maybeSingle();
+  const { data: ped } = await getSupa().from('pedidos').select('*').eq('id', id).maybeSingle();
   const isMesa = ped && (ped.endereco||'').startsWith('No local');
 
-  const { error } = await getSupa().from('pedidos').update({ status:'preparo' }).eq('id', id);
+  // Se usa setores: cria mapa de setores_status a partir dos itens do pedido
+  const estab = getEstab();
+  let updates = { status: 'preparo' };
+  if (estab?.usa_setores) {
+    const itens = Array.isArray(ped?.itens) ? ped.itens : [];
+    const setoresMap = {};
+    itens.forEach(it => {
+      const s = (it.setor || 'geral').toLowerCase();
+      if (!setoresMap[s]) setoresMap[s] = 'pendente';
+    });
+    if (Object.keys(setoresMap).length > 0) updates.setores_status = setoresMap;
+  }
+
+  const { error } = await getSupa().from('pedidos').update(updates).eq('id', id);
   if (error) return showToast('Erro ao aceitar.','error');
   removerCardNovo(id);
 
@@ -3679,6 +3717,73 @@ window.salvarQuente = async function() {
   const desmarcados= [...checkboxes].filter(c => !c.checked);
   const pct        = _quentePct;
   const estab      = getEstab();
+// ─────────────────────────────────────────────────────────────────────────────
+// KDS · Renderiza links de painéis por setor nas configurações
+// ─────────────────────────────────────────────────────────────────────────────
+window.renderKdsLinks = function(estab) {
+  const wrap = document.getElementById('cfg-kds-links');
+  if (!wrap || !estab) return;
+
+  const kdsSection = document.getElementById('cfg-kds-section');
+
+  // Coleta setores únicos dos produtos (ou usa lista manual futuramente)
+  getSupa().from('produtos')
+    .select('setor')
+    .eq('estabelecimento_id', estab.id)
+    .eq('disponivel', true)
+    .then(({ data }) => {
+      const setores = [...new Set(
+        (data || []).map(p => p.setor).filter(Boolean).map(s => s.toLowerCase())
+      )];
+
+      if (kdsSection) kdsSection.style.display = (estab.usa_setores && setores.length) ? 'block' : 'none';
+
+      if (!setores.length) {
+        wrap.innerHTML = '<div style="font-size:.75rem;color:#aaa">Nenhum produto com setor cadastrado ainda.<br>Edite seus produtos e defina o campo <b>Setor (KDS)</b>.</div>';
+        return;
+      }
+
+      const emojis = { cozinha:'🍳', bar:'🥤', sobremesa:'🍰', cafeteria:'☕', grill:'🔥', padaria:'🥖', geral:'📋' };
+      wrap.innerHTML = setores.map(s => {
+        const slug = estab.slug || '';
+        const url  = `https://pediway.com.br/kds/${s}?loja=${slug}`;
+        const em   = emojis[s] || '🏷️';
+        return `
+          <div style="display:flex;align-items:center;gap:8px;background:#faf8f5;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;">
+            <span style="font-size:1.1rem">${em}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.72rem;font-weight:800;color:#555;text-transform:uppercase;letter-spacing:.04em">${s}</div>
+              <div style="font-size:.65rem;color:#aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${url}</div>
+            </div>
+            <button onclick="navigator.clipboard.writeText('${url}').then(()=>showToast('Link copiado!'))"
+              style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:5px 10px;font-family:'Poppins',sans-serif;font-size:.7rem;font-weight:700;color:#555;cursor:pointer;white-space:nowrap">
+              Copiar
+            </button>
+          </div>`;
+      }).join('');
+    });
+};
+
+window.toggleUsaSetores = async function(checked) {
+  const estab = getEstab(); if (!estab) return;
+  await getSupa().from('estabelecimentos').update({ usa_setores: checked }).eq('id', estab.id);
+  const kdsSection = document.getElementById('cfg-kds-section');
+  if (kdsSection) kdsSection.style.display = checked ? 'block' : 'none';
+  if (checked) window.renderKdsLinks(estab);
+  showToast(checked ? '🍳 Setores KDS ativados!' : 'Setores desativados');
+  // Atualiza local
+  const stored = localStorage.getItem('pw_estab');
+  if (stored) {
+    try {
+      const obj = JSON.parse(stored);
+      obj.usa_setores = checked;
+      localStorage.setItem('pw_estab', JSON.stringify(obj));
+      window._estab = obj;
+    } catch(e) {}
+  }
+};
+
+
 
   showToast('Salvando...', '#f59e0b');
 
