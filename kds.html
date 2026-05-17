@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0a">
+  <title>KDS · PEDIWAY</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0a0a;
+      --bg2:       #141414;
+      --card:      #1a1a1a;
+      --border:    #2a2a2a;
+      --red:       #E8001C;
+      --green:     #22C55E;
+      --yellow:    #F59E0B;
+      --blue:      #3B82F6;
+      --gray:      #888;
+      --text:      #fff;
+      --text-dim:  rgba(255,255,255,.5);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Poppins', sans-serif;
+      overflow: hidden;
+      touch-action: pan-y;
+    }
+
+    /* ── SPLASH ── */
+    #kds-splash {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--bg);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+    }
+    #kds-splash .logo {
+      font-size: 2.4rem; font-weight: 900; letter-spacing: -.04em;
+    }
+    #kds-splash .logo span { color: var(--red); }
+    #kds-splash .sub { font-size: .85rem; color: var(--text-dim); }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--red);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── SETUP (sem loja configurada) ── */
+    #kds-setup {
+      display: none;
+      position: fixed; inset: 0; z-index: 999;
+      background: var(--bg);
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    #kds-setup.show { display: flex; }
+    .setup-box {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      padding: 32px 28px;
+      width: 100%; max-width: 400px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .setup-box h2 { font-size: 1.2rem; font-weight: 800; }
+    .setup-box p  { font-size: .8rem; color: var(--text-dim); line-height: 1.6; }
+    .setup-input {
+      background: var(--bg2); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 12px 14px;
+      color: var(--text); font-family: 'Poppins', sans-serif; font-size: .9rem;
+      outline: none; width: 100%;
+    }
+    .setup-input:focus { border-color: var(--red); }
+    .setup-btn {
+      background: var(--red); color: #fff; border: none;
+      border-radius: 10px; padding: 14px;
+      font-family: 'Poppins', sans-serif; font-size: .95rem; font-weight: 800;
+      cursor: pointer; transition: background .15s;
+    }
+    .setup-btn:hover { background: #C0001A; }
+
+    /* ── HEADER ── */
+    #kds-header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: var(--bg2);
+      border-bottom: 1.5px solid var(--border);
+      padding: 0 20px;
+      height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
+    }
+    .kds-header-left {
+      display: flex; align-items: center; gap: 14px;
+    }
+    .kds-setor-badge {
+      background: var(--red);
+      color: #fff;
+      font-size: .72rem; font-weight: 900;
+      letter-spacing: .1em; text-transform: uppercase;
+      padding: 5px 14px; border-radius: 50px;
+    }
+    .kds-loja-nome {
+      font-size: .85rem; font-weight: 700; color: var(--text-dim);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 200px;
+    }
+    .kds-header-right {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .kds-contador {
+      font-size: .75rem; font-weight: 700; color: var(--text-dim);
+      white-space: nowrap;
+    }
+    .kds-contador span {
+      font-size: 1.1rem; font-weight: 900; color: var(--red);
+      margin-right: 2px;
+    }
+    .kds-live-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .5; transform: scale(.75); }
+    }
+    .btn-cfg {
+      background: none; border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 6px 10px;
+      color: var(--text-dim); cursor: pointer; font-size: .75rem;
+      transition: all .15s;
+    }
+    .btn-cfg:hover { border-color: var(--red); color: var(--red); }
+
+    /* ── GRID DE PEDIDOS ── */
+    #kds-main {
+      position: fixed; inset: 60px 0 0 0;
+      overflow-y: auto;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      align-content: start;
+      gap: 14px;
+    }
+
+    /* ── EMPTY STATE ── */
+    #kds-empty {
+      display: none;
+      position: fixed; inset: 60px 0 0 0;
+      align-items: center; justify-content: center;
+      flex-direction: column; gap: 14px;
+      text-align: center;
+    }
+    #kds-empty.show { display: flex; }
+    .empty-icon { font-size: 4rem; }
+    .empty-title { font-size: 1.2rem; font-weight: 800; color: var(--text-dim); }
+    .empty-sub   { font-size: .8rem; color: var(--border); }
+
+    /* ── CARD DE PEDIDO ── */
+    .kds-card {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: border-color .2s, transform .15s;
+      animation: cardIn .3s ease;
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(12px) scale(.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .kds-card.status-pendente  { border-color: var(--red);    }
+    .kds-card.status-aceito    { border-color: var(--yellow);  }
+    .kds-card.status-preparando{ border-color: var(--blue);    }
+    .kds-card.status-pronto    { border-color: var(--green); opacity: .7; }
+
+    .kds-card-header {
+      padding: 12px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1.5px solid var(--border);
+    }
+    .kds-card-header-left { display: flex; align-items: center; gap: 10px; }
+    .kds-num {
+      font-size: 1.3rem; font-weight: 900; letter-spacing: -.04em;
+    }
+    .kds-cliente { font-size: .78rem; color: var(--text-dim); font-weight: 600; }
+    .kds-status-badge {
+      font-size: .65rem; font-weight: 900; letter-spacing: .08em;
+      text-transform: uppercase; padding: 4px 10px; border-radius: 50px;
+    }
+    .badge-pendente   { background: rgba(232,0,28,.15);   color: var(--red);    }
+    .badge-aceito     { background: rgba(245,158,11,.15);  color: var(--yellow); }
+    .badge-preparando { background: rgba(59,130,246,.15);  color: var(--blue);   }
+    .badge-pronto     { background: rgba(34,197,94,.15);   color: var(--green);  }
+
+    .kds-timer {
+      font-size: .7rem; font-weight: 700; color: var(--text-dim);
+      white-space: nowrap;
+    }
+    .kds-timer.urgent { color: var(--red); animation: blink .8s step-end infinite; }
+    @keyframes blink { 50% { opacity: .3; } }
+
+    .kds-card-items {
+      padding: 12px 16px;
+      display: flex; flex-direction: column; gap: 8px;
+      flex: 1;
+    }
+    .kds-item {
+      display: flex; align-items: baseline; gap: 10px;
+    }
+    .kds-item-qtd {
+      font-size: 1.4rem; font-weight: 900; color: var(--red);
+      min-width: 28px; line-height: 1;
+    }
+    .kds-item-nome {
+      font-size: .9rem; font-weight: 700; line-height: 1.3; flex: 1;
+    }
+    .kds-item-obs {
+      font-size: .72rem; color: var(--text-dim);
+      font-style: italic; margin-top: 2px; margin-left: 38px;
+    }
+    .kds-obs-pedido {
+      margin: 0 16px 10px;
+      background: rgba(245,158,11,.1);
+      border: 1px solid rgba(245,158,11,.3);
+      border-radius: 8px; padding: 8px 12px;
+      font-size: .75rem; color: var(--yellow); line-height: 1.5;
+    }
+    .kds-obs-pedido::before { content: '⚠️ '; }
+
+    .kds-card-footer {
+      padding: 10px 12px;
+      border-top: 1.5px solid var(--border);
+      display: flex; gap: 8px;
+    }
+    .kds-btn {
+      flex: 1; border: none; border-radius: 10px;
+      padding: 12px 8px;
+      font-family: 'Poppins', sans-serif; font-size: .78rem; font-weight: 800;
+      cursor: pointer; transition: all .15s; letter-spacing: .01em;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+    }
+    .kds-btn:active { transform: scale(.96); }
+    .kds-btn-aceitar    { background: var(--red);    color: #fff; }
+    .kds-btn-preparando { background: var(--blue);   color: #fff; }
+    .kds-btn-pronto     { background: var(--green);  color: #fff; }
+    .kds-btn-secondary  {
+      background: none; border: 1.5px solid var(--border);
+      color: var(--text-dim); flex: 0 0 auto; padding: 12px 12px;
+    }
+
+    /* ── TOAST ── */
+    #kds-toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 50px; padding: 10px 22px;
+      font-size: .82rem; font-weight: 700;
+      white-space: nowrap; z-index: 9999;
+      opacity: 0; transition: opacity .25s; pointer-events: none;
+    }
+    #kds-toast.show { opacity: 1; }
+
+    /* ── NOTIF BADGE (novos pedidos) ── */
+    .kds-novos-badge {
+      position: fixed; top: 70px; right: 16px; z-index: 200;
+      background: var(--red); color: #fff;
+      border-radius: 50px; padding: 8px 16px;
+      font-size: .78rem; font-weight: 900;
+      animation: fadeSlide .3s ease;
+      cursor: pointer;
+    }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── MOBILE ── */
+    @media (max-width: 480px) {
+      #kds-main {
+        grid-template-columns: 1fr;
+        padding: 10px;
+        gap: 10px;
+      }
+      .kds-loja-nome { max-width: 120px; font-size: .75rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="kds-splash">
+  <div class="logo">PEDI<span>WAY</span></div>
+  <div class="sub">Carregando painel...</div>
+  <div class="spinner"></div>
+</div>
+
+<!-- SETUP (quando loja não está configurada) -->
+<div id="kds-setup">
+  <div class="setup-box">
+    <h2>🍳 Configurar Painel KDS</h2>
+    <p>Digite o slug (link) do estabelecimento para conectar este painel ao seu restaurante.</p>
+    <input class="setup-input" id="setup-slug" placeholder="ex: meu-restaurante" autocomplete="off">
+    <button class="setup-btn" onclick="confirmarSetup()">Conectar →</button>
+    <div style="font-size:.7rem;color:var(--text-dim);text-align:center">
+      O slug está nas Configurações → Link do cardápio
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div id="kds-header" style="display:none">
+  <div class="kds-header-left">
+    <div class="kds-setor-badge" id="hdr-setor">COZINHA</div>
+    <div class="kds-loja-nome"  id="hdr-loja">—</div>
+  </div>
+  <div class="kds-header-right">
+    <div class="kds-contador">
+      <span id="hdr-count">0</span> pedido(s)
+    </div>
+    <div class="kds-live-dot" title="Tempo real ativo"></div>
+    <button class="btn-cfg" onclick="redefinirLoja()" title="Trocar loja">⚙</button>
+  </div>
+</div>
+
+<!-- ÁREA PRINCIPAL -->
+<div id="kds-main" style="display:none"></div>
+
+<!-- EMPTY -->
+<div id="kds-empty">
+  <div class="empty-icon">✅</div>
+  <div class="empty-title">Tudo em dia!</div>
+  <div class="empty-sub">Nenhum pedido pendente para este setor</div>
+</div>
+
+<!-- TOAST -->
+<div id="kds-toast"></div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+// ── CONFIG SUPABASE ──────────────────────────────────────────────────────────
+const SUPA_URL = 'https://nmttkjmfazcipefeakkx.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tdHRram1mYXpjaXBlZmVha2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTM3NjQsImV4cCI6MjA5MDI4OTc2NH0.MMTX_6iQJk7Uv3HPSk0m32_BihvqsWhHJ_qiRkw0WYo';
+const db = createClient(SUPA_URL, SUPA_KEY);
+
+// ── ESTADO ───────────────────────────────────────────────────────────────────
+let SETOR    = '';   // ex: 'cozinha', 'bar'
+let ESTAB    = null; // objeto do estabelecimento
+let PEDIDOS  = [];   // pedidos ativos para este setor
+let _canal   = null;
+let _timers  = {};   // timers por pedido id
+
+const $ = id => document.getElementById(id);
+
+// ── ÁUDIO ────────────────────────────────────────────────────────────────────
+let audioCtx = null;
+function beep() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc  = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.frequency.value = 880; gain.gain.value = 0.3;
+    osc.start(); osc.stop(audioCtx.currentTime + 0.18);
+    setTimeout(() => {
+      const o2 = audioCtx.createOscillator();
+      const g2 = audioCtx.createGain();
+      o2.connect(g2); g2.connect(audioCtx.destination);
+      o2.frequency.value = 1100; g2.gain.value = 0.3;
+      o2.start(); o2.stop(audioCtx.currentTime + 0.22);
+    }, 200);
+  } catch(e) {}
+}
+
+// ── TOAST ────────────────────────────────────────────────────────────────────
+function toast(msg, dur = 2200) {
+  const el = $('kds-toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// ── SETOR DA URL ─────────────────────────────────────────────────────────────
+function getSetorFromURL() {
+  const path = window.location.pathname; // /kds/cozinha
+  const parts = path.split('/').filter(Boolean);
+  // /kds/SETOR
+  if (parts.length >= 2 && parts[0] === 'kds') return parts[1].toLowerCase();
+  return null;
+}
+
+// ── SETUP / LOJA ─────────────────────────────────────────────────────────────
+function getStoredSlug() {
+  return localStorage.getItem('kds_slug_' + SETOR) ||
+         new URLSearchParams(window.location.search).get('loja') || '';
+}
+
+window.confirmarSetup = async function() {
+  const slug = $('setup-slug').value.trim().toLowerCase();
+  if (!slug) return;
+  const { data } = await db.from('estabelecimentos').select('*').eq('slug', slug).maybeSingle();
+  if (!data) return toast('❌ Estabelecimento não encontrado.');
+  localStorage.setItem('kds_slug_' + SETOR, slug);
+  ESTAB = data;
+  iniciar();
+};
+
+window.redefinirLoja = function() {
+  if (!confirm('Redefinir loja deste painel?')) return;
+  localStorage.removeItem('kds_slug_' + SETOR);
+  window.location.reload();
+};
+
+// ── TIMER ────────────────────────────────────────────────────────────────────
+function tempoDecorrido(createdAt) {
+  const diff = Math.floor((Date.now() - new Date(createdAt)) / 1000);
+  if (diff < 60) return diff + 's';
+  const m = Math.floor(diff / 60), s = diff % 60;
+  return m + 'min' + (s > 0 ? ' ' + s + 's' : '');
+}
+
+// ── RENDERIZAR ───────────────────────────────────────────────────────────────
+function statusDoPedidoNosetor(p) {
+  if (p.setores_status && p.setores_status[SETOR]) return p.setores_status[SETOR];
+  // Fallback: mapear status global para setor
+  const mapa = { novo: 'pendente', preparo: 'preparando', pronto: 'pronto', recusado: 'pronto' };
+  return mapa[p.status] || 'pendente';
+}
+
+function filtrarItensDoSetor(itens) {
+  if (!Array.isArray(itens)) return [];
+  // Se os itens têm campo setor, filtra. Se não tem, mostra todos (retrocompatível)
+  const comSetor = itens.filter(it => it.setor);
+  if (!comSetor.length) return itens; // pedido antigo sem setor → mostra tudo
+  return itens.filter(it => (it.setor || '').toLowerCase() === SETOR.toLowerCase());
+}
+
+function cardHTML(p) {
+  const statusSetor = statusDoPedidoNosetor(p);
+  const itens = filtrarItensDoSetor(p.itens || []);
+  if (!itens.length) return ''; // sem itens deste setor
+
+  const num = (p.id || '').slice(-4).toUpperCase();
+  const diff = Math.floor((Date.now() - new Date(p.created_at)) / 1000 / 60);
+  const urgent = diff >= 15;
+
+  const badgeClass = {
+    pendente:   'badge-pendente',
+    aceito:     'badge-aceito',
+    preparando: 'badge-preparando',
+    pronto:     'badge-pronto',
+  }[statusSetor] || 'badge-pendente';
+
+  const badgeLabel = {
+    pendente:   '🔴 Novo',
+    aceito:     '🟡 Aceito',
+    preparando: '🔵 Preparando',
+    pronto:     '✅ Pronto',
+  }[statusSetor] || '🔴 Novo';
+
+  const itensHTML = itens.map(it => `
+    <div class="kds-item">
+      <div class="kds-item-qtd">${it.qtd}×</div>
+      <div style="flex:1">
+        <div class="kds-item-nome">${it.nome}</div>
+        ${it.obs ? `<div class="kds-item-obs">${it.obs}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  const obsHTML = p.observacao
+    ? `<div class="kds-obs-pedido">${p.observacao}</div>` : '';
+
+  // Botões baseados no status atual do setor
+  let botoesHTML = '';
+  if (statusSetor === 'pendente') {
+    botoesHTML = `
+      <button class="kds-btn kds-btn-aceitar" onclick="atualizarStatus('${p.id}','aceito')">✓ Aceitar</button>
+    `;
+  } else if (statusSetor === 'aceito') {
+    botoesHTML = `
+      <button class="kds-btn kds-btn-preparando" onclick="atualizarStatus('${p.id}','preparando')">🔥 Preparando</button>
+    `;
+  } else if (statusSetor === 'preparando') {
+    botoesHTML = `
+      <button class="kds-btn kds-btn-pronto" onclick="atualizarStatus('${p.id}','pronto')">✅ Pronto</button>
+    `;
+  } else {
+    botoesHTML = `
+      <button class="kds-btn kds-btn-secondary" onclick="atualizarStatus('${p.id}','preparando')" style="flex:1">↩ Reabrir</button>
+    `;
+  }
+
+  return `
+    <div class="kds-card status-${statusSetor}" id="kds-card-${p.id}">
+      <div class="kds-card-header">
+        <div class="kds-card-header-left">
+          <div class="kds-num">#${num}</div>
+          <div>
+            <div class="kds-cliente">${p.cliente_nome || p.endereco || 'Cliente'}</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <div class="kds-status-badge ${badgeClass}">${badgeLabel}</div>
+          <div class="kds-timer ${urgent ? 'urgent' : ''}" id="timer-${p.id}">
+            ${tempoDecorrido(p.created_at)}
+          </div>
+        </div>
+      </div>
+      <div class="kds-card-items">${itensHTML}</div>
+      ${obsHTML}
+      <div class="kds-card-footer">${botoesHTML}</div>
+    </div>
+  `;
+}
+
+function render() {
+  const main  = $('kds-main');
+  const empty = $('kds-empty');
+  const count = $('hdr-count');
+
+  // Exclui pedidos finalizados/recusados sem setores_status deste setor
+  const ativos = PEDIDOS.filter(p => {
+    const st = statusDoPedidoNosetor(p);
+    return st !== 'pronto' || false; // mostra todos incluindo prontos (para o cozinheiro dar baixa)
+  });
+
+  // Ordena: pendente → aceito → preparando → pronto
+  const ordem = { pendente: 0, aceito: 1, preparando: 2, pronto: 3 };
+  ativos.sort((a, b) => {
+    const sa = statusDoPedidoNosetor(a), sb = statusDoPedidoNosetor(b);
+    if (sa !== sb) return (ordem[sa] || 0) - (ordem[sb] || 0);
+    return new Date(a.created_at) - new Date(b.created_at);
+  });
+
+  const html = ativos.map(p => cardHTML(p)).filter(Boolean).join('');
+  main.innerHTML = html;
+
+  const visiveis = ativos.filter(p => filtrarItensDoSetor(p.itens || []).length);
+  if (count) count.textContent = visiveis.length;
+
+  empty.classList.toggle('show', visiveis.length === 0);
+
+  // Timers atualizados a cada segundo
+  clearAllTimers();
+  visiveis.forEach(p => {
+    _timers[p.id] = setInterval(() => {
+      const el = document.getElementById('timer-' + p.id);
+      if (!el) return clearInterval(_timers[p.id]);
+      const diff = Math.floor((Date.now() - new Date(p.created_at)) / 1000 / 60);
+      el.textContent = tempoDecorrido(p.created_at);
+      el.classList.toggle('urgent', diff >= 15);
+    }, 1000);
+  });
+}
+
+function clearAllTimers() {
+  Object.values(_timers).forEach(t => clearInterval(t));
+  _timers = {};
+}
+
+// ── ATUALIZAR STATUS ─────────────────────────────────────────────────────────
+window.atualizarStatus = async function(pedidoId, novoStatus) {
+  const p = PEDIDOS.find(x => x.id === pedidoId || x.id === parseInt(pedidoId));
+  if (!p) return;
+
+  // Atualiza setores_status
+  const statusAtual = p.setores_status || {};
+  statusAtual[SETOR] = novoStatus;
+
+  // Verifica se todos os setores estão prontos → atualiza status global
+  const todosSetores = Object.values(statusAtual);
+  const todosProntos = todosSetores.length > 0 && todosSetores.every(s => s === 'pronto');
+
+  const updates = { setores_status: statusAtual };
+  if (todosProntos) updates.status = 'pronto';
+  if (novoStatus === 'aceito' && p.status === 'novo') updates.status = 'preparo';
+
+  const { error } = await db.from('pedidos').update(updates).eq('id', pedidoId);
+  if (error) return toast('❌ Erro ao atualizar.');
+
+  // Atualiza local imediatamente
+  p.setores_status = statusAtual;
+  if (updates.status) p.status = updates.status;
+  render();
+
+  const labels = { aceito: 'Aceito ✓', preparando: 'Em preparo 🔥', pronto: 'Pronto ✅' };
+  toast(labels[novoStatus] || 'Atualizado');
+};
+
+// ── CARREGAR PEDIDOS ─────────────────────────────────────────────────────────
+async function carregarPedidos() {
+  if (!ESTAB) return;
+  const { data } = await db.from('pedidos')
+    .select('*')
+    .eq('estabelecimento_id', ESTAB.id)
+    .not('status', 'in', '("recusado","finalizado")')
+    .order('created_at', { ascending: false })
+    .limit(40);
+  PEDIDOS = (data || []).filter(p => {
+    // Só mostra pedidos aceitos no sistema (status !== 'novo' para pedidos sem setores_status)
+    if (p.setores_status && p.setores_status[SETOR] !== undefined) return true;
+    // Sem setores_status: mostra pedidos em preparo/pronto
+    return ['preparo', 'pronto'].includes(p.status);
+  });
+  render();
+}
+
+// ── REALTIME ─────────────────────────────────────────────────────────────────
+function conectarRealtime() {
+  if (_canal) _canal.unsubscribe();
+  _canal = db.channel('kds-' + ESTAB.id + '-' + SETOR)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'pedidos',
+      filter: `estabelecimento_id=eq.${ESTAB.id}`
+    }, payload => {
+      const { eventType, new: novo, old: antigo } = payload;
+
+      if (eventType === 'INSERT') {
+        // Novo pedido — verifica se tem itens deste setor
+        const itens = novo.itens || [];
+        const temNosetor = filtrarItensDoSetor(itens).length > 0;
+        if (temNosetor) {
+          PEDIDOS.unshift(novo);
+          render(); beep();
+          toast('🔔 Novo pedido #' + (novo.id || '').slice(-4).toUpperCase());
+        }
+      } else if (eventType === 'UPDATE') {
+        const idx = PEDIDOS.findIndex(p => p.id === novo.id);
+        if (idx !== -1) { PEDIDOS[idx] = novo; }
+        else {
+          const temNosetor = filtrarItensDoSetor(novo.itens || []).length > 0;
+          if (temNosetor) PEDIDOS.unshift(novo);
+        }
+        render();
+      } else if (eventType === 'DELETE') {
+        PEDIDOS = PEDIDOS.filter(p => p.id !== antigo.id);
+        render();
+      }
+    })
+    .subscribe();
+}
+
+// ── INICIAR ───────────────────────────────────────────────────────────────────
+async function iniciar() {
+  $('kds-setup').classList.remove('show');
+  $('kds-header').style.display = 'flex';
+  $('kds-main').style.display   = 'grid';
+
+  $('hdr-setor').textContent = SETOR.toUpperCase();
+  $('hdr-loja').textContent  = ESTAB.nome || ESTAB.slug;
+
+  await carregarPedidos();
+  conectarRealtime();
+
+  // Atualiza a cada 30s como fallback
+  setInterval(carregarPedidos, 30000);
+}
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+async function boot() {
+  SETOR = getSetorFromURL();
+  if (!SETOR) {
+    // Se não tem setor na URL, usa 'geral'
+    SETOR = new URLSearchParams(window.location.search).get('setor') || 'geral';
+  }
+
+  const slug = getStoredSlug();
+  if (slug) {
+    const { data } = await db.from('estabelecimentos').select('*').eq('slug', slug).maybeSingle();
+    if (data) { ESTAB = data; }
+  }
+
+  // Esconde splash
+  setTimeout(() => {
+    $('kds-splash').style.display = 'none';
+    if (ESTAB) {
+      iniciar();
+    } else {
+      $('kds-setup').classList.add('show');
+    }
+  }, 800);
+}
+
+boot();
+</script>
+</body>
+</html>
