@@ -283,16 +283,20 @@ function preencherConfig(estab) {
   const ctsWrap   = document.getElementById('cfg-taxa-servico-wrap');
   const ctsPerc   = $('cfg-perc-servico');
 
-  // KDS toggle — totalmente defensivo
+  // KDS toggle — inicializa visual
   try {
-    const kdsChk = $('cfg-usa-setores');
-    if (kdsChk) {
-      kdsChk.checked = !!estab.usa_setores;
-      const kdsSection = $('cfg-kds-section');
-      if (kdsSection) kdsSection.style.display = estab.usa_setores ? 'block' : 'none';
-      if (estab.usa_setores) setTimeout(()=>{ try{ window.renderKdsLinks&&window.renderKdsLinks(estab); }catch(e){} },600);
+    const _kdsChk   = $('cfg-usa-setores');
+    const _kdsTrack = document.getElementById('kds-track');
+    const _kdsThumb = document.getElementById('kds-thumb');
+    if(_kdsChk) {
+      _kdsChk.checked = !!estab.usa_setores;
+      if(_kdsTrack) _kdsTrack.style.background = estab.usa_setores ? '#E8001C' : '#ddd';
+      if(_kdsThumb) _kdsThumb.style.transform   = estab.usa_setores ? 'translateX(22px)' : 'translateX(0)';
+      const _sec = $('cfg-kds-section');
+      if(_sec) _sec.style.display = estab.usa_setores ? 'block' : 'none';
+      if(estab.usa_setores) setTimeout(()=>{ try{window.renderKdsLinks&&window.renderKdsLinks(estab);}catch(e){} },500);
     }
-  } catch(e) {}
+  } catch(e){}
   if (ctsToggle) ctsToggle.checked = estab.taxa_servico === true;
   if (ctsWrap)   ctsWrap.style.display = estab.taxa_servico ? 'block' : 'none';
   if (ctsPerc)   ctsPerc.value = estab.perc_servico || 10;
@@ -567,13 +571,10 @@ export async function salvarConfig() {
 
   if (!nome || !slug) return showToast('Preencha nome e link.', 'error');
 
-  // KDS: salva usa_setores separado com try/catch
   try {
-    const kdsChk = $('cfg-usa-setores');
-    if (kdsChk) {
-      await getSupa().from('estabelecimentos').update({ usa_setores: kdsChk.checked }).eq('id', estab.id);
-    }
-  } catch(e) { /* coluna ainda não existe — rode o SQL no Supabase */ }
+    const _kc=$('cfg-usa-setores');
+    if(_kc) await getSupa().from('estabelecimentos').update({usa_setores:_kc.checked}).eq('id',estab.id);
+  } catch(e){}
 
   const btn = document.querySelector('[onclick="salvarConfig()"]');
   if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
@@ -1061,16 +1062,10 @@ export async function salvarItem() {
     const foto_url = fotos_urls[0] || null;
     const promocao   = $('item-promocao')?.checked || false;
     const preco_orig = parseFloat($('item-preco-orig')?.value) || null;
-    const setor_item = ($('item-setor')?.value||'').trim().toLowerCase()||null;
-    const insertData = {
-      estabelecimento_id: estab.id, nome,
-      descricao: $('item-desc')?.value.trim(),
-      categoria: $('item-cat')?.value.trim().toUpperCase(),
-      preco, preco_original: promocao ? preco_orig : null,
-      foto_url, fotos_urls, emoji: emojiSel, disponivel: true, promocao,
-    };
-    if (setor_item) insertData.setor = setor_item;
-    const { error } = await getSupa().from('produtos').insert(insertData);
+    const _setor = ($('item-setor')?.value||'').trim().toLowerCase()||null;
+    const _ins = { estabelecimento_id:estab.id, nome, descricao:$('item-desc')?.value.trim(), categoria:$('item-cat')?.value.trim().toUpperCase(), preco, preco_original:promocao?preco_orig:null, foto_url, fotos_urls, emoji:emojiSel, disponivel:true, promocao };
+    if(_setor) _ins.setor=_setor;
+    const { error } = await getSupa().from('produtos').insert(_ins);
     if (error) throw new Error(error.message);
     await renderCardapio(); fecharModal(); showToast('Item adicionado! ✅');
   } catch (e) { showToast(e.message,'error'); }
@@ -1087,7 +1082,7 @@ export async function editarItem(id) {
     const set = (sel, val) => { const el=$(sel); if(el && val!=null) el.value=val; };
     set('item-nome', p.nome); set('item-desc', p.descricao||'');
     set('item-cat', p.categoria||'');
-    set('item-setor', p.setor||'');
+    const _setEl=$('item-setor'); if(_setEl) _setEl.value=p.setor||'';
     // Se tem desconto %, o campo mostra o preço ORIGINAL (o que o dono digitou)
     set('item-preco', p.em_promocao && p.preco_original ? p.preco_original : p.preco);
     set('item-preco-orig', p.preco_original||'');
@@ -1148,19 +1143,10 @@ export async function editarItem(id) {
             precoOrigU = precoBase;
             precoFinalU = parseFloat((precoBase * (1 - desconto_pct_u / 100)).toFixed(2));
           }
-          const setor_edit = ($('item-setor')?.value||'').trim().toLowerCase()||null;
-          const updData = {
-            nome:         $('item-nome')?.value.trim(),
-            descricao:    $('item-desc')?.value.trim(),
-            categoria:    $('item-cat')?.value.trim().toUpperCase(),
-            preco:        precoFinalU,
-            preco_original: precoOrigU,
-            foto_url, fotos_urls, emoji: emojiSel, promocao,
-            em_promocao: promocao && desconto_pct_u > 0,
-            desconto_percent: promocao ? desconto_pct_u : 0,
-          };
-          if (setor_edit !== undefined) updData.setor = setor_edit;
-          const { error } = await getSupa().from('produtos').update(updData).eq('id', id);
+          const _setorUpd = ($('item-setor')?.value||'').trim().toLowerCase()||null;
+          const _upd = { nome:$('item-nome')?.value.trim(), descricao:$('item-desc')?.value.trim(), categoria:$('item-cat')?.value.trim().toUpperCase(), preco:precoFinalU, preco_original:precoOrigU, foto_url, fotos_urls, emoji:emojiSel, promocao, em_promocao:promocao&&desconto_pct_u>0, desconto_percent:promocao?desconto_pct_u:0 };
+          if(_setorUpd!==undefined) _upd.setor=_setorUpd;
+          const { error } = await getSupa().from('produtos').update(_upd).eq('id', id);
           if (error) throw new Error(error.message);
           await renderCardapio(); fecharModal(); showToast('Item atualizado!');
         } catch (e) { showToast(e.message,'error'); }
@@ -1284,15 +1270,6 @@ async function renderPedidos() {
   const cardHtml = p => {
     const CLS = { novo:'status-novo', preparo:'status-preparo', pronto:'status-pronto', recusado:'status-recusado' };
     const LBL = { novo:'Novo', preparo:'Em preparo', pronto:'Pronto', recusado:'Recusado' };
-    const _estabKds = getEstab();
-    const setoresHTML = (_estabKds?.usa_setores && p?.setores_status && typeof p.setores_status==='object')
-      ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">'
-        + Object.entries(p.setores_status).map(([s,st])=>{
-            const c={pendente:'#aaa',aceito:'#F59E0B',preparando:'#3B82F6',pronto:'#22C55E'}[st]||'#aaa';
-            return `<span style="font-size:.58rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:50px;background:rgba(0,0,0,.06);color:${c}">${s}: ${st}</span>`;
-          }).join('')
-        + '</div>'
-      : '';
     const ICONS = { novo:'🔔', preparo:'👨‍🍳', pronto:'✅', recusado:'❌' };
     const cls = CLS[p.status] || 'status-novo';
     const lbl = LBL[p.status] || 'Novo';
@@ -1376,18 +1353,16 @@ window.aceitarPedido = async function(id) {
   const { data: ped } = await getSupa().from('pedidos').select('*').eq('id', id).maybeSingle();
   const isMesa = ped && (ped.endereco||'').startsWith('No local');
 
-  // KDS: monta setores_status se ativo — defensivo, não quebra sem SQL
-  const pedUpdates = { status: 'preparo' };
+  const _upds = { status:'preparo' };
   try {
-    const estabLocal = getEstab();
-    if (estabLocal?.usa_setores && Array.isArray(ped?.itens)) {
-      const sm = {};
-      ped.itens.forEach(it => { const s=(it.setor||'geral').toLowerCase(); if(!sm[s]) sm[s]='pendente'; });
-      if (Object.keys(sm).length) pedUpdates.setores_status = sm;
+    const _estabLocal = getEstab();
+    if(_estabLocal?.usa_setores && Array.isArray(ped?.itens)) {
+      const _sm={};
+      ped.itens.forEach(it=>{ const s=(it.setor||'geral').toLowerCase(); if(!_sm[s])_sm[s]='pendente'; });
+      if(Object.keys(_sm).length) _upds.setores_status=_sm;
     }
-  } catch(e) {}
-
-  const { error } = await getSupa().from('pedidos').update(pedUpdates).eq('id', id);
+  } catch(e){}
+  const { error } = await getSupa().from('pedidos').update(_upds).eq('id', id);
   if (error) return showToast('Erro ao aceitar.','error');
   removerCardNovo(id);
 
@@ -4224,64 +4199,55 @@ function renderHistoricoCaixa() {
 window.renderHistoricoCaixa = renderHistoricoCaixa;
 
 
-// ═══════════════════════════════════════════════════════════════════
-// KDS — Sistema de setores (defensivo: funciona com ou sem SQL)
-// ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// KDS SYSTEM — Funções globais
+// ═══════════════════════════════════════════════════════════
 window.renderKdsLinks = function(estab) {
-  const wrap = document.getElementById('cfg-kds-links');
-  const section = document.getElementById('cfg-kds-section');
-  if (!wrap || !estab) return;
-
-  getSupa().from('produtos')
-    .select('setor')
-    .eq('estabelecimento_id', estab.id)
-    .eq('disponivel', true)
-    .then(({ data, error }) => {
-      if (error) {
-        wrap.innerHTML = '<div style="font-size:.75rem;color:#c00;background:#fff0f0;padding:10px;border-radius:8px">⚠️ Execute o SQL no Supabase:<br><code style="font-size:.62rem">ALTER TABLE produtos ADD COLUMN IF NOT EXISTS setor text;</code></div>';
+  const wrap=$('cfg-kds-links'), sec=$('cfg-kds-section');
+  if(!wrap||!estab) return;
+  getSupa().from('produtos').select('setor').eq('estabelecimento_id',estab.id).eq('disponivel',true)
+    .then(({data,error})=>{
+      if(error){
+        wrap.innerHTML='<div style="font-size:.75rem;color:#c00;background:#fff0f0;padding:10px;border-radius:8px">⚠️ Rode o SQL no Supabase primeiro:<br><code>ALTER TABLE produtos ADD COLUMN IF NOT EXISTS setor text;</code></div>';
         return;
       }
-      const setores = [...new Set((data||[]).map(p=>p.setor).filter(Boolean).map(s=>s.toLowerCase()))];
-      if (section) section.style.display = (estab.usa_setores && setores.length) ? 'block' : (estab.usa_setores ? 'block' : 'none');
-      if (!setores.length) {
-        wrap.innerHTML = '<div style="font-size:.75rem;color:#aaa;line-height:1.6">Nenhum produto com setor ainda.<br>Edite um produto e preencha o campo <b>Setor (KDS)</b>.<br>Exemplos: <code>cozinha</code>, <code>bar</code>, <code>sobremesa</code></div>';
+      const setores=[...new Set((data||[]).map(p=>p.setor).filter(Boolean).map(s=>s.toLowerCase()))].sort();
+      if(sec) sec.style.display=estab.usa_setores?'block':'none';
+      const EM={cozinha:'🍳',bar:'🥤',sobremesa:'🍰',cafeteria:'☕',grill:'🔥',padaria:'🥖',pizza:'🍕',sushi:'🍣',geral:'📋'};
+      if(!setores.length){
+        wrap.innerHTML='<div style="font-size:.75rem;color:#aaa;line-height:1.7">Nenhum produto com setor ainda.<br>Edite um produto → campo <b>Setor (KDS)</b>.<br>Exemplos: <code>cozinha</code>, <code>bar</code>, <code>sobremesa</code></div>';
         return;
       }
-      const em = {cozinha:'🍳',bar:'🥤',sobremesa:'🍰',cafeteria:'☕',grill:'🔥',padaria:'🥖',geral:'📋'};
-      const slug = estab.slug||'';
-      wrap.innerHTML = setores.map(s => {
-        const url = `https://pediway.com.br/kds/${s}?loja=${slug}`;
-        return `<div style="display:flex;align-items:center;gap:8px;background:#faf8f5;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;">
-          <span style="font-size:1.1rem">${em[s]||'🏷️'}</span>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:.72rem;font-weight:800;color:#555;text-transform:uppercase">${s}</div>
-            <div style="font-size:.63rem;color:#aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${url}</div>
-          </div>
+      const slug=estab.slug||'';
+      wrap.innerHTML=setores.map(s=>{
+        const url=`https://pediway.com.br/kds/${s}?loja=${slug}`;
+        return `<div style="display:flex;align-items:center;gap:8px;background:#faf8f5;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px">
+          <span style="font-size:1.1rem">${EM[s]||'🏷️'}</span>
+          <div style="flex:1;min-width:0"><div style="font-size:.72rem;font-weight:800;color:#555;text-transform:uppercase">${s}</div>
+          <div style="font-size:.63rem;color:#aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${url}</div></div>
           <button onclick="navigator.clipboard.writeText('${url}').then(()=>showToast('✅ Link copiado!'))"
-            style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:5px 10px;font-family:'Poppins',sans-serif;font-size:.7rem;font-weight:700;color:#555;cursor:pointer;flex-shrink:0">
-            Copiar
-          </button>
+            style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:5px 10px;font-family:'Poppins',sans-serif;font-size:.7rem;font-weight:700;color:#555;cursor:pointer;flex-shrink:0">Copiar</button>
         </div>`;
       }).join('');
     });
 };
 
 window.toggleUsaSetores = async function(checked) {
-  const estab = getEstab(); if (!estab) return;
+  const estab=getEstab(); if(!estab) return;
+  const track=document.getElementById('kds-track'), thumb=document.getElementById('kds-thumb');
+  if(track) track.style.background=checked?'#E8001C':'#ddd';
+  if(thumb) thumb.style.transform=checked?'translateX(22px)':'translateX(0)';
   try {
-    const {error} = await getSupa().from('estabelecimentos').update({ usa_setores: checked }).eq('id', estab.id);
-    if (error) throw error;
-    const section = document.getElementById('cfg-kds-section');
-    if (section) section.style.display = checked ? 'block' : 'none';
-    if (checked) { try { window.renderKdsLinks(estab); } catch(e){} }
-    try {
-      const obj = JSON.parse(localStorage.getItem('pw_estab')||'{}');
-      obj.usa_setores = checked; localStorage.setItem('pw_estab', JSON.stringify(obj));
-      if (window._estab) window._estab.usa_setores = checked;
-    } catch(e){}
-    showToast(checked ? '🍳 KDS ativado!' : 'KDS desativado');
+    const{error}=await getSupa().from('estabelecimentos').update({usa_setores:checked}).eq('id',estab.id);
+    if(error) throw error;
+    const sec=$('cfg-kds-section');
+    if(sec) sec.style.display=checked?'block':'none';
+    try{ const o=JSON.parse(localStorage.getItem('pw_estab')||'{}'); o.usa_setores=checked; localStorage.setItem('pw_estab',JSON.stringify(o)); if(window._estab) window._estab.usa_setores=checked; }catch(e){}
+    if(checked) { try{ window.renderKdsLinks(estab); }catch(e){} }
+    showToast(checked?'🍳 KDS ativado!':'KDS desativado');
   } catch(e) {
     showToast('⚠️ Execute o SQL no Supabase primeiro.','error');
-    document.getElementById('cfg-usa-setores').checked = !checked;
+    const chk=$('cfg-usa-setores'); if(chk){chk.checked=!checked;if(track)track.style.background=!checked?'#E8001C':'#ddd';if(thumb)thumb.style.transform=!checked?'translateX(22px)':'translateX(0)';}
   }
 };
+window._toggleUsaSetoresReal = window.toggleUsaSetores;
