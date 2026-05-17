@@ -979,6 +979,8 @@ let _cardStyle = 'A';
 function storeCardHTML(l) {
   const ab = l._aberto !== undefined ? l._aberto : calcularAberto(l);
   const temPromo = l.promocao_ativa || _promoItems.some(p=>p.estabelecimento_id===l.id);
+  // Badge QUENTE só aparece se a loja tem itens REAIS em promoção no _promoItems
+  const temQuente = _promoItems.some(p => String(p.estabelecimento_id) === String(l.id));
   const promosDaLoja = _promoItems.filter(p=>p.estabelecimento_id===l.id).map(p=>p.desconto);
   const maxDesc = temPromo && promosDaLoja.length ? Math.max(...promosDaLoja, l.desconto_percent||0) : (l.desconto_percent||0);
   if(_cardStyle === 'B') return storeCardHTMLb(l, ab, temPromo);
@@ -994,7 +996,7 @@ function storeCardHTML(l) {
       <!-- logo centralizada -->
       <div style="position:relative;z-index:2;">${logoContent}</div>
       ${!ab?`<div style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:3;"><span style="color:#fff;font-size:12px;font-weight:700;background:rgba(0,0,0,.4);padding:5px 12px;border-radius:8px;">Fechado</span></div>`:''}
-      ${temPromo?`<div style="position:absolute;top:0;left:0;z-index:3;">
+      ${temQuente?`<div style="position:absolute;top:0;left:0;z-index:3;">
         <div style="
           background:var(--red);
           color:#fff;
@@ -1025,6 +1027,8 @@ function storeCardHTML(l) {
 
 // Card estilo B: horizontal com imagem à esquerda
 function storeCardHTMLb(l, ab, temPromo) {
+  // Badge QUENTE só aparece se a loja tem itens REAIS em promoção
+  const temQuente = _promoItems.some(p => String(p.estabelecimento_id) === String(l.id));
   const imgContent = l.logo_url
     ? `<img src="${l.logo_url}" alt="${l.nome}" onerror="this.style.display='none'">`
     : `<div class="store-card-b-emoji">${l._emoji}</div>`;
@@ -1032,7 +1036,7 @@ function storeCardHTMLb(l, ab, temPromo) {
     <div class="store-card-b-img" style="background:${l._bg}18;">
       ${imgContent}
       ${!ab?`<div style="position:absolute;inset:0;background:rgba(0,0,0,.48);display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-size:11px;font-weight:700;background:rgba(0,0,0,.35);padding:4px 10px;border-radius:7px;">Fechado</span></div>`:''}
-      ${temPromo?`<div style="position:absolute;top:0;left:0;z-index:3;">
+      ${temQuente?`<div style="position:absolute;top:0;left:0;z-index:3;">
         <div style="background:#E8001C;color:#fff;font-size:9px;font-weight:900;letter-spacing:.04em;padding:4px 10px 4px 8px;border-radius:0 0 12px 0;display:flex;align-items:center;gap:4px;box-shadow:2px 2px 8px rgba(232,0,28,.35);">
           🔥 <span>QUENTE</span>
         </div>
