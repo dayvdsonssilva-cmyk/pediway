@@ -1407,6 +1407,7 @@ window.finalizarPedido = async function() {
       preco:     Number(c.preco) || 0,
       qtd:       Math.max(1, Math.min(99, Number(c.qtd) || 1)),
       emoji:     String(c.emoji || '').slice(0, 10),
+      setor:     c.setor || null,
       adicionais: (c.adicionais || []).map(a => ({
         nome:  String(a.nome || '').slice(0, 80),
         preco: Number(a.preco) || 0,
