@@ -22,6 +22,10 @@ input, select, textarea { max-width:100%; box-sizing:border-box; }
 .cfg-section { overflow:hidden; }
 /* Bloqueia zoom em toda a plataforma */
 
+/* KDS toggle */
+#cfg-usa-setores:checked ~ #kds-track { background: #E8001C !important; }
+#cfg-usa-setores:checked ~ #kds-thumb { transform: translateX(20px) !important; }
+
 /* Dashboard mobile */
 @media(max-width:600px) {
   .dash-container { padding:14px 12px !important; }
@@ -2508,6 +2512,31 @@ canvas, [data-touch="free"] { touch-action: none !important; }
               <div style="font-size:.65rem;color:#aaa;margin-top:4px">Compartilhe este link com seus garçons. Todos usam o mesmo link para acessar as comandas digitais.</div>
             </div>
 
+            <!-- KDS ─────────────────────────── -->
+            <div style="border-top:1px solid var(--border);padding-top:16px">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+                <div>
+                  <div style="font-size:.84rem;font-weight:800;color:#1a1a1a;display:flex;align-items:center;gap:7px">
+                    🍳 Painel KDS por setor
+                    <span style="background:#E8001C;color:#fff;padding:1px 8px;border-radius:50px;font-size:.55rem;font-weight:900">PRO</span>
+                  </div>
+                  <div style="font-size:.68rem;color:#aaa;margin-top:3px;line-height:1.5">Exibe pedidos separados por setor (cozinha, bar, etc.) em painéis independentes</div>
+                </div>
+                <label style="position:relative;display:inline-block;width:46px;height:26px;flex-shrink:0;cursor:pointer">
+                  <input type="checkbox" id="cfg-usa-setores" onchange="toggleUsaSetores(this.checked)" style="opacity:0;width:0;height:0;position:absolute">
+                  <span id="kds-track" style="position:absolute;inset:0;border-radius:34px;background:#ddd;transition:background .25s"></span>
+                  <span id="kds-thumb" style="position:absolute;left:4px;top:4px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:transform .25s;pointer-events:none"></span>
+                </label>
+              </div>
+
+              <!-- Links dos painéis -->
+              <div id="cfg-kds-section" style="display:none;margin-top:14px">
+                <div style="font-size:.72rem;font-weight:700;color:#555;margin-bottom:8px">📺 Links dos painéis KDS</div>
+                <div id="cfg-kds-links" style="display:flex;flex-direction:column;gap:8px"></div>
+                <div style="font-size:.63rem;color:#aaa;margin-top:7px;line-height:1.6">Abra cada link num tablet ou TV na área correspondente</div>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -3272,6 +3301,21 @@ canvas, [data-touch="free"] { touch-action: none !important; }
       <div class="form-group-light"><label>Nome *</label><input type="text" class="input-light" id="item-nome" placeholder="Ex: X-Burguer Especial"></div>
       <div class="form-group-light"><label>Descrição</label><input type="text" class="input-light" id="item-desc" placeholder="Ingredientes, detalhes..."></div>
       <div class="form-group-light"><label>Categoria</label><input type="text" class="input-light" id="item-cat" placeholder="Ex: LANCHES, BEBIDAS..."></div>
+      <div class="form-group-light">
+        <label style="display:flex;align-items:center;gap:6px">Setor KDS <span style="background:#fff0f0;color:#E8001C;padding:1px 6px;border-radius:50px;font-size:.58rem;font-weight:800">OPCIONAL</span></label>
+        <select class="input-light" id="item-setor">
+          <option value="">— Sem setor —</option>
+          <option value="cozinha">🍳 Cozinha</option>
+          <option value="bar">🥤 Bar</option>
+          <option value="sobremesa">🍰 Sobremesa</option>
+          <option value="cafeteria">☕ Cafeteria</option>
+          <option value="grill">🔥 Grill</option>
+          <option value="padaria">🥖 Padaria</option>
+          <option value="pizza">🍕 Pizza</option>
+          <option value="sushi">🍣 Sushi</option>
+        </select>
+        <div style="font-size:.63rem;color:#aaa;margin-top:3px">Onde este item é preparado no estabelecimento</div>
+      </div>
       <div class="form-group-light">
         <label>Preço *</label>
         <input type="number" step="0.01" min="0" class="input-light" id="item-preco" placeholder="0,00">
