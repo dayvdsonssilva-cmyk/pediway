@@ -206,7 +206,10 @@ function renderTabs(){
   bar.classList.add('show');
   const cnt={};
   SETORES.forEach(s=>{
-    cnt[s]=PEDIDOS.filter(p=>getStSetor(p,s)!=='pronto'&&filtrarItens(p.itens||[],s).length>0).length;
+    cnt[s]=PEDIDOS.filter(p=>{
+      if(getStSetor(p,s)==='pronto') return false;
+      return filtrarItens(p.itens||[],s).length>0;
+    }).length;
   });
   bar.innerHTML=SETORES.map(s=>`
     <button class="stab${s===SETOR_ATIVO?' active':''}" onclick="trocarSetor('${s}')">
@@ -220,9 +223,11 @@ window.trocarSetor=function(s){SETOR_ATIVO=s;renderTabs();render();};
 // FILTROS
 function filtrarItens(itens,setor){
   if(!Array.isArray(itens))return[];
-  const c=itens.filter(it=>it.setor);
-  if(!c.length)return itens;
-  return itens.filter(it=>(it.setor||'').toLowerCase()===setor.toLowerCase());
+  // Só mostra itens que têm setor EXPLICITAMENTE igual ao setor atual
+  // Se nenhum item tem setor definido, não mostra em nenhum painel específico
+  const comSetor=itens.filter(it=>it.setor);
+  if(!comSetor.length)return []; // sem setor definido → não aparece em nenhum KDS
+  return comSetor.filter(it=>it.setor.toLowerCase()===setor.toLowerCase());
 }
 function getStSetor(p,setor){
   if(p.setores_status&&p.setores_status[setor]!==undefined)return p.setores_status[setor];
@@ -239,6 +244,7 @@ function render(){
   const s=SETOR_ATIVO;
   const ord={pendente:0,aceito:1,preparando:2};
 
+  // Só mostra pedidos que têm pelo menos 1 item do setor atual
   const todos=PEDIDOS.filter(p=>filtrarItens(p.itens||[],s).length>0);
   const ativos=todos.filter(p=>getStSetor(p,s)!=='pronto')
     .sort((a,b)=>{const sa=getStSetor(a,s),sb=getStSetor(b,s);return sa!==sb?(ord[sa]||0)-(ord[sb]||0):new Date(a.created_at)-new Date(b.created_at);});
@@ -355,7 +361,8 @@ async function carregar(){
   if(!ESTAB)return;
   const{data}=await db.from('pedidos').select('*').eq('estabelecimento_id',ESTAB.id)
     .not('status','in','("recusado","finalizado")').order('created_at',{ascending:false}).limit(60);
-  PEDIDOS=(data||[]).filter(p=>p.setores_status||['preparo','pronto'].includes(p.status));
+  // Inclui TODOS os status ativos — não deixa sumir antes de aceitar
+  PEDIDOS=(data||[]);
   render();renderTabs();
 }
 
@@ -366,7 +373,10 @@ function conectar(){
     .on('postgres_changes',{event:'*',schema:'public',table:'pedidos',filter:`estabelecimento_id=eq.${ESTAB.id}`},({eventType,new:novo,old:antigo})=>{
       if(eventType==='INSERT'){
         PEDIDOS.unshift(novo);render();renderTabs();
-        if(filtrarItens(novo.itens||[],SETOR_ATIVO).length>0){beep();toast('🔔 Novo pedido #'+(novo.id||'').slice(-4).toUpperCase());}
+        // Só bipa se tem itens deste setor
+        if(filtrarItens(novo.itens||[],SETOR_ATIVO).length>0){
+          beep();toast('🔔 Novo pedido #'+(novo.id||'').slice(-4).toUpperCase());
+        }
       } else if(eventType==='UPDATE'){
         const i=PEDIDOS.findIndex(p=>String(p.id)===String(novo.id));
         if(i>-1)PEDIDOS[i]=novo;else PEDIDOS.unshift(novo);
