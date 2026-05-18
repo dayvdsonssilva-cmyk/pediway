@@ -282,6 +282,19 @@ function preencherConfig(estab) {
   const ctsToggle = $('cfg-taxa-servico');
   const ctsWrap   = document.getElementById('cfg-taxa-servico-wrap');
   const ctsPerc   = $('cfg-perc-servico');
+
+  // KDS toggle init
+  try {
+    var _kc = $('cfg-usa-setores'), _tr = document.getElementById('kds-track'), _th = document.getElementById('kds-thumb');
+    if (_kc) {
+      var _on = !!estab.usa_setores;
+      _kc.checked = _on;
+      if (_tr) _tr.style.background = _on ? '#E8001C' : '#ddd';
+      if (_th) _th.style.transform  = _on ? 'translateX(20px)' : 'translateX(0)';
+      var _sec = $('cfg-kds-section'); if (_sec) _sec.style.display = _on ? 'block' : 'none';
+      if (_on) setTimeout(function(){ try{window.renderKdsLinks&&window.renderKdsLinks(estab);}catch(e){} }, 400);
+    }
+  } catch(e) {}
   if (ctsToggle) ctsToggle.checked = estab.taxa_servico === true;
   if (ctsWrap)   ctsWrap.style.display = estab.taxa_servico ? 'block' : 'none';
   if (ctsPerc)   ctsPerc.value = estab.perc_servico || 10;
@@ -556,6 +569,7 @@ export async function salvarConfig() {
 
   if (!nome || !slug) return showToast('Preencha nome e link.', 'error');
 
+  try{var _kc2=$('cfg-usa-setores');if(_kc2) await getSupa().from('estabelecimentos').update({usa_setores:_kc2.checked}).eq('id',estab.id);}catch(e){}
   const btn = document.querySelector('[onclick="salvarConfig()"]');
   if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
 
@@ -3852,12 +3866,33 @@ var _caixaAbertura = null;
 var _caixaId       = null;
 var _caixaTimer    = null;
 
+var _caixaCanal = null;
+
 function iniciarAutoRefreshCaixa() {
+  // Mantém intervalo como fallback (60s)
   if (_caixaTimer) clearInterval(_caixaTimer);
-  _caixaTimer = setInterval(function() { if (_caixaAberto) atualizarResumoCaixa(); }, 30000);
+  _caixaTimer = setInterval(function() { if (_caixaAberto) atualizarResumoCaixa(); }, 60000);
+
+  // Realtime: atualiza caixa imediatamente quando chega pedido novo ou é atualizado
+  var estab = getEstab();
+  if (!estab) return;
+  if (_caixaCanal) { try { _caixaCanal.unsubscribe(); } catch(e) {} }
+  _caixaCanal = getSupa()
+    .channel('caixa-rt-' + estab.id)
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'pedidos',
+      filter: 'estabelecimento_id=eq.' + estab.id
+    }, function() {
+      if (_caixaAberto) atualizarResumoCaixa();
+    })
+    .subscribe();
 }
+
 function pararAutoRefreshCaixa() {
   if (_caixaTimer) { clearInterval(_caixaTimer); _caixaTimer = null; }
+  if (_caixaCanal) { try { _caixaCanal.unsubscribe(); } catch(e) {} _caixaCanal = null; }
 }
 
 async function atualizarResumoCaixa() {
@@ -4179,3 +4214,67 @@ function renderHistoricoCaixa() {
   }
 }
 window.renderHistoricoCaixa = renderHistoricoCaixa;
+
+
+// ══════════════════════════════════════════════════════════════════════
+// KDS — Toggle, Links com botão Abrir, e funções globais
+// ══════════════════════════════════════════════════════════════════════
+window.renderKdsLinks = function(estab) {
+  var wrap = document.getElementById('cfg-kds-links');
+  var sec  = document.getElementById('cfg-kds-section');
+  if (!wrap || !estab) return;
+  getSupa().from('produtos').select('setor').eq('estabelecimento_id', estab.id).eq('disponivel', true)
+    .then(function(res) {
+      var data = res.data, error = res.error;
+      if (error) {
+        wrap.innerHTML = '<div style="font-size:.73rem;color:#c00;background:#fff0f0;padding:10px;border-radius:8px">⚠️ Execute o SQL no Supabase:<br><code>ALTER TABLE produtos ADD COLUMN IF NOT EXISTS setor text;</code></div>';
+        return;
+      }
+      var setores = [...new Set((data||[]).map(function(p){return p.setor;}).filter(Boolean).map(function(s){return s.toLowerCase();}))].sort();
+      if (sec) sec.style.display = estab.usa_setores ? 'block' : 'none';
+      if (!setores.length) {
+        wrap.innerHTML = '<div style="font-size:.73rem;color:#aaa;line-height:1.7">Nenhum produto com setor ainda.<br>Edite produtos → campo <b>Setor KDS</b>.<br>Ex: <code>cozinha</code>, <code>bar</code>, <code>sobremesa</code></div>';
+        return;
+      }
+      var EM = {cozinha:'🍳',bar:'🥤',sobremesa:'🍰',cafeteria:'☕',grill:'🔥',padaria:'🥖',pizza:'🍕',sushi:'🍣',geral:'📋'};
+      var slug = estab.slug || '';
+      wrap.innerHTML = setores.map(function(s) {
+        var url   = 'https://pediway.com.br/kds/' + s + '?loja=' + slug;
+        var label = s.charAt(0).toUpperCase() + s.slice(1);
+        return '<div style="background:#faf8f5;border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px">'
+          + '<div style="display:flex;align-items:center;gap:8px">'
+          + '<span style="font-size:1.1rem">' + (EM[s]||'🏷️') + '</span>'
+          + '<div style="flex:1;min-width:0"><div style="font-size:.78rem;font-weight:800;color:#333;text-transform:capitalize">' + label + '</div>'
+          + '<div style="font-size:.6rem;color:#aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + url + '</div></div></div>'
+          + '<div style="display:flex;gap:6px">'
+          + '<a href="' + url + '" target="_blank" style="flex:1;background:#E8001C;color:#fff;border:none;border-radius:8px;padding:9px 12px;font-family:Poppins,sans-serif;font-size:.75rem;font-weight:800;cursor:pointer;text-align:center;text-decoration:none;display:block">📺 Abrir painel ' + label + '</a>'
+          + '<button onclick="navigator.clipboard.writeText('' + url + '').then(function(){showToast('✅ Link copiado!');})" style="border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:Poppins,sans-serif;font-size:.75rem;font-weight:700;color:#555;cursor:pointer;background:#fff;flex-shrink:0">Copiar</button>'
+          + '</div></div>';
+      }).join('');
+    });
+};
+
+window.toggleUsaSetores = async function(checked) {
+  var estab = getEstab(); if (!estab) return;
+  var tr = document.getElementById('kds-track'), th = document.getElementById('kds-thumb');
+  if (tr) tr.style.background = checked ? '#E8001C' : '#ddd';
+  if (th) th.style.transform  = checked ? 'translateX(20px)' : 'translateX(0)';
+  try {
+    var res = await getSupa().from('estabelecimentos').update({usa_setores: checked}).eq('id', estab.id);
+    if (res.error) throw res.error;
+    var sec = document.getElementById('cfg-kds-section');
+    if (sec) sec.style.display = checked ? 'block' : 'none';
+    try {
+      var o = JSON.parse(localStorage.getItem('pw_estab') || '{}');
+      o.usa_setores = checked;
+      localStorage.setItem('pw_estab', JSON.stringify(o));
+      if (window._estab) window._estab.usa_setores = checked;
+    } catch(e) {}
+    if (checked) { try { window.renderKdsLinks(estab); } catch(e) {} }
+    showToast(checked ? '🍳 KDS ativado!' : 'KDS desativado');
+  } catch(e) {
+    showToast('⚠️ Execute o SQL no Supabase primeiro.', 'error');
+    var chk = document.getElementById('cfg-usa-setores');
+    if (chk) { chk.checked = !checked; if (tr) tr.style.background = !checked?'#E8001C':'#ddd'; if (th) th.style.transform = !checked?'translateX(20px)':'translateX(0)'; }
+  }
+};
