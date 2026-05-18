@@ -4223,35 +4223,65 @@ window.renderKdsLinks = function(estab) {
   var wrap = document.getElementById('cfg-kds-links');
   var sec  = document.getElementById('cfg-kds-section');
   if (!wrap || !estab) return;
+  var slug = estab.slug || '';
+  var EM   = {cozinha:'🍳',bar:'🥤',sobremesa:'🍰',cafeteria:'☕',grill:'🔥',padaria:'🥖',pizza:'🍕',sushi:'🍣',geral:'📋'};
+
+  // Mostra seção imediatamente
+  if (sec) sec.style.display = estab.usa_setores ? 'block' : 'none';
+  if (!estab.usa_setores) return;
+
+  // Carrega setores configurados nos produtos (async, enriquece depois)
   getSupa().from('produtos').select('setor').eq('estabelecimento_id', estab.id).eq('disponivel', true)
     .then(function(res) {
-      var data = res.data, error = res.error;
-      if (error) {
-        wrap.innerHTML = '<div style="font-size:.73rem;color:#c00;background:#fff0f0;padding:10px;border-radius:8px">⚠️ Execute o SQL no Supabase:<br><code>ALTER TABLE produtos ADD COLUMN IF NOT EXISTS setor text;</code></div>';
-        return;
-      }
-      var setores = [...new Set((data||[]).map(function(p){return p.setor;}).filter(Boolean).map(function(s){return s.toLowerCase();}))].sort();
-      if (sec) sec.style.display = estab.usa_setores ? 'block' : 'none';
-      if (!setores.length) {
-        wrap.innerHTML = '<div style="font-size:.73rem;color:#aaa;line-height:1.7">Nenhum produto com setor ainda.<br>Edite produtos → campo <b>Setor KDS</b>.<br>Ex: <code>cozinha</code>, <code>bar</code>, <code>sobremesa</code></div>';
-        return;
-      }
-      var EM = {cozinha:'🍳',bar:'🥤',sobremesa:'🍰',cafeteria:'☕',grill:'🔥',padaria:'🥖',pizza:'🍕',sushi:'🍣',geral:'📋'};
-      var slug = estab.slug || '';
-      wrap.innerHTML = setores.map(function(s) {
+      var detectados = res.error ? [] :
+        [...new Set((res.data||[]).map(function(p){return p.setor;}).filter(Boolean).map(function(s){return s.toLowerCase();}))].sort();
+
+      function makeCard(s) {
         var url   = 'https://pediway.com.br/kds/' + s + '?loja=' + slug;
         var label = s.charAt(0).toUpperCase() + s.slice(1);
         return '<div style="background:#faf8f5;border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px">'
           + '<div style="display:flex;align-items:center;gap:8px">'
           + '<span style="font-size:1.1rem">' + (EM[s]||'🏷️') + '</span>'
-          + '<div style="flex:1;min-width:0"><div style="font-size:.78rem;font-weight:800;color:#333;text-transform:capitalize">' + label + '</div>'
+          + '<div style="flex:1;min-width:0"><div style="font-size:.78rem;font-weight:800;color:#333">' + label + '</div>'
           + '<div style="font-size:.6rem;color:#aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + url + '</div></div></div>'
           + '<div style="display:flex;gap:6px">'
           + '<a href="' + url + '" target="_blank" style="flex:1;background:#E8001C;color:#fff;border:none;border-radius:8px;padding:9px 12px;font-family:Poppins,sans-serif;font-size:.75rem;font-weight:800;cursor:pointer;text-align:center;text-decoration:none;display:block">📺 Abrir painel ' + label + '</a>'
-          + '<button onclick="navigator.clipboard.writeText('' + url + '').then(function(){showToast('✅ Link copiado!');})" style="border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:Poppins,sans-serif;font-size:.75rem;font-weight:700;color:#555;cursor:pointer;background:#fff;flex-shrink:0">Copiar</button>'
+          + '<button onclick="navigator.clipboard.writeText('' + url + '').then(function(){showToast('✅ Copiado!');})" style="border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:Poppins,sans-serif;font-size:.75rem;font-weight:700;color:#555;cursor:pointer;background:#fff;flex-shrink:0">Copiar</button>'
           + '</div></div>';
-      }).join('');
+      }
+
+      var html = '';
+
+      if (detectados.length) {
+        // Setores detectados dos produtos
+        html += detectados.map(makeCard).join('');
+      } else {
+        // Sem produtos com setor — mostra atalhos rápidos padrão
+        html += '<div style="font-size:.72rem;color:#888;margin-bottom:8px;font-style:italic">Nenhum produto com setor cadastrado ainda — use os atalhos abaixo para acessar o KDS:</div>';
+        ['cozinha','bar','sobremesa'].forEach(function(s){ html += makeCard(s); });
+        html += '<div style="font-size:.65rem;color:#aaa;margin-top:4px;line-height:1.6">Para filtrar pedidos por setor, edite cada produto e preencha o campo <b>Setor KDS</b>.</div>';
+      }
+
+      // Campo de acesso rápido customizado
+      html += '<div style="border-top:1px solid var(--border);padding-top:10px;margin-top:2px">'
+        + '<div style="font-size:.7rem;font-weight:700;color:#555;margin-bottom:6px">🔗 Abrir setor personalizado</div>'
+        + '<div style="display:flex;gap:6px">'
+        + '<input id="kds-setor-custom" type="text" placeholder="ex: pizzas" style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-family:Poppins,sans-serif;font-size:.78rem;outline:none" oninput="this.value=this.value.toLowerCase()" onkeydown="if(event.key==='Enter')abrirKdsCustom()">'
+        + '<button onclick="abrirKdsCustom()" style="background:#E8001C;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-family:Poppins,sans-serif;font-size:.78rem;font-weight:800;cursor:pointer;flex-shrink:0">Abrir</button>'
+        + '</div></div>';
+
+      wrap.innerHTML = html;
     });
+};
+
+window.abrirKdsCustom = function() {
+  var inp = document.getElementById('kds-setor-custom');
+  var estab = getEstab();
+  if (!inp || !estab) return;
+  var s = (inp.value||'').trim().toLowerCase();
+  if (!s) { showToast('Digite o nome do setor.', 'error'); return; }
+  var url = 'https://pediway.com.br/kds/' + s + '?loja=' + (estab.slug||'');
+  window.open(url, '_blank');
 };
 
 window.toggleUsaSetores = async function(checked) {
