@@ -2520,7 +2520,7 @@ canvas, [data-touch="free"] { touch-action: none !important; }
                     🍳 Painel KDS por setor
                     <span style="background:#E8001C;color:#fff;padding:1px 8px;border-radius:50px;font-size:.55rem;font-weight:900">PRO</span>
                   </div>
-                  <div style="font-size:.68rem;color:#aaa;margin-top:3px;line-height:1.5">Exibe pedidos separados por setor (cozinha, bar, etc.) em painéis independentes</div>
+                  <div style="font-size:.68rem;color:#aaa;margin-top:3px;line-height:1.5">Pedidos separados por setor em painéis independentes</div>
                 </div>
                 <label style="position:relative;display:inline-block;width:46px;height:26px;flex-shrink:0;cursor:pointer">
                   <input type="checkbox" id="cfg-usa-setores" onchange="toggleUsaSetores(this.checked)" style="opacity:0;width:0;height:0;position:absolute">
@@ -2529,11 +2529,12 @@ canvas, [data-touch="free"] { touch-action: none !important; }
                 </label>
               </div>
 
-              <!-- Links dos painéis -->
-              <div id="cfg-kds-section" style="display:none;margin-top:14px">
-                <div style="font-size:.72rem;font-weight:700;color:#555;margin-bottom:8px">📺 Links dos painéis KDS</div>
-                <div id="cfg-kds-links" style="display:flex;flex-direction:column;gap:8px"></div>
-                <div style="font-size:.63rem;color:#aaa;margin-top:7px;line-height:1.6">Abra cada link num tablet ou TV na área correspondente</div>
+              <!-- Botão Acessar Painéis — aparece só quando KDS está ativo -->
+              <div id="cfg-kds-section" style="display:none;margin-top:12px">
+                <button onclick="abrirKdsPaineis()" style="width:100%;background:#E8001C;color:#fff;border:none;border-radius:10px;padding:13px;font-family:'Poppins',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s" onmouseover="this.style.background='#C0001A'" onmouseout="this.style.background='#E8001C'">
+                  📺 Acessar Painéis KDS
+                </button>
+                <div id="cfg-kds-links" style="display:flex;flex-direction:column;gap:7px;margin-top:10px"></div>
               </div>
             </div>
 
