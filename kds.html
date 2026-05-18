@@ -237,14 +237,36 @@ function tempo(t){const s=Math.floor((Date.now()-new Date(t))/1000);if(s<60)retu
 function render(){
   const main=$('main'),empty=$('empty'),cnt=$('hdr-count');
   const s=SETOR_ATIVO;
-  const ord={pendente:0,aceito:1,preparando:2,pronto:3};
-  const ativos=PEDIDOS
-    .filter(p=>filtrarItens(p.itens||[],s).length>0)
+  const ord={pendente:0,aceito:1,preparando:2};
+
+  const todos=PEDIDOS.filter(p=>filtrarItens(p.itens||[],s).length>0);
+  const ativos=todos.filter(p=>getStSetor(p,s)!=='pronto')
     .sort((a,b)=>{const sa=getStSetor(a,s),sb=getStSetor(b,s);return sa!==sb?(ord[sa]||0)-(ord[sb]||0):new Date(a.created_at)-new Date(b.created_at);});
-  main.innerHTML=ativos.map(p=>cardHTML(p,s)).join('');
-  const vis=ativos.filter(p=>getStSetor(p,s)!=='pronto');
-  if(cnt) cnt.textContent=vis.length;
-  empty.classList.toggle('show',ativos.length===0);
+  const prontos=todos.filter(p=>getStSetor(p,s)==='pronto')
+    .sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,6);
+
+  let html='';
+
+  // Seção ativos
+  if(ativos.length){
+    html+=ativos.map(p=>cardHTML(p,s)).join('');
+  }
+
+  // Divisor + prontos
+  if(prontos.length){
+    html+=`<div style="grid-column:1/-1;display:flex;align-items:center;gap:10px;margin:4px 0">
+      <div style="flex:1;height:1px;background:rgba(255,255,255,.08)"></div>
+      <div style="font-size:.65rem;font-weight:800;color:rgba(255,255,255,.25);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap">✅ Concluídos</div>
+      <div style="flex:1;height:1px;background:rgba(255,255,255,.08)"></div>
+    </div>`;
+    html+=prontos.map(p=>cardHTML(p,s)).join('');
+  }
+
+  main.innerHTML=html;
+  if(cnt) cnt.textContent=ativos.length;
+  empty.classList.toggle('show',todos.length===0);
+
+  // Timers só para ativos
   Object.values(_timers).forEach(t=>clearInterval(t));_timers={};
   ativos.forEach(p=>{
     _timers[p.id]=setInterval(()=>{
@@ -265,6 +287,9 @@ function cardHTML(p,setor){
   const BL={pendente:'🔴 Novo',aceito:'🟡 Aceito',preparando:'🔵 Preparando',pronto:'✅ Pronto'};
   const BC={pendente:'bp',aceito:'ba',preparando:'bpr',pronto:'bpn'};
   const items=itens.map(it=>`<div class="ck-item"><div class="ck-qty">${it.qtd}×</div><div style="flex:1"><div class="ck-nome">${it.nome}</div>${it.obs?`<div class="ck-obs">${it.obs}</div>`:''}</div></div>`).join('');
+  // Prontos: mostra horário fixo, não timer
+  const isPronto=st==='pronto';
+  const horaFixa=isPronto?new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):null;
   let btns='';
   if(st==='pendente')     btns=`<button class="ck-btn cb-aceitar"  onclick="aceitar('${p.id}')">✓ Aceitar e imprimir</button>`;
   else if(st==='aceito')  btns=`<button class="ck-btn cb-preparar" onclick="atualizarSt('${p.id}','preparando')">🔥 Em preparo</button><button class="ck-btn cb-print" onclick="imprimir('${p.id}')">🖨</button>`;
@@ -272,7 +297,10 @@ function cardHTML(p,setor){
   else                    btns=`<button class="ck-btn cb-sec" onclick="atualizarSt('${p.id}','preparando')" style="flex:1">↩ Reabrir</button>`;
   return `<div class="kds-card s-${st}" id="kc-${p.id}">
     <div class="ck-hdr"><div class="ck-hdr-l"><div class="ck-num">#${num}</div><div class="ck-info"><div class="ck-cli">${p.cliente_nome||'Cliente'}</div><div class="ck-loc">${local}</div></div></div>
-    <div class="ck-hdr-r"><div class="ck-badge ${BC[st]||'bp'}">${BL[st]||'🔴 Novo'}</div><div class="ck-timer ${min>=12?'urg':''}" id="tm-${p.id}">${tempo(p.created_at)}</div></div></div>
+    <div class="ck-hdr-r"><div class="ck-badge ${BC[st]||'bp'}">${BL[st]||'🔴 Novo'}</div>${isPronto
+  ? `<div class="ck-timer" style="color:var(--grn)">${horaFixa}</div>`
+  : `<div class="ck-timer ${min>=12?'urg':''}" id="tm-${p.id}">${tempo(p.created_at)}</div>`
+}</div></div>
     <div class="ck-items">${items}</div>
     ${p.observacao?`<div class="ck-obs-g">${p.observacao}</div>`:''}
     <div class="ck-ftr">${btns}</div>
