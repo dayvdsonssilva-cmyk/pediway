@@ -282,21 +282,6 @@ function preencherConfig(estab) {
   const ctsToggle = $('cfg-taxa-servico');
   const ctsWrap   = document.getElementById('cfg-taxa-servico-wrap');
   const ctsPerc   = $('cfg-perc-servico');
-
-  // KDS toggle — inicializa visual
-  try {
-    const _kdsChk   = $('cfg-usa-setores');
-    const _kdsTrack = document.getElementById('kds-track');
-    const _kdsThumb = document.getElementById('kds-thumb');
-    if(_kdsChk) {
-      _kdsChk.checked = !!estab.usa_setores;
-      if(_kdsTrack) _kdsTrack.style.background = estab.usa_setores ? '#E8001C' : '#ddd';
-      if(_kdsThumb) _kdsThumb.style.transform   = estab.usa_setores ? 'translateX(22px)' : 'translateX(0)';
-      const _sec = $('cfg-kds-section');
-      if(_sec) _sec.style.display = estab.usa_setores ? 'block' : 'none';
-      if(estab.usa_setores) setTimeout(()=>{ try{window.renderKdsLinks&&window.renderKdsLinks(estab);}catch(e){} },500);
-    }
-  } catch(e){}
   if (ctsToggle) ctsToggle.checked = estab.taxa_servico === true;
   if (ctsWrap)   ctsWrap.style.display = estab.taxa_servico ? 'block' : 'none';
   if (ctsPerc)   ctsPerc.value = estab.perc_servico || 10;
@@ -570,11 +555,6 @@ export async function salvarConfig() {
   const msg_nota         = $('cfg-msg-nota')?.value.trim() || null;
 
   if (!nome || !slug) return showToast('Preencha nome e link.', 'error');
-
-  try {
-    const _kc=$('cfg-usa-setores');
-    if(_kc) await getSupa().from('estabelecimentos').update({usa_setores:_kc.checked}).eq('id',estab.id);
-  } catch(e){}
 
   const btn = document.querySelector('[onclick="salvarConfig()"]');
   if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
@@ -1143,9 +1123,8 @@ export async function editarItem(id) {
             precoOrigU = precoBase;
             precoFinalU = parseFloat((precoBase * (1 - desconto_pct_u / 100)).toFixed(2));
           }
-          const _setorUpd = ($('item-setor')?.value||'').trim().toLowerCase()||null;
-          const _upd = { nome:$('item-nome')?.value.trim(), descricao:$('item-desc')?.value.trim(), categoria:$('item-cat')?.value.trim().toUpperCase(), preco:precoFinalU, preco_original:precoOrigU, foto_url, fotos_urls, emoji:emojiSel, promocao, em_promocao:promocao&&desconto_pct_u>0, desconto_percent:promocao?desconto_pct_u:0 };
-          if(_setorUpd!==undefined) _upd.setor=_setorUpd;
+          const _setorUpd=($('item-setor')?.value||'').trim().toLowerCase()||null;
+          const _upd={nome:$('item-nome')?.value.trim(),descricao:$('item-desc')?.value.trim(),categoria:$('item-cat')?.value.trim().toUpperCase(),preco:precoFinalU,preco_original:precoOrigU,foto_url,fotos_urls,emoji:emojiSel,promocao,em_promocao:promocao&&desconto_pct_u>0,desconto_percent:promocao?desconto_pct_u:0,setor:_setorUpd};
           const { error } = await getSupa().from('produtos').update(_upd).eq('id', id);
           if (error) throw new Error(error.message);
           await renderCardapio(); fecharModal(); showToast('Item atualizado!');
@@ -1353,12 +1332,12 @@ window.aceitarPedido = async function(id) {
   const { data: ped } = await getSupa().from('pedidos').select('*').eq('id', id).maybeSingle();
   const isMesa = ped && (ped.endereco||'').startsWith('No local');
 
+  // Monta setores_status automaticamente se os itens têm setor definido
   const _upds = { status:'preparo' };
   try {
-    const _estabLocal = getEstab();
-    if(_estabLocal?.usa_setores && Array.isArray(ped?.itens)) {
+    if(Array.isArray(ped?.itens)) {
       const _sm={};
-      ped.itens.forEach(it=>{ const s=(it.setor||'geral').toLowerCase(); if(!_sm[s])_sm[s]='pendente'; });
+      ped.itens.forEach(it=>{ if(it.setor){const s=it.setor.toLowerCase(); if(!_sm[s])_sm[s]='pendente';} });
       if(Object.keys(_sm).length) _upds.setores_status=_sm;
     }
   } catch(e){}
@@ -4197,57 +4176,3 @@ function renderHistoricoCaixa() {
   }
 }
 window.renderHistoricoCaixa = renderHistoricoCaixa;
-
-
-// ═══════════════════════════════════════════════════════════
-// KDS SYSTEM — Funções globais
-// ═══════════════════════════════════════════════════════════
-window.renderKdsLinks = function(estab) {
-  const wrap=$('cfg-kds-links'), sec=$('cfg-kds-section');
-  if(!wrap||!estab) return;
-  getSupa().from('produtos').select('setor').eq('estabelecimento_id',estab.id).eq('disponivel',true)
-    .then(({data,error})=>{
-      if(error){
-        wrap.innerHTML='<div style="font-size:.75rem;color:#c00;background:#fff0f0;padding:10px;border-radius:8px">⚠️ Rode o SQL no Supabase primeiro:<br><code>ALTER TABLE produtos ADD COLUMN IF NOT EXISTS setor text;</code></div>';
-        return;
-      }
-      const setores=[...new Set((data||[]).map(p=>p.setor).filter(Boolean).map(s=>s.toLowerCase()))].sort();
-      if(sec) sec.style.display=estab.usa_setores?'block':'none';
-      const EM={cozinha:'🍳',bar:'🥤',sobremesa:'🍰',cafeteria:'☕',grill:'🔥',padaria:'🥖',pizza:'🍕',sushi:'🍣',geral:'📋'};
-      if(!setores.length){
-        wrap.innerHTML='<div style="font-size:.75rem;color:#aaa;line-height:1.7">Nenhum produto com setor ainda.<br>Edite um produto → campo <b>Setor (KDS)</b>.<br>Exemplos: <code>cozinha</code>, <code>bar</code>, <code>sobremesa</code></div>';
-        return;
-      }
-      const slug=estab.slug||'';
-      wrap.innerHTML=setores.map(s=>{
-        const url=`https://pediway.com.br/kds/${s}?loja=${slug}`;
-        return `<div style="display:flex;align-items:center;gap:8px;background:#faf8f5;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px">
-          <span style="font-size:1.1rem">${EM[s]||'🏷️'}</span>
-          <div style="flex:1;min-width:0"><div style="font-size:.72rem;font-weight:800;color:#555;text-transform:uppercase">${s}</div>
-          <div style="font-size:.63rem;color:#aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${url}</div></div>
-          <button onclick="navigator.clipboard.writeText('${url}').then(()=>showToast('✅ Link copiado!'))"
-            style="background:none;border:1.5px solid var(--border);border-radius:8px;padding:5px 10px;font-family:'Poppins',sans-serif;font-size:.7rem;font-weight:700;color:#555;cursor:pointer;flex-shrink:0">Copiar</button>
-        </div>`;
-      }).join('');
-    });
-};
-
-window.toggleUsaSetores = async function(checked) {
-  const estab=getEstab(); if(!estab) return;
-  const track=document.getElementById('kds-track'), thumb=document.getElementById('kds-thumb');
-  if(track) track.style.background=checked?'#E8001C':'#ddd';
-  if(thumb) thumb.style.transform=checked?'translateX(22px)':'translateX(0)';
-  try {
-    const{error}=await getSupa().from('estabelecimentos').update({usa_setores:checked}).eq('id',estab.id);
-    if(error) throw error;
-    const sec=$('cfg-kds-section');
-    if(sec) sec.style.display=checked?'block':'none';
-    try{ const o=JSON.parse(localStorage.getItem('pw_estab')||'{}'); o.usa_setores=checked; localStorage.setItem('pw_estab',JSON.stringify(o)); if(window._estab) window._estab.usa_setores=checked; }catch(e){}
-    if(checked) { try{ window.renderKdsLinks(estab); }catch(e){} }
-    showToast(checked?'🍳 KDS ativado!':'KDS desativado');
-  } catch(e) {
-    showToast('⚠️ Execute o SQL no Supabase primeiro.','error');
-    const chk=$('cfg-usa-setores'); if(chk){chk.checked=!checked;if(track)track.style.background=!checked?'#E8001C':'#ddd';if(thumb)thumb.style.transform=!checked?'translateX(22px)':'translateX(0)';}
-  }
-};
-window._toggleUsaSetoresReal = window.toggleUsaSetores;
