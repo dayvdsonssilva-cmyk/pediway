@@ -206,10 +206,7 @@ function renderTabs(){
   bar.classList.add('show');
   const cnt={};
   SETORES.forEach(s=>{
-    cnt[s]=PEDIDOS.filter(p=>{
-      if(getStSetor(p,s)==='pronto') return false;
-      return filtrarItens(p.itens||[],s).length>0;
-    }).length;
+    cnt[s]=PEDIDOS.filter(p=>getStSetor(p,s)!=='pronto'&&deveExibir(p,s)).length;
   });
   bar.innerHTML=SETORES.map(s=>`
     <button class="stab${s===SETOR_ATIVO?' active':''}" onclick="trocarSetor('${s}')">
@@ -221,14 +218,30 @@ function renderTabs(){
 window.trocarSetor=function(s){SETOR_ATIVO=s;renderTabs();render();};
 
 // FILTROS
+// Retorna os itens visíveis neste setor
 function filtrarItens(itens,setor){
   if(!Array.isArray(itens))return[];
-  // Só mostra itens que têm setor EXPLICITAMENTE igual ao setor atual
-  // Se nenhum item tem setor definido, não mostra em nenhum painel específico
   const comSetor=itens.filter(it=>it.setor);
-  if(!comSetor.length)return []; // sem setor definido → não aparece em nenhum KDS
+  if(!comSetor.length)return itens; // sem setor definido → fallback: mostra tudo
   return comSetor.filter(it=>it.setor.toLowerCase()===setor.toLowerCase());
 }
+
+// Decide se um pedido deve aparecer neste painel KDS
+function deveExibir(p,setor){
+  // 1ª prioridade: setores_status (criado ao aceitar no dashboard)
+  if(p.setores_status && Object.keys(p.setores_status).length>0){
+    return p.setores_status[setor]!==undefined;
+  }
+  // 2ª: itens com setor explícito
+  const itens=p.itens||[];
+  const comSetor=itens.filter(it=>it.setor);
+  if(comSetor.length>0){
+    return comSetor.some(it=>it.setor.toLowerCase()===setor.toLowerCase());
+  }
+  // 3ª: sem informação de setor → mostra em TODOS os painéis (nada se perde)
+  return true;
+}
+
 function getStSetor(p,setor){
   if(p.setores_status&&p.setores_status[setor]!==undefined)return p.setores_status[setor];
   const m={novo:'pendente',preparo:'preparando',pronto:'pronto',recusado:'pronto'};
@@ -244,8 +257,7 @@ function render(){
   const s=SETOR_ATIVO;
   const ord={pendente:0,aceito:1,preparando:2};
 
-  // Só mostra pedidos que têm pelo menos 1 item do setor atual
-  const todos=PEDIDOS.filter(p=>filtrarItens(p.itens||[],s).length>0);
+  const todos=PEDIDOS.filter(p=>deveExibir(p,s));
   const ativos=todos.filter(p=>getStSetor(p,s)!=='pronto')
     .sort((a,b)=>{const sa=getStSetor(a,s),sb=getStSetor(b,s);return sa!==sb?(ord[sa]||0)-(ord[sb]||0):new Date(a.created_at)-new Date(b.created_at);});
   const prontos=todos.filter(p=>getStSetor(p,s)==='pronto')
@@ -373,8 +385,7 @@ function conectar(){
     .on('postgres_changes',{event:'*',schema:'public',table:'pedidos',filter:`estabelecimento_id=eq.${ESTAB.id}`},({eventType,new:novo,old:antigo})=>{
       if(eventType==='INSERT'){
         PEDIDOS.unshift(novo);render();renderTabs();
-        // Só bipa se tem itens deste setor
-        if(filtrarItens(novo.itens||[],SETOR_ATIVO).length>0){
+        if(deveExibir(novo,SETOR_ATIVO)){
           beep();toast('🔔 Novo pedido #'+(novo.id||'').slice(-4).toUpperCase());
         }
       } else if(eventType==='UPDATE'){
