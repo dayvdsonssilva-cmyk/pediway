@@ -22,6 +22,12 @@
       ]
     }
   ],
+  "functions": {
+    "api/scan-menu.js": {
+      "runtime": "nodejs18.x",
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     { "source": "/sounds/:path*",  "destination": "/sounds/:path*" },
     { "source": "/notificacao.mp3","destination": "/notificacao.mp3" },
@@ -40,10 +46,5 @@
     { "source": "/comandas/:slug", "destination": "/garcom.html" },
     { "source": "/splash.mp4",     "destination": "/splash.mp4" },
     { "source": "/:slug",          "destination": "/cliente.html" }
-  ],
-  "functions": {
-    "api/scan-menu.js": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }
