@@ -214,20 +214,33 @@ h3 { font-size:1.2rem; font-weight:700; color:#1a1a1a; }
 
 /* Previne salto de scroll ao trocar abas */
 #s-dash {
-  display:flex;
-  flex-direction:column;
-  height:100vh;
-  overflow:hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  position: fixed;       /* impede window scroll completamente */
+  inset: 0;
+  width: 100%;
 }
 .tab-content-wrap {
-  flex:1;
+  flex: 1;
   overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
-  overflow-anchor: none;
+  overflow-anchor: none;       /* sem scroll anchoring automático */
+  scroll-behavior: auto;       /* sem smooth scroll = sem delay visual */
+  will-change: scroll-position;
 }
-.tab-content { min-height:80vh; }
-.tab-content.active { animation:none; }
+/* Tabs: sem reflow, sem transform, sem salto */
+.tab-content {
+  display: none;
+  min-height: 100%;
+  contain: layout style;       /* isola o layout de cada aba */
+}
+.tab-content.active {
+  display: block;
+  transform: none !important;  /* garante que não há transform residual */
+}
 
 .dash-container { max-width:1100px; margin:0 auto; padding:28px 5%; box-sizing:border-box; }
 
@@ -851,8 +864,9 @@ h3 { font-size:1.2rem; font-weight:700; color:#1a1a1a; }
 }
 
 /* ═══ SMOOTH TRANSITIONS ══════════════════════════════════════ */
-.tab-content { animation: fadeIn 0.2s ease; }
-@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+/* fadeIn: apenas opacidade, SEM transform para evitar layout shift */
+.tab-content.active { animation: tabFadeIn 0.12s ease; }
+@keyframes tabFadeIn { from { opacity:0; } to { opacity:1; } }
 .pedido-novo-card { transition: all 0.25s ease; }
 .produto-card { transition: box-shadow 0.2s ease, transform 0.15s ease; }
 .btn-primary { transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease; }
@@ -3997,6 +4011,7 @@ function setMobileNav(id) {
     document.body.style.position = 'relative';
 
     document.querySelectorAll('.tab-content').forEach(function(t){ t.classList.remove('active'); });
+    var _tw = document.querySelector('.tab-content-wrap'); if(_tw){ _tw.scrollTop = 0; _tw.style.scrollBehavior = 'auto'; }
     document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
     var target = document.getElementById('tab-' + tabId);
     if (target) target.classList.add('active');
@@ -4068,6 +4083,7 @@ function setMobileNav(id) {
     document.body.style.position = 'relative';
 
     document.querySelectorAll('.tab-content').forEach(function(t){ t.classList.remove('active'); });
+    var _tw = document.querySelector('.tab-content-wrap'); if(_tw){ _tw.scrollTop = 0; _tw.style.scrollBehavior = 'auto'; }
     document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
     var target = document.getElementById('tab-' + tabId);
     if (target) target.classList.add('active');
