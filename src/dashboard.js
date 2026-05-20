@@ -4464,18 +4464,18 @@ function iaRenderLista() {
   lista.innerHTML = _iaItens.map(function(it) {
     const preco = it.preco > 0 ? 'R$ ' + Number(it.preco).toFixed(2).replace('.', ',') : '—';
     return '<label style="display:flex;align-items:flex-start;gap:10px;background:#f8f8ff;border:1.5px solid '
-      + (it._sel ? '#c7d2fe' : '#e5e7eb') + ';border-radius:10px;padding:10px 12px;cursor:pointer">'
+      + (it._sel ? '#ffcccc' : '#f0f0f0') + ';border-radius:10px;padding:10px 12px;cursor:pointer">'
       + '<input type="checkbox" data-iaid="' + it._id + '" '
       + (it._sel ? 'checked' : '')
-      + ' onchange="iaToggleItem(' + it._id + ',this.checked)" style="margin-top:3px;accent-color:#6366f1;flex-shrink:0">'
+      + ' onchange="iaToggleItem(' + it._id + ',this.checked)" style="margin-top:3px;accent-color:#E8001C;flex-shrink:0">'
       + '<div style="flex:1;min-width:0">'
       + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;flex-wrap:wrap">'
       + '<span>' + (it.emoji || '🍽️') + '</span>'
       + '<span style="font-size:.83rem;font-weight:800;color:#111">' + it.nome + '</span>'
-      + '<span style="background:#e0e7ff;color:#6366f1;font-size:.56rem;font-weight:800;padding:1px 7px;border-radius:50px;margin-left:auto">'
+      + '<span style="background:#e0e7ff;color:#E8001C;font-size:.56rem;font-weight:800;padding:1px 7px;border-radius:50px;margin-left:auto">'
       + (it.categoria || 'OUTROS') + '</span></div>'
       + (it.descricao ? '<div style="font-size:.7rem;color:#888;margin-bottom:3px">' + it.descricao + '</div>' : '')
-      + '<div style="font-size:.75rem;font-weight:700;color:#6366f1">' + preco + '</div>'
+      + '<div style="font-size:.75rem;font-weight:700;color:#E8001C">' + preco + '</div>'
       + '</div></label>';
   }).join('');
 }
