@@ -189,7 +189,8 @@
     <div id="gc-hist-panel" class="panel" style="display:none;flex-direction:column">
       <div class="hist-hdr">
         <span class="hist-hdr-lbl">Pedidos da mesa</span>
-        <button class="btn-print" onclick="gcImprimir()">&#128424; Imprimir</button>
+        <button class="btn-print" onclick="gcImprimir()" title="Imprimir comanda completa">&#128424; Imprimir</button>
+        <button class="btn-print" id="btn-thermal" onclick="conectarImpressora()" title="Conectar impressora térmica ESC/POS" style="background:#f0f6ff;border-color:#3b82f6;color:#3b82f6;display:none">🖨 Térmica</button>
       </div>
       <div id="gc-historico"></div>
       <div class="gc-actions"><button class="btn-fechar" onclick="gcFecharComanda()">Fechar comanda &#9989;</button></div>
@@ -339,7 +340,17 @@ function iniciarRealtime(){
       if(!['novo','preparo'].includes(p.status))return;
       const key=(p.endereco||'').split('—')[1]?.trim();if(!key)return;
       if(!pedMesas[key])pedMesas[key]=[];
-      if(!pedMesas[key].find(x=>x.id===p.id)){pedMesas[key].push(p);renderMesas();toast('Novo pedido na '+key+'!');if(mesaAtual===key)renderHistorico();}
+      if(!pedMesas[key].find(x=>x.id===p.id)){
+        pedMesas[key].push(p);
+        renderMesas();
+        toast('Novo pedido na '+key+'!');
+        if(mesaAtual===key)renderHistorico();
+        // Impressão automática com corte por setor
+        if(typeof gcImprimirSetores==='function' && Array.isArray(p.itens) && p.itens.length){
+          const itensComSetor=p.itens.filter(it=>it.setor);
+          if(itensComSetor.length>0) gcImprimirSetores(p, estab?.nome||'');
+        }
+      }
     })
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'pedidos'},payload=>{
       const p=payload.new;if(p.estabelecimento_id!==estab.id)return;
@@ -451,7 +462,7 @@ window.gcAdd=function(id,nome,preco,emoji){
   const precoSeguro=prodReal?Number(prodReal.preco):Number(preco)||0;
   const nomeSeguro=prodReal?prodReal.nome:String(nome||'').slice(0,120);
   const ex=carrinhos[mesaAtual].find(x=>x.id===id);
-  if(ex)ex.qtd++;else carrinhos[mesaAtual].push({id,nome:nomeSeguro,preco:precoSeguro,emoji:String(emoji||'🍽️').slice(0,10),setor:prodReal?.setor||null,qtd:1});
+  if(ex)ex.qtd++;else carrinhos[mesaAtual].push({id,nome:nomeSeguro,preco:precoSeguro,emoji:String(emoji||'🍽️').slice(0,10),qtd:1});
   renderCarrinho();
 };
 window.gcRm=function(id){
@@ -652,8 +663,288 @@ window.gcImprimir=function(){
   w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),400);
 };
 
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ESC/POS — Impressão térmica com corte por setor
+// Compatível: Epson, Elgin, Bematech, XP e similares
+// ═══════════════════════════════════════════════════════════════════════════
+
+const SETOR_EM = {
+  cozinha:'🍔', bar:'🥤', sobremesa:'🍰', cafeteria:'☕',
+  grill:'🔥', padaria:'🥖', pizza:'🍕', sushi:'🍣', caixa:'🏦', geral:'📋'
+};
+
+// ── Constantes ESC/POS ──────────────────────────────────────────────────────
+const EP = {
+  INIT:         [0x1B, 0x40],
+  BOLD_ON:      [0x1B, 0x45, 0x01],
+  BOLD_OFF:     [0x1B, 0x45, 0x00],
+  CENTER:       [0x1B, 0x61, 0x01],
+  LEFT:         [0x1B, 0x61, 0x00],
+  RIGHT:        [0x1B, 0x61, 0x02],
+  DBL_HEIGHT:   [0x1B, 0x21, 0x10],
+  DBL_BOTH:     [0x1B, 0x21, 0x30],
+  NORMAL:       [0x1B, 0x21, 0x00],
+  UNDERLINE_ON: [0x1B, 0x2D, 0x01],
+  UNDERLINE_OFF:[0x1B, 0x2D, 0x00],
+  CUT_PARTIAL:  [0x1D, 0x56, 0x01],   // Corte parcial (Epson/Elgin/XP)
+  CUT_TOTAL:    [0x1D, 0x56, 0x00],   // Corte total
+  CUT_BEMATECH: [0x1D, 0x56, 0x41, 0x05], // Bematech MP-4200
+  FEED: n =>    [0x1B, 0x64, n],
+  LF:           [0x0A],
+};
+
+// Converte string para bytes Latin-1 (padrão impressoras térmicas)
+function strBytes(str) {
+  const out = [];
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    out.push(code > 255 ? 0x3F : code); // '?' para caracteres fora do Latin-1
+  }
+  return out;
+}
+
+// Centraliza texto em 32 colunas
+function center32(str) {
+  const n = Math.max(0, Math.floor((32 - str.length) / 2));
+  return ' '.repeat(n) + str + '\n';
+}
+
+// Linha separadora
+function sepLine(char = '=', len = 32) {
+  return char.repeat(len) + '\n';
+}
+
+// ── Builder de bloco por setor ──────────────────────────────────────────────
+function buildSetorBlock(pedNum, setor, itens, obsGeral, nomeEstab, isFirst) {
+  const bytes = [];
+  const push = (...cmds) => cmds.forEach(cmd =>
+    Array.isArray(cmd) ? bytes.push(...cmd) : bytes.push(...strBytes(cmd))
+  );
+
+  const em = SETOR_EM[setor.toLowerCase()] || '🏷️';
+  const setorLabel = setor.toUpperCase();
+
+  if (isFirst) push(EP.INIT);
+
+  // Cabeçalho
+  push(EP.CENTER, EP.BOLD_ON);
+  push(strBytes('PEDIWAY')); push(EP.LF);
+  push(EP.NORMAL, strBytes(nomeEstab || 'Estabelecimento'), EP.LF);
+  push(EP.BOLD_OFF);
+  push(strBytes(sepLine('-')));
+
+  // Número do pedido + setor em destaque
+  push(EP.CENTER, EP.DBL_BOTH, EP.BOLD_ON);
+  push(strBytes('PEDIDO #' + pedNum), EP.LF);
+  push(EP.NORMAL, EP.BOLD_ON);
+  push(strBytes(center32(setorLabel)));
+  push(EP.BOLD_OFF, EP.LEFT);
+  push(strBytes(sepLine('=')));
+
+  // Itens
+  itens.forEach(it => {
+    const qtd  = Math.max(1, parseInt(it.qtd) || 1);
+    const nome = String(it.nome || '').slice(0, 28);
+    push(EP.BOLD_ON);
+    push(strBytes(qtd + 'x ' + nome + '\n'));
+    push(EP.BOLD_OFF);
+    if (it.obs) {
+      push(strBytes('   -> ' + String(it.obs).slice(0, 26) + '\n'));
+    }
+  });
+
+  // Observação geral do pedido
+  if (obsGeral) {
+    push(strBytes(sepLine('-')));
+    push(EP.BOLD_ON);
+    push(strBytes('OBS: ' + String(obsGeral).slice(0, 60) + '\n'));
+    push(EP.BOLD_OFF);
+  }
+
+  push(strBytes(sepLine('=')));
+  push(EP.FEED(3));
+
+  return bytes;
+}
+
+// ── Web Serial API: envia bytes para impressora USB/serial ──────────────────
+let _serialPort = null;
+
+async function getSerialPort() {
+  if (!navigator.serial) return null;
+  try {
+    if (_serialPort && _serialPort.readable) return _serialPort;
+    _serialPort = await navigator.serial.requestPort();
+    await _serialPort.open({ baudRate: 9600 });
+    return _serialPort;
+  } catch(e) { return null; }
+}
+
+async function enviarEscPos(blocos, model = 'epson') {
+  // model: 'epson'|'bematech'
+  const port = await getSerialPort();
+  if (!port) return false;
+
+  try {
+    const writer = port.writable.getWriter();
+    const cut = model === 'bematech' ? EP.CUT_BEMATECH : EP.CUT_PARTIAL;
+
+    for (let i = 0; i < blocos.length; i++) {
+      await writer.write(new Uint8Array(blocos[i]));
+      if (i < blocos.length - 1) {
+        // Corte parcial entre setores
+        await writer.write(new Uint8Array(cut));
+      }
+    }
+    // Corte total no final
+    const cutFinal = model === 'bematech' ? EP.CUT_BEMATECH : EP.CUT_TOTAL;
+    await writer.write(new Uint8Array([...EP.FEED(5), ...cutFinal]));
+    writer.releaseLock();
+    return true;
+  } catch(e) {
+    console.error('Erro ESC/POS:', e);
+    return false;
+  }
+}
+
+// ── Impressão HTML fallback (browser) ──────────────────────────────────────
+function htmlSetorBlock(pedNum, setor, itens, obsGeral, nomeEstab) {
+  const em = SETOR_EM[setor.toLowerCase()] || '🏷️';
+  const rows = itens.map(it => {
+    const qtd = Math.max(1, parseInt(it.qtd) || 1);
+    return '<div class="item-row"><span class="item-qtd">' + qtd + 'x</span>'
+      + '<span class="item-nome">' + esc(it.nome) + '</span></div>'
+      + (it.obs ? '<div class="item-obs">↳ ' + esc(it.obs) + '</div>' : '');
+  }).join('');
+  return '<div class="bloco-setor">'
+    + '<div class="bloco-header">'
+    + '<div class="pedido-num">PEDIDO #' + pedNum + '</div>'
+    + '<div class="setor-nome">' + em + ' ' + setor.toUpperCase() + '</div>'
+    + '</div>'
+    + '<div class="bloco-itens">' + rows + '</div>'
+    + (obsGeral ? '<div class="obs-geral">⚠️ OBS: ' + esc(obsGeral) + '</div>' : '')
+    + '</div>';
+}
+
+function imprimirSetoresHTML(blocos, nomeEstab) {
+  const css = `
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Courier New',monospace;font-size:13px;background:#fff;color:#000;width:80mm;margin:0 auto;padding:4mm}
+    .bloco-setor{margin-bottom:0;padding-bottom:0}
+    .bloco-header{text-align:center;border:3px solid #000;padding:8px 4px;margin-bottom:6px}
+    .pedido-num{font-size:16px;font-weight:900;letter-spacing:.04em}
+    .setor-nome{font-size:22px;font-weight:900;letter-spacing:.06em;margin-top:4px}
+    .bloco-itens{padding:4px 0}
+    .item-row{display:flex;gap:6px;padding:4px 0;border-bottom:1px dashed #ddd;font-size:14px;font-weight:700}
+    .item-qtd{color:#C0392B;font-weight:900;min-width:28px;flex-shrink:0}
+    .item-nome{flex:1}
+    .item-obs{font-size:11px;font-style:italic;color:#555;padding:1px 0 4px 34px}
+    .obs-geral{border:2px solid #000;padding:6px;margin-top:6px;font-size:12px;font-weight:700;background:#fffbe6}
+    .obs-geral::before{content:""}
+    .corte{
+      page-break-after: always;
+      border-top: 3px dashed #aaa;
+      margin: 8px 0;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .corte::before{content:"✂ CORTE";font-size:9px;font-weight:700;color:#aaa;letter-spacing:.1em;background:#fff;padding:0 6px}
+    .empresa{text-align:center;font-size:11px;color:#555;margin-bottom:8px;font-family:Arial,sans-serif}
+    .logo{text-align:center;font-size:16px;font-weight:900;font-family:Arial,sans-serif;margin-bottom:2px}
+    .logo span{color:#C0392B}
+    @media print{
+      body{width:100%;margin:0;padding:2mm}
+      .corte{page-break-after:always}
+    }
+  `;
+
+  const blocosHTML = blocos.map((b, i) => {
+    const sep = i < blocos.length - 1
+      ? '<div class="corte"></div>'
+      : '';
+    return '<div class="logo">PEDI<span>WAY</span></div>'
+      + '<div class="empresa">' + esc(nomeEstab||'') + '</div>'
+      + b + sep;
+  }).join('');
+
+  const w = window.open('', '_blank', 'width=320,height=700');
+  if (!w) { alert('Permita pop-ups para imprimir.'); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comanda</title>'
+    + '<style>' + css + '</style></head><body>' + blocosHTML + '</body></html>');
+  w.document.close();
+  w.focus();
+  setTimeout(() => w.print(), 400);
+}
+
+// ── Agrupa itens por setor ──────────────────────────────────────────────────
+function agruparPorSetor(itens) {
+  const grupos = {};
+  itens.forEach(it => {
+    const s = (it.setor || 'geral').toLowerCase();
+    if (!grupos[s]) grupos[s] = [];
+    grupos[s].push(it);
+  });
+  return grupos;
+}
+
+// ── Função principal: imprime comanda com separação por setor ───────────────
+window.gcImprimirSetores = async function(pedido, nomeEstab) {
+  if (!pedido) return;
+  const itens  = Array.isArray(pedido.itens) ? pedido.itens : [];
+  const pedNum = (pedido.id || '').slice(-4).toUpperCase() || '—';
+  const obs    = pedido.observacao || '';
+  if (!itens.length) return;
+
+  // Separa por setor (ou usa 'geral' se nenhum setor definido)
+  const grupos = agruparPorSetor(itens);
+  const setores = Object.keys(grupos);
+
+  // Ordem de impressão: cozinha → grill → pizza → bar → sobremesa → outros
+  const ORDEM = ['cozinha','grill','pizza','padaria','sobremesa','cafeteria','bar','caixa','geral'];
+  setores.sort((a, b) => {
+    const ia = ORDEM.indexOf(a), ib = ORDEM.indexOf(b);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  });
+
+  if (setores.length === 1 && setores[0] === 'geral') {
+    // Sem setores definidos — usa impressão normal (retrocompatível)
+    gcImprimir();
+    return;
+  }
+
+  // Tenta ESC/POS via Web Serial (silenciosamente, sem forçar)
+  if (navigator.serial && _serialPort) {
+    const escBlocos = setores.map((s, i) =>
+      buildSetorBlock(pedNum, s, grupos[s], obs, nomeEstab, i === 0)
+    );
+    const ok = await enviarEscPos(escBlocos);
+    if (ok) { toast('✅ Impresso!'); return; }
+  }
+
+  // Fallback: HTML com separadores visuais
+  const htmlBlocos = setores.map(s =>
+    htmlSetorBlock(pedNum, s, grupos[s], obs, nomeEstab)
+  );
+  imprimirSetoresHTML(htmlBlocos, nomeEstab);
+};
+
+// ── Botão para conectar impressora serial (opcional) ─────────────────────────
+window.conectarImpressora = async function() {
+  const port = await getSerialPort();
+  if (port) toast('🖨️ Impressora conectada!', '#3b82f6');
+  else toast('❌ Impressora não conectada', '#ef4444');
+};
+
 function toast(msg,cor='#22c55e'){const t=$('gc-toast');t.textContent=msg;t.style.background=cor;t.style.display='block';setTimeout(()=>t.style.display='none',3000);}
 
+// Mostra botão de impressora térmica se Web Serial disponível
+if('serial' in navigator){
+  const btn=document.getElementById('btn-thermal');
+  if(btn) btn.style.display='flex';
+}
 init();
 </script>
 </body>
