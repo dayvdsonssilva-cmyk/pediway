@@ -4299,3 +4299,167 @@ window.toggleUsaSetores = async function(checked) {
     if (chk) { chk.checked = !checked; if (tr) tr.style.background = !checked?'#E8001C':'#ddd'; if (th) th.style.transform = !checked?'translateX(20px)':'translateX(0)'; }
   }
 };
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ✨ CARDÁPIO EM SEGUNDOS — Scanner IA
+// ══════════════════════════════════════════════════════════════════════════════
+
+var _iaImgBase64 = null;
+var _iaMimeType  = 'image/jpeg';
+var _iaItens     = [];
+
+window.abrirScannerIA = function() {
+  const m = document.getElementById('modal-scanner-ia');
+  if (m) { m.style.display = 'flex'; iaReset(); }
+};
+
+window.fecharScannerIA = function() {
+  const m = document.getElementById('modal-scanner-ia');
+  if (m) m.style.display = 'none';
+};
+
+function iaReset() {
+  _iaImgBase64 = null; _iaMimeType = 'image/jpeg'; _iaItens = [];
+  ia$('ia-upload-zone').style.display = 'block';
+  ia$('ia-preview-wrap').style.display = 'none';
+  ia$('ia-btn-analisar').style.display = 'none';
+  ia$('ia-loading').style.display = 'none';
+  ia$('ia-resultados').style.display = 'none';
+  ia$('ia-erro').style.display = 'none';
+  ia$('ia-lista-itens').innerHTML = '';
+  const inp = document.getElementById('ia-file-input');
+  if (inp) inp.value = '';
+}
+
+function ia$(id) { return document.getElementById(id) || {}; }
+
+window.iaHandleDrop = function(e) {
+  e.preventDefault();
+  ia$('ia-upload-zone').style.borderColor = '#d4d4f9';
+  const file = e.dataTransfer?.files?.[0];
+  if (file && file.type.startsWith('image/')) iaCarregarArquivo(file);
+};
+
+window.iaPreviewImagem = function(input) {
+  const file = input.files?.[0];
+  if (file) iaCarregarArquivo(file);
+};
+
+function iaCarregarArquivo(file) {
+  _iaMimeType = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const dataUrl = e.target.result;
+    _iaImgBase64 = dataUrl.split(',')[1];
+    const img = ia$('ia-preview-img');
+    if (img.src !== undefined) img.src = dataUrl;
+    ia$('ia-upload-zone').style.display = 'none';
+    ia$('ia-preview-wrap').style.display = 'block';
+    ia$('ia-btn-analisar').style.display = 'block';
+    ia$('ia-resultados').style.display = 'none';
+    ia$('ia-erro').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+window.iaLimparImagem = function() {
+  iaReset();
+};
+
+window.analisarCardapioIA = async function() {
+  if (!_iaImgBase64) return;
+  ia$('ia-btn-analisar').style.display = 'none';
+  ia$('ia-loading').style.display = 'block';
+  ia$('ia-erro').style.display = 'none';
+  ia$('ia-resultados').style.display = 'none';
+
+  try {
+    const res = await fetch('/api/scan-menu', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: _iaImgBase64, mimeType: _iaMimeType })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Erro na análise');
+
+    _iaItens = (json.itens || []).map(function(it, i) {
+      return { ...it, _id: i, _sel: true };
+    });
+
+    ia$('ia-loading').style.display = 'none';
+    ia$('ia-resultados').style.display = 'block';
+    ia$('ia-count').textContent = _iaItens.length;
+    iaRenderLista();
+
+  } catch(e) {
+    ia$('ia-loading').style.display = 'none';
+    ia$('ia-btn-analisar').style.display = 'block';
+    const err = ia$('ia-erro');
+    err.style.display = 'block';
+    err.textContent = '❌ ' + (e.message || 'Erro ao analisar. Tente novamente.');
+  }
+};
+
+function iaRenderLista() {
+  const lista = ia$('ia-lista-itens');
+  if (!lista.innerHTML !== undefined) return;
+  lista.innerHTML = _iaItens.map(function(it) {
+    const preco = it.preco > 0 ? 'R$ ' + Number(it.preco).toFixed(2).replace('.', ',') : 'Preço não detectado';
+    return '<label style="display:flex;align-items:flex-start;gap:10px;background:#f8f8ff;border:1.5px solid ' + (it._sel ? '#c7d2fe' : '#e5e7eb') + ';border-radius:10px;padding:10px 12px;cursor:pointer;transition:all .15s">'
+      + '<input type="checkbox" data-iaid="' + it._id + '" ' + (it._sel ? 'checked' : '') + ' onchange="iaToggleItem(' + it._id + ',this.checked)" style="margin-top:2px;accent-color:#6366f1;flex-shrink:0">'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">'
+      + '<span style="font-size:1rem">' + (it.emoji || '🍽️') + '</span>'
+      + '<span style="font-size:.83rem;font-weight:800;color:#111">' + it.nome + '</span>'
+      + '<span style="background:#e0e7ff;color:#6366f1;font-size:.58rem;font-weight:800;padding:1px 7px;border-radius:50px;margin-left:auto;flex-shrink:0">' + (it.categoria || 'OUTROS') + '</span>'
+      + '</div>'
+      + (it.descricao ? '<div style="font-size:.7rem;color:#888;margin-bottom:3px">' + it.descricao + '</div>' : '')
+      + '<div style="font-size:.75rem;font-weight:700;color:#6366f1">' + preco + '</div>'
+      + '</div></label>';
+  }).join('');
+}
+
+window.iaToggleItem = function(id, checked) {
+  const it = _iaItens.find(function(x){ return x._id === id; });
+  if (it) it._sel = checked;
+};
+
+window.iaSelecionarTodos = function() {
+  _iaItens.forEach(function(it){ it._sel = true; });
+  ia$('ia-lista-itens').querySelectorAll('input[type=checkbox]').forEach(function(cb){ cb.checked = true; });
+  ia$('ia-lista-itens').querySelectorAll('label').forEach(function(l){ l.style.border = '1.5px solid #c7d2fe'; });
+};
+
+window.iaAdicionarSelecionados = async function() {
+  const estab = getEstab(); if (!estab) return;
+  const selecionados = _iaItens.filter(function(it){ return it._sel; });
+  if (!selecionados.length) return showToast('Selecione pelo menos um item.');
+
+  const btn = document.querySelector('#ia-resultados button:last-child');
+  if (btn) { btn.textContent = 'Adicionando...'; btn.disabled = true; }
+
+  let ok = 0, erros = 0;
+  for (const it of selecionados) {
+    try {
+      const { error } = await getSupa().from('produtos').insert({
+        estabelecimento_id: estab.id,
+        nome:        String(it.nome || '').slice(0, 120),
+        categoria:   String(it.categoria || 'OUTROS').toUpperCase().slice(0, 40),
+        descricao:   String(it.descricao || '').slice(0, 200),
+        emoji:       String(it.emoji || '🍽️').slice(0, 10),
+        preco:       Number(it.preco) || 0,
+        disponivel:  true,
+        promocao:    false,
+      });
+      if (error) erros++;
+      else ok++;
+    } catch(e) { erros++; }
+  }
+
+  fecharScannerIA();
+  showToast('✅ ' + ok + ' itens adicionados' + (erros ? ' (' + erros + ' erros)' : '') + '!');
+  // Recarrega o cardápio
+  if (typeof renderProdutos === 'function') renderProdutos();
+  else if (typeof initDashboard === 'function') setTimeout(function(){ document.querySelector('[data-tab="cardapio"]')?.click(); }, 500);
+};
