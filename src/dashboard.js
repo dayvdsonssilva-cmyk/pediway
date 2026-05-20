@@ -4380,8 +4380,12 @@ window.analisarCardapioIA = async function() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ image: _iaImgBase64, mimeType: _iaMimeType })
     });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error || 'Erro na análise');
+    // Lê como texto primeiro para tratar erros não-JSON do Vercel
+    const rawText = await res.text();
+    let json;
+    try { json = JSON.parse(rawText); }
+    catch(e) { throw new Error('Erro do servidor: ' + rawText.slice(0, 120)); }
+    if (!res.ok) throw new Error(json.error || 'Erro na análise (status ' + res.status + ')');
 
     _iaItens = (json.itens || []).map(function(it, i) {
       return { ...it, _id: i, _sel: true };
