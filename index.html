@@ -2046,18 +2046,18 @@ canvas, [data-touch="free"] { touch-action: none !important; }
         <div class="section-header" style="margin-bottom:0">
           <h3 style="font-size:1.3rem;font-weight:900">Seu cardápio</h3>
           <div class="cardapio-btns-desktop" style="display:flex;gap:8px">
-            <button class="btn-primary" onclick="abrirModalItem()">+ Adicionar item</button>
             <button onclick="abrirScannerIA()" style="padding:11px 18px;border:none;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;font-family:'Poppins',sans-serif;font-weight:800;font-size:.82rem;color:#fff;cursor:pointer;white-space:nowrap;box-shadow:0 4px 14px rgba(99,102,241,.35);display:flex;align-items:center;gap:6px">
               <span style="font-size:.9rem">✨</span> Cardápio em Segundos
             </button>
+            <button class="btn-primary" onclick="abrirModalItem()">+ Adicionar item</button>
             <button onclick="abrirGerenciadorAdicionais()" style="padding:11px 18px;border:1.5px solid var(--red);background:none;border-radius:12px;font-family:'Poppins',sans-serif;font-weight:700;font-size:.82rem;color:var(--red);cursor:pointer;white-space:nowrap">🧩 Adicionais</button>
             <button onclick="abrirModalQuente()" style="padding:11px 18px;border:none;background:linear-gradient(135deg,#e65e32,#c94e24);border-radius:12px;font-family:'Poppins',sans-serif;font-weight:800;font-size:.82rem;color:#fff;cursor:pointer;white-space:nowrap;box-shadow:0 4px 14px rgba(230,94,50,.4)">🔥 QUENTE</button>
           </div>
         </div>
         <!-- Mobile: botões em linha abaixo do título -->
         <div class="cardapio-btns-mobile" style="display:none;gap:6px;margin-top:10px;flex-wrap:wrap">
-          <button class="btn-primary" onclick="abrirModalItem()" style="flex:1;padding:10px 6px;font-size:.75rem">+ Adicionar item</button>
           <button onclick="abrirScannerIA()" style="flex:1;padding:10px 6px;border:none;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;font-family:'Poppins',sans-serif;font-weight:800;font-size:.75rem;color:#fff;cursor:pointer">✨ IA</button>
+          <button class="btn-primary" onclick="abrirModalItem()" style="flex:1;padding:10px 6px;font-size:.75rem">+ Adicionar item</button>
           <button onclick="abrirGerenciadorAdicionais()" style="flex:1;padding:10px 6px;border:1.5px solid var(--red);background:none;border-radius:12px;font-family:'Poppins',sans-serif;font-weight:700;font-size:.75rem;color:var(--red);cursor:pointer">🧩 Adicionais</button>
           <button onclick="abrirModalQuente()" style="flex:1;padding:10px 6px;border:none;background:linear-gradient(135deg,#e65e32,#c94e24);border-radius:12px;font-family:'Poppins',sans-serif;font-weight:800;font-size:.75rem;color:#fff;cursor:pointer;box-shadow:0 3px 10px rgba(230,94,50,.3)">🔥 QUENTE</button>
         </div>
@@ -4100,68 +4100,71 @@ window.goTo = function(screen) {
 </script>
 
 <!-- ══ MODAL SCANNER IA — Cardápio em Segundos ══════════════════════════════ -->
-<div id="modal-scanner-ia" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px">
-  <div style="background:#fff;border-radius:24px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.25)">
+<div id="modal-scanner-ia" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:12px">
+  <div style="background:#fff;border-radius:24px;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.3)">
 
     <!-- Header -->
-    <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:24px 24px 0 0;padding:24px 28px 20px">
+    <div style="background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:24px 24px 0 0;padding:20px 24px 18px;position:sticky;top:0;z-index:2">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <div>
-          <div style="font-size:1.2rem;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px">
+          <div style="font-size:1.1rem;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px">
             ✨ Cardápio em Segundos
-            <span style="background:rgba(255,255,255,.2);padding:2px 9px;border-radius:50px;font-size:.55rem;font-weight:900;letter-spacing:.05em">IA</span>
+            <span style="background:rgba(255,255,255,.2);padding:2px 9px;border-radius:50px;font-size:.52rem;font-weight:900;letter-spacing:.05em">IA</span>
           </div>
-          <div style="font-size:.75rem;color:rgba(255,255,255,.75);margin-top:4px">Tire uma foto do cardápio e a IA cria todos os itens automaticamente</div>
+          <div style="font-size:.72rem;color:rgba(255,255,255,.8);margin-top:3px">Suba até 6 fotos — a IA detecta todos os itens</div>
         </div>
-        <button onclick="fecharScannerIA()" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
+        <button onclick="fecharScannerIA()" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:34px;height:34px;border-radius:50%;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>
       </div>
     </div>
 
-    <!-- Body -->
-    <div style="padding:24px 28px">
+    <div style="padding:20px 22px">
+
+      <!-- Miniaturas das fotos adicionadas -->
+      <div id="ia-thumbs" style="display:none;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:flex-start"></div>
 
       <!-- Upload zone -->
-      <div id="ia-upload-zone" style="border:2px dashed #d4d4f9;border-radius:16px;padding:32px 20px;text-align:center;background:#f8f8ff;cursor:pointer;transition:all .2s;margin-bottom:16px" onclick="document.getElementById('ia-file-input').click()" ondragover="event.preventDefault();this.style.borderColor='#6366f1'" ondragleave="this.style.borderColor='#d4d4f9'" ondrop="iaHandleDrop(event)">
-        <div style="font-size:2.5rem;margin-bottom:8px">📸</div>
-        <div style="font-size:.88rem;font-weight:800;color:#333;margin-bottom:4px">Clique para selecionar ou arraste a foto</div>
-        <div style="font-size:.72rem;color:#aaa">Foto do cardápio físico, digital ou impresso</div>
-        <input type="file" id="ia-file-input" accept="image/*" capture="environment" style="display:none" onchange="iaPreviewImagem(this)">
-      </div>
-
-      <!-- Preview imagem -->
-      <div id="ia-preview-wrap" style="display:none;margin-bottom:16px;position:relative">
-        <img id="ia-preview-img" src="" alt="Preview" style="width:100%;border-radius:12px;max-height:240px;object-fit:cover;border:2px solid #e5e7ff">
-        <button onclick="iaLimparImagem()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:.9rem">✕</button>
+      <div id="ia-upload-zone" style="border:2px dashed #d4d4f9;border-radius:14px;padding:24px 16px;text-align:center;background:#f8f8ff;cursor:pointer;transition:all .2s;margin-bottom:14px"
+        onclick="document.getElementById('ia-file-input').click()"
+        ondragover="event.preventDefault();this.style.borderColor='#6366f1';this.style.background='#f0f0ff'"
+        ondragleave="this.style.borderColor='#d4d4f9';this.style.background='#f8f8ff'"
+        ondrop="iaHandleDrop(event)">
+        <div style="font-size:2rem;margin-bottom:6px">📸</div>
+        <div style="font-size:.85rem;font-weight:800;color:#333;margin-bottom:3px">Clique ou arraste as fotos do cardápio</div>
+        <div style="font-size:.68rem;color:#aaa;line-height:1.5">Cardápios verticais · Múltiplas páginas · Até 6 fotos</div>
+        <input type="file" id="ia-file-input" accept="image/*" multiple
+          style="display:none" onchange="iaPreviewImagem(this)">
       </div>
 
       <!-- Botão analisar -->
-      <button id="ia-btn-analisar" onclick="analisarCardapioIA()" style="width:100%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;padding:14px;font-family:'Poppins',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;display:none;transition:opacity .2s">
+      <button id="ia-btn-analisar" onclick="analisarCardapioIA()"
+        style="width:100%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:12px;padding:13px;font-family:'Poppins',sans-serif;font-size:.9rem;font-weight:800;cursor:pointer;display:none;margin-bottom:4px">
         ✨ Analisar com IA
       </button>
 
       <!-- Loading -->
-      <div id="ia-loading" style="display:none;text-align:center;padding:24px">
-        <div style="width:40px;height:40px;border:4px solid #e5e7ff;border-top-color:#6366f1;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px"></div>
-        <div style="font-size:.88rem;font-weight:700;color:#555">Analisando cardápio com IA...</div>
-        <div style="font-size:.72rem;color:#aaa;margin-top:4px">Isso pode levar até 10 segundos</div>
+      <div id="ia-loading" style="display:none;text-align:center;padding:20px">
+        <div style="width:36px;height:36px;border:4px solid #e5e7ff;border-top-color:#6366f1;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px"></div>
+        <div id="ia-loading-txt" style="font-size:.85rem;font-weight:700;color:#555">Analisando com IA...</div>
+        <div style="font-size:.68rem;color:#aaa;margin-top:3px">Cada foto leva ~5–10 segundos</div>
       </div>
 
       <!-- Resultados -->
       <div id="ia-resultados" style="display:none">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div style="font-size:.88rem;font-weight:800;color:#111">
-            Itens encontrados: <span id="ia-count" style="color:#6366f1">0</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:.85rem;font-weight:800;color:#111">
+            🎉 <span id="ia-count" style="color:#6366f1">0</span> itens encontrados
           </div>
-          <button onclick="iaSelecionarTodos()" style="font-size:.72rem;font-weight:700;color:#6366f1;background:none;border:none;cursor:pointer;text-decoration:underline">Selecionar todos</button>
+          <button onclick="iaSelecionarTodos()" style="font-size:.7rem;font-weight:700;color:#6366f1;background:none;border:none;cursor:pointer;text-decoration:underline">Todos</button>
         </div>
-        <div id="ia-lista-itens" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;padding-right:4px;margin-bottom:16px"></div>
-        <button onclick="iaAdicionarSelecionados()" style="width:100%;background:#22C55E;color:#fff;border:none;border-radius:12px;padding:14px;font-family:'Poppins',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer">
-          ✅ Adicionar itens selecionados ao cardápio
+        <div id="ia-lista-itens" style="display:flex;flex-direction:column;gap:5px;max-height:300px;overflow-y:auto;padding-right:2px;margin-bottom:14px"></div>
+        <button onclick="iaAdicionarSelecionados()"
+          style="width:100%;background:#22C55E;color:#fff;border:none;border-radius:12px;padding:13px;font-family:'Poppins',sans-serif;font-size:.9rem;font-weight:800;cursor:pointer">
+          ✅ Adicionar selecionados ao cardápio
         </button>
       </div>
 
       <!-- Erro -->
-      <div id="ia-erro" style="display:none;background:#fff0f0;border:1.5px solid #ffcccc;border-radius:10px;padding:14px;font-size:.8rem;color:#c00;margin-top:12px"></div>
+      <div id="ia-erro" style="display:none;background:#fff0f0;border:1.5px solid #ffcccc;border-radius:10px;padding:12px;font-size:.78rem;color:#c00;margin-top:10px;line-height:1.5"></div>
 
     </div>
   </div>
