@@ -61,7 +61,7 @@ Extraia TODOS os itens visíveis.`;
 
   try {
     const result = await openaiPost(apiKey, {
-      model: 'gpt-4o-mini',
+      model: 'gpt-4.1-mini',
       max_tokens: 4000,
       messages: [{
         role: 'user',
