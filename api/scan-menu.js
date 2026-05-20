@@ -24,19 +24,6 @@ function openaiPost(apiKey, payload) {
   });
 }
 
-// Lê o body completo da request (Vercel às vezes não parseia automaticamente)
-function readBody(req) {
-  return new Promise((resolve) => {
-    if (req.body && typeof req.body === 'object') return resolve(req.body);
-    let raw = '';
-    req.on('data', c => raw += c);
-    req.on('end', () => {
-      try { resolve(JSON.parse(raw)); }
-      catch(e) { resolve({}); }
-    });
-  });
-}
-
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -48,9 +35,19 @@ module.exports = async function handler(req, res) {
   const apiKey = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY;
   if (!apiKey) return res.status(500).json({ error: 'OPENAI_API_KEY não configurada.' });
 
-  const body = await readBody(req);
+  // Garante que o body está parseado
+  const body = typeof req.body === 'object' && req.body !== null
+    ? req.body
+    : (() => { try { return JSON.parse(req.body || '{}'); } catch(e) { return {}; } })();
+
   const { image, mimeType = 'image/jpeg' } = body;
   if (!image) return res.status(400).json({ error: 'Imagem não enviada.' });
+
+  // Verifica tamanho (base64 ~1.33x o original)
+  const estimatedBytes = Math.ceil(image.length * 0.75);
+  if (estimatedBytes > 4 * 1024 * 1024) {
+    return res.status(413).json({ error: 'Imagem muito grande. Use uma foto menor ou tire pelo celular.' });
+  }
 
   const prompt = `Analise este cardápio e extraia TODOS os itens visíveis.
 Retorne SOMENTE JSON válido sem markdown:
@@ -61,7 +58,7 @@ Extraia TODOS os itens visíveis.`;
 
   try {
     const result = await openaiPost(apiKey, {
-      model: 'gpt-4.1-mini',
+      model: 'gpt-4o-mini',
       max_tokens: 4000,
       messages: [{
         role: 'user',
@@ -74,18 +71,18 @@ Extraia TODOS os itens visíveis.`;
 
     let parsed;
     try { parsed = JSON.parse(result.text); }
-    catch(e) { return res.status(502).json({ error: 'Resposta inválida da OpenAI: ' + result.text.slice(0, 200) }); }
+    catch(e) { return res.status(502).json({ error: 'Resposta inválida da OpenAI.' }); }
 
     if (result.status !== 200) {
-      return res.status(502).json({ error: parsed?.error?.message || 'Erro OpenAI status ' + result.status });
+      return res.status(502).json({ error: parsed?.error?.message || 'Erro OpenAI ' + result.status });
     }
 
-    const text  = parsed.choices?.[0]?.message?.content || '';
-    const clean = text.replace(/```json|```/g, '').trim();
+    const content = parsed.choices?.[0]?.message?.content || '';
+    const clean   = content.replace(/```json|```/g, '').trim();
 
     let items;
     try { items = JSON.parse(clean); }
-    catch(e) { return res.status(502).json({ error: 'IA retornou formato inválido: ' + clean.slice(0, 200) }); }
+    catch(e) { return res.status(502).json({ error: 'Formato inválido retornado pela IA.' }); }
 
     return res.status(200).json(items);
 
