@@ -3,22 +3,40 @@
     {
       "source": "/sw.js",
       "headers": [
-        { "key": "Content-Type",           "value": "application/javascript" },
-        { "key": "Cache-Control",          "value": "no-cache, no-store, must-revalidate" },
-        { "key": "Service-Worker-Allowed", "value": "/" }
+        {
+          "key": "Content-Type",
+          "value": "application/javascript"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        }
       ]
     },
     {
       "source": "/manifest.json",
       "headers": [
-        { "key": "Content-Type",  "value": "application/manifest+json" },
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
       ]
     },
     {
       "source": "/pwa192/(.*)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=604800, immutable" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, immutable"
+        }
       ]
     }
   ],
@@ -29,22 +47,73 @@
     }
   },
   "rewrites": [
-    { "source": "/sounds/:path*",  "destination": "/sounds/:path*" },
-    { "source": "/notificacao.mp3","destination": "/notificacao.mp3" },
-    { "source": "/src/:path*",     "destination": "/src/:path*" },
-    { "source": "/assets/:path*",  "destination": "/assets/:path*" },
-    { "source": "/style.css",      "destination": "/style.css" },
-    { "source": "/manifest.json",  "destination": "/manifest.json" },
-    { "source": "/sw.js",          "destination": "/sw.js" },
-    { "source": "/baixar",         "destination": "/baixar.html" },
-    { "source": "/mandaadmin",     "destination": "/mandaadmin.html" },
-    { "source": "/checkout",       "destination": "/checkout.html" },
-    { "source": "/cliente.html",   "destination": "/cliente.html" },
-    { "source": "/lojas",          "destination": "/lojas.html" },
-    { "source": "/delivery",       "destination": "/delivery.html" },
-    { "source": "/kds/:slug",      "destination": "/kds.html" },
-    { "source": "/comandas/:slug", "destination": "/garcom.html" },
-    { "source": "/splash.mp4",     "destination": "/splash.mp4" },
-    { "source": "/:slug",          "destination": "/cliente.html" }
+    {
+      "source": "/sounds/:path*",
+      "destination": "/sounds/:path*"
+    },
+    {
+      "source": "/notificacao.mp3",
+      "destination": "/notificacao.mp3"
+    },
+    {
+      "source": "/src/:path*",
+      "destination": "/src/:path*"
+    },
+    {
+      "source": "/assets/:path*",
+      "destination": "/assets/:path*"
+    },
+    {
+      "source": "/style.css",
+      "destination": "/style.css"
+    },
+    {
+      "source": "/manifest.json",
+      "destination": "/manifest.json"
+    },
+    {
+      "source": "/sw.js",
+      "destination": "/sw.js"
+    },
+    {
+      "source": "/baixar",
+      "destination": "/baixar.html"
+    },
+    {
+      "source": "/mandaadmin",
+      "destination": "/mandaadmin.html"
+    },
+    {
+      "source": "/checkout",
+      "destination": "/checkout.html"
+    },
+    {
+      "source": "/cliente.html",
+      "destination": "/cliente.html"
+    },
+    {
+      "source": "/lojas",
+      "destination": "/lojas.html"
+    },
+    {
+      "source": "/delivery",
+      "destination": "/delivery.html"
+    },
+    {
+      "source": "/kds/:slug",
+      "destination": "/kds.html"
+    },
+    {
+      "source": "/comandas/:slug",
+      "destination": "/garcom.html"
+    },
+    {
+      "source": "/splash.mp4",
+      "destination": "/splash.mp4"
+    },
+    {
+      "source": "/:slug",
+      "destination": "/cliente.html"
+    }
   ]
 }
