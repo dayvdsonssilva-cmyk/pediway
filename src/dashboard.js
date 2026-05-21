@@ -4796,7 +4796,7 @@ function renderObStep(step) {
       </div>
       <div class="ob-field"><label>Tipo de negócio</label>
         <div class="ob-tipos">${_obTipos.map(function(t){
-          return '<div class="ob-tipo'+(t.val===_obDados.tipo?' selected':'')+'" onclick="obSelecionarTipo(''+t.val+'',this)">'
+          return '<div class="ob-tipo'+(t.val===_obDados.tipo?' selected':'')+'" onclick="obSelecionarTipo(\'' + t.val + '\',this)">'
             +'<span class="ob-tipo-em">'+t.em+'</span>'
             +'<span class="ob-tipo-nm">'+t.nm+'</span>'
             +'</div>';
