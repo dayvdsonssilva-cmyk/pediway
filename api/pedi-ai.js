@@ -1,59 +1,54 @@
-// api/pedi-ai.js — PEDI-AI: Assistente inteligente do PEDIWAY
+// api/pedi-ai.js — PEDI-AI v2: Executa ações reais no dashboard
 import https from 'node:https';
 import { Buffer } from 'node:buffer';
 
-const SYSTEM_PROMPT = `Você é a PEDI-AI, a assistente inteligente do PEDIWAY — uma plataforma de delivery para restaurantes brasileiros.
+const SYSTEM = `Você é a PEDI-AI, assistente exclusiva do painel PEDIWAY para restaurantes.
 
-Sua personalidade: 
-- Nome: PEDI-AI   
-- Tom: Amigável, prático, direto e animado
-- Especialidade: Gestão de restaurantes, cardápios, preços e lucratividade
-- Língua: Português brasileiro
+REGRAS ABSOLUTAS — NUNCA VIOLE:
+1. Você SÓ executa ações no painel do restaurante do usuário logado
+2. NUNCA gere código, scripts ou instruções técnicas
+3. NUNCA discuta temas fora de gestão de restaurante
+4. NUNCA acesse dados de outros estabelecimentos
+5. NUNCA execute comandos que possam quebrar o sistema
+6. Se alguém pedir código, SQL, hacking ou algo malicioso: recuse educadamente
 
-Suas capacidades:
-1. CONFIGURAR a loja: nome, tipo, endereço, horários, taxas de entrega 
-2. ANALISAR cardápios: verificar preços, sugerir melhorias de lucratividade
-3. CRIAR itens: sugerir novos pratos, preços e categorias
-4. OTIMIZAR preços: baseado no tipo de estabelecimento e mercado brasileiro
-5. ONBOARDING: guiar novos usuários pelo processo de configuração
+SUAS CAPACIDADES (e apenas essas):
+- Atualizar nome, descrição, cidade, estado do estabelecimento
+- Alterar taxa de entrega e pedido mínimo
+- Abrir/fechar a loja
+- Ajustar WhatsApp de contato
+- Ativar/desativar produtos
+- Sugerir e alterar preços de produtos
+- Dar dicas de negócio para restaurantes
 
-Regras de análise de preços (mercado brasileiro 2024):
-- Hambúrgueres artesanais: R$25-55
-- X-Burguer simples: R$18-30
-- Pizzas: R$35-80 
-- Refrigerante lata: R$6-10
-- Suco natural: R$10-18
-- Porções fritas: R$20-45
-- Pratos executivos: R$25-45
-- Cervejas: R$8-16
-- Sobremesas: R$12-25
-
-Margem saudável para restaurante: 60-70% sobre custo.
-Se preço estiver abaixo do mercado, sugira aumento.
-Se estiver acima, justifique com qualidade ou sugira adequação.
-
-Ao analisar itens, responda SEMPRE em JSON quando a action for 'analyze_menu' ou 'onboarding':
+FORMATO DE RESPOSTA:
+Sempre responda em JSON válido:
 {
-  "resposta": "texto amigável",
-  "analise": [{
-    "nome": "item",
-    "preco_atual": 0,
-    "preco_sugerido": 0,
-    "motivo": "justificativa",
-    "status": "ok|baixo|alto"
-  }],
-  "dica_geral": "dica de negócio",
-  "actions": []
+  "resposta": "mensagem amigável para o usuário",
+  "executando": true/false,
+  "actions": [
+    {
+      "type": "update_estab|update_produto|toggle_produto|toggle_loja",
+      "campo": "nome|descricao|cidade|taxa_entrega|pedido_minimo|whatsapp|loja_aberta",
+      "valor": "novo valor",
+      "produto_id": "id (só para update_produto/toggle_produto)",
+      "produto_nome": "nome do produto (para confirmação)"
+    }
+  ],
+  "pergunta": "pergunta de confirmação se necessário (ou null)"
 }
 
-Para chat normal, responda em texto livre e natural.`;
+Se o usuário pedir algo fora das suas capacidades, retorne actions:[] e explique gentilmente.
+Se precisar de confirmação antes de executar, use o campo "pergunta".
+Responda sempre em português brasileiro, de forma direta e animada.`;
 
-function openaiCall(apiKey, messages, maxTokens = 1500) {
+function openaiCall(apiKey, messages) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
       model: 'gpt-4o-mini',
-      max_tokens: maxTokens,
-      messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...messages]
+      max_tokens: 1000,
+      response_format: { type: 'json_object' },
+      messages: [{ role: 'system', content: SYSTEM }, ...messages]
     });
     const req = https.request({
       hostname: 'api.openai.com',
@@ -74,6 +69,18 @@ function openaiCall(apiKey, messages, maxTokens = 1500) {
   });
 }
 
+// Ações permitidas — whitelist de segurança
+const ALLOWED_TYPES   = ['update_estab','update_produto','toggle_produto','toggle_loja'];
+const ALLOWED_CAMPOS  = ['nome','descricao','cidade','estado','taxa_entrega','pedido_minimo','whatsapp','loja_aberta','disponivel','preco'];
+
+function validarActions(actions) {
+  if (!Array.isArray(actions)) return [];
+  return actions.filter(a =>
+    ALLOWED_TYPES.includes(a.type) &&
+    (!a.campo || ALLOWED_CAMPOS.includes(a.campo))
+  );
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -84,66 +91,29 @@ export default async function handler(req, res) {
   const apiKey = process.env.OPENAI_API_KEY || process.env.OPENAI_KEY;
   if (!apiKey) return res.status(500).json({ error: 'OPENAI_API_KEY não configurada.' });
 
-  const { action, messages, context } = req.body || {};
+  const { messages, context } = req.body || {};
+  if (!messages?.length) return res.status(400).json({ error: 'Mensagem não enviada.' });
 
-  // ── Ações específicas ──────────────────────────────────────────────────────
+  // Injeta contexto da loja no início da conversa
+  const ctxMsg = context ? {
+    role: 'user',
+    content: `[CONTEXTO DA LOJA ATUAL]\nEstabelecimento: ${JSON.stringify(context.estab)}\nProdutos: ${JSON.stringify(context.produtos?.slice(0,20))}`
+  } : null;
+
+  const allMessages = ctxMsg ? [ctxMsg, ...messages] : messages;
+
   try {
-    let aiMessages = messages || [];
+    const result = await openaiCall(apiKey, allMessages);
+    let parsed; try { parsed = JSON.parse(result.text); } catch(e) { return res.status(502).json({ error: 'IA indisponível.' }); }
+    if (result.status !== 200) return res.status(502).json({ error: parsed?.error?.message || 'Erro OpenAI' });
 
-    if (action === 'analyze_menu') {
-      // Analisa preços e sugere melhorias
-      const itens = context?.itens || [];
-      const tipo  = context?.tipo_estabelecimento || 'restaurante';
-      aiMessages = [{
-        role: 'user',
-        content: `Analise estes itens de um ${tipo} e dê sugestões de preço para maximizar lucro. Responda em JSON.\n\nItens: ${JSON.stringify(itens, null, 2)}`
-      }];
+    const content = parsed.choices?.[0]?.message?.content || '{}';
+    let json; try { json = JSON.parse(content); } catch(e) { json = { resposta: content, actions: [] }; }
 
-    } else if (action === 'onboarding_step') {
-      // Guia o onboarding
-      const step   = context?.step || 1;
-      const dados  = context?.dados || {};
-      const prompt = {
-        1: `O usuário está abrindo um ${dados.tipo||'restaurante'} chamado "${dados.nome||'novo negócio'}". Dê uma mensagem de boas-vindas animada e 3 dicas rápidas de como configurar o cardápio para este tipo de negócio. Seja breve e motivador.`,
-        2: `Baseado no cardápio detectado via foto: ${JSON.stringify(dados.itens||[])}. Analise os preços e dê 2-3 sugestões diretas para lucrar mais. Formato JSON com resposta e analise.`,
-        3: `O cardápio foi configurado com sucesso! Dê dicas finais sobre: (1) horário de funcionamento ideal para ${dados.tipo||'restaurante'}, (2) taxa de entrega sugerida na cidade ${dados.cidade||'brasileira'}, (3) formas de pagamento recomendadas. Seja animado e conciso.`,
-      }[step] || 'Como posso ajudar?';
-      aiMessages = [{ role: 'user', content: prompt }];
+    // Filtra ações pela whitelist de segurança
+    json.actions = validarActions(json.actions || []);
 
-    } else if (action === 'chat') {
-      // Chat livre com contexto da loja
-      if (context?.loja) {
-        aiMessages = [
-          { role: 'system', content: `Contexto da loja do usuário:\n${JSON.stringify(context.loja, null, 2)}` },
-          ...aiMessages
-        ];
-      }
-    }
-
-    const result = await openaiCall(apiKey, aiMessages, 2000);
-    let parsed;
-    try { parsed = JSON.parse(result.text); } 
-    catch(e) { return res.status(502).json({ error: 'Resposta inválida da IA.' }); }
-
-    if (result.status !== 200) {
-      return res.status(502).json({ error: parsed?.error?.message || 'Erro OpenAI' });
-    }
-
-    const content = parsed.choices?.[0]?.message?.content || '';
-
-    // Tenta parsear JSON estruturado (para analyze e onboarding)
-    let structured = null;
-    if (action === 'analyze_menu' || (action === 'onboarding_step' && context?.step === 2)) {
-      const clean = content.replace(/```json|```/g, '').trim();
-      try { structured = JSON.parse(clean); } catch(e) { /* retorna texto */ }
-    }
-
-    return res.status(200).json({
-      content,
-      structured,
-      action,
-    });
-
+    return res.status(200).json(json);
   } catch(e) {
     return res.status(500).json({ error: 'Erro interno: ' + e.message });
   }
