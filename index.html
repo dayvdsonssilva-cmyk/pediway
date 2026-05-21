@@ -19,8 +19,115 @@
 body { font-family:'Poppins',sans-serif; font-weight:500; line-height:1.6; min-height:100vh; overflow-x:hidden; max-width:100vw; }
 *, *::before, *::after { box-sizing:border-box; }
 input, select, textarea { max-width:100%; box-sizing:border-box; }
-.cfg-section { overflow:hidden; } 
+.cfg-section { overflow:hidden; }
 /* Bloqueia zoom em toda a plataforma */
+
+
+/* ══ PEDI-AI ════════════════════════════════════════════════════════════════ */
+/* Botão flutuante */
+#pedi-ai-btn {
+  position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+  width: 58px; height: 58px; border-radius: 50%;
+  background: var(--red); border: none; cursor: pointer;
+  box-shadow: 0 6px 24px rgba(232,0,28,.4);
+  display: none; align-items: center; justify-content: center;
+  transition: transform .2s, box-shadow .2s;
+  animation: pedi-ai-pulse 3s ease-in-out infinite;
+}
+#pedi-ai-btn:hover { transform: scale(1.08); box-shadow: 0 8px 32px rgba(232,0,28,.55); }
+#pedi-ai-btn.show { display: flex; }
+@keyframes pedi-ai-pulse { 0%,100%{box-shadow:0 6px 24px rgba(232,0,28,.4)} 50%{box-shadow:0 6px 36px rgba(232,0,28,.65)} }
+.pedi-ai-logo { font-size: .72rem; font-weight: 900; color: #fff; letter-spacing: -.03em; line-height: 1.1; text-align: center; }
+.pedi-ai-logo-p { font-size: 1.3rem; display: block; }
+.pedi-ai-badge { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; background: #22C55E; border-radius: 50%; border: 2px solid #fff; font-size: .5rem; font-weight: 900; color: #fff; display: flex; align-items: center; justify-content: center; }
+
+/* Modal Chat */
+#pedi-ai-modal {
+  display: none; position: fixed; inset: 0; z-index: 2000;
+  align-items: flex-end; justify-content: flex-end;
+  padding: 0 24px 96px; pointer-events: none;
+}
+#pedi-ai-modal.show { display: flex; pointer-events: all; }
+.pedi-ai-chat {
+  width: 360px; max-height: 540px; background: #fff;
+  border-radius: 20px; box-shadow: 0 24px 60px rgba(0,0,0,.18);
+  display: flex; flex-direction: column; overflow: hidden;
+  animation: slideUp .2s ease;
+}
+@keyframes slideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+.pai-header {
+  background: var(--red); padding: 14px 18px;
+  display: flex; align-items: center; gap: 10px;
+}
+.pai-header-logo { width: 36px; height: 36px; background: rgba(255,255,255,.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 900; color: #fff; flex-shrink: 0; }
+.pai-header-info h4 { font-size: .88rem; font-weight: 900; color: #fff; }
+.pai-header-info p  { font-size: .65rem; color: rgba(255,255,255,.8); }
+.pai-close { margin-left: auto; background: none; border: none; color: rgba(255,255,255,.7); cursor: pointer; font-size: 1.1rem; line-height: 1; }
+.pai-messages {
+  flex: 1; overflow-y: auto; padding: 14px; display: flex;
+  flex-direction: column; gap: 10px; background: #f8f8f8;
+}
+.pai-msg { max-width: 85%; border-radius: 14px; padding: 10px 13px; font-size: .8rem; line-height: 1.5; }
+.pai-msg-ai   { background: #fff; border: 1.5px solid #f0f0f0; color: #222; align-self: flex-start; border-radius: 4px 14px 14px 14px; }
+.pai-msg-user { background: var(--red); color: #fff; align-self: flex-end; border-radius: 14px 4px 14px 14px; }
+.pai-typing { display: flex; gap: 4px; align-items: center; padding: 10px 14px; background: #fff; border-radius: 4px 14px 14px 14px; border: 1.5px solid #f0f0f0; width: fit-content; }
+.pai-dot { width: 6px; height: 6px; background: var(--red); border-radius: 50%; animation: pai-dot .9s ease-in-out infinite; }
+.pai-dot:nth-child(2){animation-delay:.15s} .pai-dot:nth-child(3){animation-delay:.3s}
+@keyframes pai-dot { 0%,80%,100%{transform:scale(.5);opacity:.4} 40%{transform:scale(1);opacity:1} }
+.pai-footer { padding: 10px 12px; background: #fff; border-top: 1px solid #f0f0f0; display: flex; gap: 8px; }
+.pai-input { flex: 1; border: 1.5px solid #e5e5e5; border-radius: 50px; padding: 9px 16px; font-family: 'Poppins',sans-serif; font-size: .8rem; outline: none; transition: border-color .2s; }
+.pai-input:focus { border-color: var(--red); }
+.pai-send { background: var(--red); color: #fff; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .9rem; flex-shrink: 0; transition: background .15s; }
+.pai-send:hover { background: #C0001A; }
+.pai-chip { display: inline-block; background: #fff0f0; color: var(--red); border: 1px solid #ffcccc; border-radius: 50px; padding: 4px 12px; font-size: .7rem; font-weight: 700; cursor: pointer; margin: 2px; transition: all .15s; }
+.pai-chip:hover { background: var(--red); color: #fff; }
+.pai-analise { background: #fff; border: 1.5px solid #f0f0f0; border-radius: 10px; padding: 10px 12px; margin-top: 6px; font-size: .75rem; }
+.pai-analise-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid #f5f5f5; }
+.pai-analise-item:last-child { border: none; }
+.pai-status-ok  { color: #22C55E; font-size: .65rem; font-weight: 800; }
+.pai-status-low { color: var(--red); font-size: .65rem; font-weight: 800; }
+.pai-status-high{ color: #F59E0B; font-size: .65rem; font-weight: 800; }
+@media(max-width:480px){ .pedi-ai-chat{width:calc(100vw - 24px)} #pedi-ai-modal{padding:0 12px 90px} }
+
+/* ══ ONBOARDING ══════════════════════════════════════════════════════════════ */
+#onboarding-modal {
+  display: none; position: fixed; inset: 0; z-index: 4000;
+  background: rgba(0,0,0,.7); backdrop-filter: blur(6px);
+  align-items: center; justify-content: center; padding: 16px;
+}
+#onboarding-modal.show { display: flex; }
+.ob-box {
+  background: #fff; border-radius: 24px; width: 100%; max-width: 480px;
+  max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 32px 80px rgba(0,0,0,.25);
+  animation: slideUp .25s ease;
+}
+.ob-header { background: var(--red); border-radius: 24px 24px 0 0; padding: 24px 28px 20px; }
+.ob-step-indicator { display: flex; gap: 6px; justify-content: center; margin-bottom: 14px; }
+.ob-step-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.35); transition: all .3s; }
+.ob-step-dot.active { background: #fff; width: 24px; border-radius: 4px; }
+.ob-header h2 { font-size: 1.15rem; font-weight: 900; color: #fff; }
+.ob-header p  { font-size: .75rem; color: rgba(255,255,255,.8); margin-top: 4px; }
+.ob-body { padding: 24px 28px; }
+.ob-field { margin-bottom: 16px; }
+.ob-field label { display: block; font-size: .72rem; font-weight: 800; color: #555; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+.ob-input { width: 100%; border: 1.5px solid #e5e5e5; border-radius: 10px; padding: 12px 14px; font-family: 'Poppins',sans-serif; font-size: .9rem; outline: none; transition: border-color .2s; }
+.ob-input:focus { border-color: var(--red); }
+.ob-tipos { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.ob-tipo { border: 2px solid #e5e5e5; border-radius: 12px; padding: 12px 8px; text-align: center; cursor: pointer; transition: all .2s; background: #fafafa; }
+.ob-tipo:hover { border-color: var(--red); }
+.ob-tipo.selected { border-color: var(--red); background: #fff0f0; }
+.ob-tipo-em  { font-size: 1.6rem; display: block; margin-bottom: 4px; }
+.ob-tipo-nm  { font-size: .68rem; font-weight: 700; color: #333; }
+.ob-btn { width: 100%; background: var(--red); color: #fff; border: none; border-radius: 12px; padding: 14px; font-family: 'Poppins',sans-serif; font-size: .95rem; font-weight: 800; cursor: pointer; transition: background .15s; margin-top: 8px; }
+.ob-btn:hover { background: #C0001A; }
+.ob-btn-sec { width: 100%; background: none; border: 1.5px solid #e5e5e5; border-radius: 12px; padding: 12px; font-family: 'Poppins',sans-serif; font-size: .88rem; font-weight: 700; color: #888; cursor: pointer; margin-top: 8px; }
+.ob-ai-msg { background: #fff8f8; border: 1.5px solid #ffe0e0; border-radius: 12px; padding: 14px; font-size: .8rem; color: #444; line-height: 1.6; margin-bottom: 16px; }
+.ob-ai-msg strong { color: var(--red); }
+.ob-ai-typing { display: flex; gap: 4px; padding: 4px 0; }
+.ob-progress { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.ob-progress-bar { flex: 1; height: 4px; background: #f0f0f0; border-radius: 2px; overflow: hidden; }
+.ob-progress-fill { height: 100%; background: var(--red); border-radius: 2px; transition: width .4s ease; }
 
 /* Dashboard mobile */
 @media(max-width:600px) {
@@ -4203,6 +4310,53 @@ window.goTo = function(screen) {
       <!-- Erro -->
       <div id="ia-erro" style="display:none;background:#fff0f0;border:1.5px solid #ffcccc;border-radius:10px;padding:12px;font-size:.78rem;color:#c00;margin-top:10px;line-height:1.5"></div>
 
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ PEDI-AI — Botão flutuante ═══════════════════════════════════════════ -->
+<button id="pedi-ai-btn" onclick="togglePediAI()" title="PEDI-AI — Seu assistente">
+  <div class="pedi-ai-logo">
+    <span class="pedi-ai-logo-p">P</span>AI
+  </div>
+  <div class="pedi-ai-badge">✦</div>
+</button>
+
+<!-- ══ PEDI-AI — Chat modal ════════════════════════════════════════════════ -->
+<div id="pedi-ai-modal">
+  <div class="pedi-ai-chat">
+    <div class="pai-header">
+      <div class="pai-header-logo">P</div>
+      <div class="pai-header-info">
+        <h4>PEDI-AI</h4>
+        <p>Sua assistente inteligente ✦</p>
+      </div>
+      <button class="pai-close" onclick="togglePediAI()">✕</button>
+    </div>
+    <div class="pai-messages" id="pai-messages"></div>
+    <div class="pai-footer">
+      <input class="pai-input" id="pai-input" placeholder="Pergunte algo para a PEDI-AI..."
+        onkeydown="if(event.key==='Enter')enviarPediAI()">
+      <button class="pai-send" onclick="enviarPediAI()">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ONBOARDING — Primeiros passos ════════════════════════════════════════ -->
+<div id="onboarding-modal">
+  <div class="ob-box">
+    <div class="ob-header">
+      <div class="ob-step-indicator">
+        <div class="ob-step-dot active" id="ob-dot-1"></div>
+        <div class="ob-step-dot" id="ob-dot-2"></div>
+        <div class="ob-step-dot" id="ob-dot-3"></div>
+      </div>
+      <h2 id="ob-title">👋 Bem-vindo ao PEDIWAY!</h2>
+      <p id="ob-subtitle">Vamos deixar sua loja pronta em 3 passos rápidos</p>
+    </div>
+    <div class="ob-body" id="ob-body">
+      <!-- Conteúdo injetado via JS -->
     </div>
   </div>
 </div>
