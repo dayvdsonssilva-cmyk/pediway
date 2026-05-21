@@ -13,9 +13,9 @@
         },
         {
           "key": "Service-Worker-Allowed",
-          "value": "/" 
+          "value": "/"
         }
-      ] 
+      ]
     },
     {
       "source": "/manifest.json",
@@ -118,4 +118,4 @@
       "destination": "/cliente.html"
     }
   ]
-}
+} 
