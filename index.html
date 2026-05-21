@@ -35,7 +35,7 @@ input, select, textarea { max-width:100%; box-sizing:border-box; }
   animation: pedi-ai-pulse 3s ease-in-out infinite;
 }
 #pedi-ai-btn:hover { transform: scale(1.08); box-shadow: 0 8px 32px rgba(232,0,28,.55); }
-#pedi-ai-btn.show { display: flex; }
+#pedi-ai-btn.show { display: flex !important; }
 @keyframes pedi-ai-pulse { 0%,100%{box-shadow:0 6px 24px rgba(232,0,28,.4)} 50%{box-shadow:0 6px 36px rgba(232,0,28,.65)} }
 .pedi-ai-logo { font-size: .72rem; font-weight: 900; color: #fff; letter-spacing: -.03em; line-height: 1.1; text-align: center; }
 .pedi-ai-logo-p { font-size: 1.3rem; display: block; }
@@ -4361,5 +4361,26 @@ window.goTo = function(screen) {
   </div>
 </div>
 
+
+<script>
+// Garante que PEDI-AI aparece ao entrar no dashboard
+(function() {
+  var _origGoTo = null;
+  function checkAndShowPediAI() {
+    var screen = document.querySelector('[data-screen="s-dash"].active');
+    var btn = document.getElementById('pedi-ai-btn');
+    if (btn) btn.classList.toggle('show', !!screen);
+  }
+  // Observa mudanças de classe nas screens
+  var observer = new MutationObserver(checkAndShowPediAI);
+  document.addEventListener('DOMContentLoaded', function() {
+    var screens = document.querySelectorAll('.screen');
+    screens.forEach(function(s) {
+      observer.observe(s, { attributes: true, attributeFilter: ['class'] });
+    });
+    checkAndShowPediAI();
+  });
+})();
+</script>
 </body>
 </html>
