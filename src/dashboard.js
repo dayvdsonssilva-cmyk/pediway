@@ -4613,8 +4613,7 @@ function pediAiAddMsg(tipo, texto) {
   // Formata **negrito**
   div.innerHTML = texto
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/
-/g, '<br>');
+    .replace(/\n/g, '<br>');
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
 }
