@@ -13,7 +13,7 @@
         },
         {
           "key": "Service-Worker-Allowed",
-          "value": "/"
+          "value": "/" 
         }
       ] 
     },
