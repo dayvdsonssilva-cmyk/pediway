@@ -551,8 +551,7 @@ export async function salvarConfig() {
   const estab = getEstab(); if (!estab) return;
 
   const nome     = $('cfg-nome')?.value.trim();
-  const slug     = $('cfg-slug')?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'-');
-  const whats    = ($('cfg-whats')?.value || '').replace(/\D/g,''); // salva só dígitos → evita bug na recuperação de senha
+  const slug     = $('cfg-slug')?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'-');\n  const whats    = ($('cfg-whats')?.value || '').replace(/\D/g,''); // salva só dígitos → evita bug na recuperação de senha
   const desc     = $('cfg-desc')?.value.trim();
   const estado   = $('cfg-estado')?.value || null;
   const cidade   = $('cfg-cidade')?.value.trim() || null;
@@ -4612,8 +4611,7 @@ function pediAiAddMsg(tipo, texto) {
   div.className = 'pai-msg pai-msg-' + tipo;
   // Formata **negrito**
   div.innerHTML = texto
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br>');
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')\n    .replace(/\n/g, '<br>');
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
 }
@@ -4878,8 +4876,7 @@ async function obBuscarDicaIA() {
     })).text();
     const json = JSON.parse(raw);
     if (json.content && el) {
-      el.innerHTML = json.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/
-/g,'<br>');
+      el.innerHTML = json.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g,'<br>');
     }
   } catch(e) {}
 }
