@@ -20,7 +20,7 @@ Suas capacidades:
 Regras de análise de preços (mercado brasileiro 2024):
 - Hambúrgueres artesanais: R$25-55
 - X-Burguer simples: R$18-30
-- Pizzas: R$35-80
+- Pizzas: R$35-80 
 - Refrigerante lata: R$6-10
 - Suco natural: R$10-18
 - Porções fritas: R$20-45
