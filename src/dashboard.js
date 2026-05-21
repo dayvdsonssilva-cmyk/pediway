@@ -551,8 +551,7 @@ export async function salvarConfig() {
   const estab = getEstab(); if (!estab) return;
 
   const nome     = $('cfg-nome')?.value.trim();
-  const slug     = $('cfg-slug')?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'-');
-  const whats    = ($('cfg-whats')?.value || '').replace(/\D/g,''); // salva só dígitos → evita bug na recuperação de senha
+  const slug     = $('cfg-slug')?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'-');\n  const whats    = ($('cfg-whats')?.value || '').replace(/\D/g,''); // salva só dígitos → evita bug na recuperação de senha
   const desc     = $('cfg-desc')?.value.trim();
   const estado   = $('cfg-estado')?.value || null;
   const cidade   = $('cfg-cidade')?.value.trim() || null;
@@ -4568,168 +4567,211 @@ window.iaAdicionarSelecionados = async function() {
 
 
 // ════════════════════════════════════════════════════════════════════════════
-// PEDI-AI — Assistente Inteligente do PEDIWAY
+// PEDI-AI v2 — Executa ações REAIS no Supabase
 // ════════════════════════════════════════════════════════════════════════════
 
-var _pediAiOpen    = false;
-var _pediAiHistory = [];
-var _pediAiInit    = false;
+var _paiOpen    = false;
+var _paiHistory = [];  // histórico da conversa
+var _paiCtxSent = false;
 
 window.togglePediAI = function() {
-  _pediAiOpen = !_pediAiOpen;
+  _paiOpen = !_paiOpen;
   const modal = document.getElementById('pedi-ai-modal');
-  if (modal) modal.classList.toggle('show', _pediAiOpen);
-  if (_pediAiOpen && !_pediAiInit) pediAiBoasVindas();
+  if (modal) modal.classList.toggle('show', _paiOpen);
+  if (_paiOpen && !_paiCtxSent) _paiBoasVindas();
 };
 
-function pediAiBoasVindas() {
-  _pediAiInit = true;
+async function _paiBoasVindas() {
+  _paiCtxSent = true;
   const estab = getEstab();
-  const nome  = estab?.nome || 'sua loja';
-  pediAiAddMsg('ai',
-    `Olá! Sou a **PEDI-AI** ✦, sua assistente do PEDIWAY! 🎉
+  _paiAddMsg('ai',
+    'Olá! Sou a **PEDI-AI** ✦, sua assistente do PEDIWAY!
 
-Estou aqui para ajudar a melhorar **${nome}**. Posso analisar preços, sugerir melhorias e responder qualquer dúvida sobre sua loja.
+Posso ajustar sua loja agora mesmo — nome, taxa de entrega, preços, abrir/fechar, e muito mais.
 
-O que vamos fazer hoje?`
+O que quer que eu faça?'
   );
-  pediAiAddChips([
-    '💰 Analisar meus preços',
-    '📊 Dicas de lucro',
-    '⚙️ Ajudar nas configurações',
-    '📋 Melhorar meu cardápio',
-  ]);
+  _paiChips(['💰 Ajustar taxa de entrega','🏪 Mudar nome da loja','🔓 Abrir/fechar loja','📊 Analisar preços','⚙️ Configurar minha loja']);
 }
 
-function pediAiAddMsg(tipo, texto) {
+// ── Mensagens ────────────────────────────────────────────────────────────────
+function _paiAddMsg(tipo, texto, actions) {
   const msgs = document.getElementById('pai-messages');
   if (!msgs) return;
-  // Remove typing indicator
-  const typing = msgs.querySelector('.pai-typing');
-  if (typing) typing.remove();
-
+  msgs.querySelector('.pai-typing')?.remove();
   const div = document.createElement('div');
   div.className = 'pai-msg pai-msg-' + tipo;
-  // Formata **negrito**
-  div.innerHTML = texto
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br>');
+  div.innerHTML = texto.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
   msgs.appendChild(div);
+
+  // Botões de ação confirmáveis
+  if (actions?.length && tipo === 'ai') {
+    const btns = document.createElement('div');
+    btns.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-top:8px';
+    actions.forEach(function(a) {
+      const b = document.createElement('button');
+      b.style.cssText = 'background:var(--red);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-family:Poppins,sans-serif;font-size:.75rem;font-weight:800;cursor:pointer';
+      b.textContent = '✓ Confirmar';
+      b.onclick = async function() {
+        btns.remove();
+        await _paiExecutarActions(actions);
+      };
+      btns.appendChild(b);
+      const c2 = document.createElement('button');
+      c2.style.cssText = 'background:none;border:1.5px solid #ddd;border-radius:8px;padding:7px 14px;font-family:Poppins,sans-serif;font-size:.75rem;font-weight:700;cursor:pointer;color:#888';
+      c2.textContent = 'Cancelar';
+      c2.onclick = function() { btns.remove(); _paiAddMsg('ai','Ok, cancelei! Posso ajudar com mais alguma coisa?'); };
+      btns.appendChild(c2);
+    });
+    msgs.appendChild(btns);
+  }
   msgs.scrollTop = msgs.scrollHeight;
 }
 
-function pediAiAddChips(opcoes) {
+function _paiTyping() {
   const msgs = document.getElementById('pai-messages');
   if (!msgs) return;
-  const div = document.createElement('div');
-  div.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-top:4px';
-  opcoes.forEach(function(op) {
-    const chip = document.createElement('button');
-    chip.className = 'pai-chip';
-    chip.textContent = op;
-    chip.onclick = function() {
-      div.remove();
-      pediAiEnviar(op);
-    };
-    div.appendChild(chip);
+  const d = document.createElement('div');
+  d.className = 'pai-typing';
+  d.innerHTML = '<div class="pai-dot"></div><div class="pai-dot"></div><div class="pai-dot"></div>';
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function _paiChips(opts) {
+  const msgs = document.getElementById('pai-messages');
+  if (!msgs) return;
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-top:4px';
+  opts.forEach(function(op) {
+    const b = document.createElement('button');
+    b.className = 'pai-chip';
+    b.textContent = op;
+    b.onclick = function() { wrap.remove(); _paiEnviar(op); };
+    wrap.appendChild(b);
   });
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
-}
-
-function pediAiTyping() {
-  const msgs = document.getElementById('pai-messages');
-  if (!msgs) return;
-  const div = document.createElement('div');
-  div.className = 'pai-typing';
-  div.innerHTML = '<div class="pai-dot"></div><div class="pai-dot"></div><div class="pai-dot"></div>';
-  msgs.appendChild(div);
+  msgs.appendChild(wrap);
   msgs.scrollTop = msgs.scrollHeight;
 }
 
 window.enviarPediAI = function() {
   const inp = document.getElementById('pai-input');
   if (!inp) return;
-  const texto = inp.value.trim();
-  if (!texto) return;
+  const t = inp.value.trim();
+  if (!t) return;
   inp.value = '';
-  pediAiEnviar(texto);
+  _paiEnviar(t);
 };
 
-async function pediAiEnviar(texto) {
-  pediAiAddMsg('user', texto);
-  pediAiTyping();
+// ── Envio para API e execução ─────────────────────────────────────────────────
+async function _paiEnviar(texto) {
+  _paiAddMsg('user', texto);
+  _paiTyping();
+  _paiHistory.push({ role:'user', content: texto });
+  if (_paiHistory.length > 12) _paiHistory = _paiHistory.slice(-12);
 
   const estab = getEstab();
-  _pediAiHistory.push({ role: 'user', content: texto });
-  if (_pediAiHistory.length > 10) _pediAiHistory = _pediAiHistory.slice(-10);
-
-  // Verifica se quer analisar preços
-  const querAnalise = /preço|precos|lucro|analis|cardápio|valores/i.test(texto);
 
   try {
-    let body = { action: 'chat', messages: _pediAiHistory, context: { loja: { nome: estab?.nome, tipo: estab?.tipo_estabelecimento, cidade: estab?.cidade } } };
+    // Busca produtos para contexto
+    const { data: prods } = await getSupa().from('produtos').select('id,nome,preco,categoria,disponivel,setor').eq('estabelecimento_id', estab.id).limit(30);
 
-    if (querAnalise) {
-      // Busca itens do cardápio para análise
-      const { data: prods } = await getSupa().from('produtos').select('nome,preco,categoria').eq('estabelecimento_id', estab.id).eq('disponivel', true).limit(30);
-      if (prods?.length) {
-        body = { action: 'analyze_menu', context: { itens: prods, tipo_estabelecimento: estab?.tipo_estabelecimento || 'restaurante' } };
-      }
-    }
-
-    const rawText = await (await fetch('/api/pedi-ai', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    const raw = await (await fetch('/api/pedi-ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: _paiHistory,
+        context: {
+          estab: { id: estab.id, nome: estab.nome, cidade: estab.cidade, taxa_entrega: estab.taxa_entrega, pedido_minimo: estab.pedido_minimo, whatsapp: estab.whatsapp, loja_aberta: estab.loja_aberta, tipo_estabelecimento: estab.tipo_estabelecimento },
+          produtos: prods || []
+        }
+      })
     })).text();
 
-    let json; try { json = JSON.parse(rawText); } catch(e) { throw new Error(rawText.slice(0, 100)); }
+    let json; try { json = JSON.parse(raw); } catch(e) { throw new Error('Erro de comunicação com a IA.'); }
     if (json.error) throw new Error(json.error);
 
-    const resposta = json.structured?.resposta || json.content || '';
-    _pediAiHistory.push({ role: 'assistant', content: resposta });
-    pediAiAddMsg('ai', resposta);
+    const resposta = json.resposta || 'Pronto!';
+    _paiHistory.push({ role:'assistant', content: resposta });
 
-    // Mostra análise de preços se houver
-    if (json.structured?.analise?.length) {
-      pediAiMostraAnalise(json.structured.analise, json.structured.dica_geral);
-    }
+    const actions = json.actions || [];
 
-    // Chips contextuais
-    if (querAnalise) {
-      pediAiAddChips(['📈 Quero ajustar os preços', '💡 Mais dicas', '✅ Ok, entendi']);
+    if (json.pergunta && actions.length) {
+      // Pede confirmação antes de executar
+      _paiAddMsg('ai', resposta + '\n\n' + json.pergunta, actions);
+    } else if (actions.length) {
+      // Executa direto
+      _paiAddMsg('ai', resposta);
+      await _paiExecutarActions(actions);
+    } else {
+      _paiAddMsg('ai', resposta);
     }
 
   } catch(e) {
-    pediAiAddMsg('ai', '❌ Ops! Tive um problema: ' + e.message + '. Tente novamente!');
+    _paiAddMsg('ai', '❌ ' + (e.message || 'Erro. Tente novamente.'));
   }
 }
 
-function pediAiMostraAnalise(analise, dica) {
-  const msgs = document.getElementById('pai-messages');
-  if (!msgs) return;
-  const div = document.createElement('div');
-  div.className = 'pai-analise';
-  const STATUS = { ok: ['✅','pai-status-ok'], baixo: ['⬆️','pai-status-low'], alto: ['⬇️','pai-status-high'] };
-  div.innerHTML = '<div style="font-size:.72rem;font-weight:800;color:#333;margin-bottom:8px">📊 Análise de Preços</div>'
-    + analise.slice(0,8).map(function(it) {
-        const [em, cls] = STATUS[it.status] || ['•', ''];
-        const sugerido = it.preco_sugerido > 0 && it.preco_sugerido !== it.preco_atual
-          ? ' → <strong>R$ ' + Number(it.preco_sugerido).toFixed(2).replace('.',',') + '</strong>' : '';
-        return '<div class="pai-analise-item">'
-          + '<span style="flex:1;font-size:.75rem;font-weight:600">' + it.nome + '</span>'
-          + '<span style="font-size:.72rem;color:#888">R$ ' + Number(it.preco_atual).toFixed(2).replace('.',',') + sugerido + '</span>'
-          + '<span class="' + cls + '">' + em + '</span>'
-          + '</div>';
-      }).join('')
-    + (dica ? '<div style="font-size:.7rem;color:#666;margin-top:8px;padding-top:8px;border-top:1px solid #f5f5f5">💡 ' + dica + '</div>' : '');
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
-}
+// ── Executor de ações no Supabase ─────────────────────────────────────────────
+async function _paiExecutarActions(actions) {
+  const estab = getEstab();
+  if (!estab) return;
+  let ok = 0, erros = 0;
 
-// Mostra botão PEDI-AI quando no dashboard
-document.addEventListener('DOMContentLoaded', function() {
-  // O botão é mostrado pelo initDashboard
-});
+  for (const a of actions) {
+    try {
+      if (a.type === 'update_estab') {
+        const upd = {};
+        upd[a.campo] = a.valor;
+        const { error } = await getSupa().from('estabelecimentos').update(upd).eq('id', estab.id);
+        if (error) throw error;
+        // Atualiza estado local
+        try { const o = JSON.parse(localStorage.getItem('pw_estab')||'{}'); o[a.campo]=a.valor; localStorage.setItem('pw_estab',JSON.stringify(o)); window._estab=o; } catch(e) {}
+        ok++;
+
+      } else if (a.type === 'toggle_loja') {
+        const aberta = typeof a.valor === 'boolean' ? a.valor : a.valor === 'true';
+        const { error } = await getSupa().from('estabelecimentos').update({ loja_aberta: aberta }).eq('id', estab.id);
+        if (error) throw error;
+        try { const o = JSON.parse(localStorage.getItem('pw_estab')||'{}'); o.loja_aberta=aberta; localStorage.setItem('pw_estab',JSON.stringify(o)); window._estab=o; } catch(e) {}
+        // Atualiza toggle visual
+        const tog = document.getElementById('cfg-loja-aberta');
+        if (tog) tog.checked = aberta;
+        ok++;
+
+      } else if (a.type === 'update_produto') {
+        if (!a.produto_id) { erros++; continue; }
+        const upd = {};
+        upd[a.campo] = a.valor;
+        const { error } = await getSupa().from('produtos').update(upd).eq('id', a.produto_id).eq('estabelecimento_id', estab.id);
+        if (error) throw error;
+        ok++;
+
+      } else if (a.type === 'toggle_produto') {
+        if (!a.produto_id) { erros++; continue; }
+        const disp = typeof a.valor === 'boolean' ? a.valor : a.valor === 'true';
+        const { error } = await getSupa().from('produtos').update({ disponivel: disp }).eq('id', a.produto_id).eq('estabelecimento_id', estab.id);
+        if (error) throw error;
+        ok++;
+      }
+    } catch(e) {
+      erros++;
+      console.error('PEDI-AI action error:', e);
+    }
+  }
+
+  if (ok > 0) {
+    const msg = ok === 1 ? '✅ Feito! Já atualizei para você.' : `✅ ${ok} alterações feitas com sucesso!`;
+    _paiAddMsg('ai', msg + (erros ? `\n⚠️ ${erros} item(ns) não puderam ser alterados.` : '') + '\n\nPrecisa de mais alguma coisa?');
+    // Recarrega dados da loja na tela
+    setTimeout(function() {
+      try { if(typeof carregarEstadosDash==='function') carregarEstadosDash(); } catch(e) {}
+      try { if(typeof renderProdutos==='function') renderProdutos(); } catch(e) {}
+    }, 600);
+  } else if (erros > 0) {
+    _paiAddMsg('ai', '❌ Não consegui fazer as alterações. Verifique se você está logado e tente novamente.');
+  }
+}
 
 // ════════════════════════════════════════════════════════════════════════════
 // ONBOARDING — Primeiros passos para novos usuários
