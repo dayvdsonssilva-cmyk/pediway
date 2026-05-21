@@ -4565,3 +4565,444 @@ window.iaAdicionarSelecionados = async function() {
     if (cardapioTab) cardapioTab.click();
   }, 600);
 };
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// PEDI-AI — Assistente Inteligente do PEDIWAY
+// ════════════════════════════════════════════════════════════════════════════
+
+var _pediAiOpen    = false;
+var _pediAiHistory = [];
+var _pediAiInit    = false;
+
+window.togglePediAI = function() {
+  _pediAiOpen = !_pediAiOpen;
+  const modal = document.getElementById('pedi-ai-modal');
+  if (modal) modal.classList.toggle('show', _pediAiOpen);
+  if (_pediAiOpen && !_pediAiInit) pediAiBoasVindas();
+};
+
+function pediAiBoasVindas() {
+  _pediAiInit = true;
+  const estab = getEstab();
+  const nome  = estab?.nome || 'sua loja';
+  pediAiAddMsg('ai',
+    `Olá! Sou a **PEDI-AI** ✦, sua assistente do PEDIWAY! 🎉
+
+Estou aqui para ajudar a melhorar **${nome}**. Posso analisar preços, sugerir melhorias e responder qualquer dúvida sobre sua loja.
+
+O que vamos fazer hoje?`
+  );
+  pediAiAddChips([
+    '💰 Analisar meus preços',
+    '📊 Dicas de lucro',
+    '⚙️ Ajudar nas configurações',
+    '📋 Melhorar meu cardápio',
+  ]);
+}
+
+function pediAiAddMsg(tipo, texto) {
+  const msgs = document.getElementById('pai-messages');
+  if (!msgs) return;
+  // Remove typing indicator
+  const typing = msgs.querySelector('.pai-typing');
+  if (typing) typing.remove();
+
+  const div = document.createElement('div');
+  div.className = 'pai-msg pai-msg-' + tipo;
+  // Formata **negrito**
+  div.innerHTML = texto
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/
+/g, '<br>');
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function pediAiAddChips(opcoes) {
+  const msgs = document.getElementById('pai-messages');
+  if (!msgs) return;
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-top:4px';
+  opcoes.forEach(function(op) {
+    const chip = document.createElement('button');
+    chip.className = 'pai-chip';
+    chip.textContent = op;
+    chip.onclick = function() {
+      div.remove();
+      pediAiEnviar(op);
+    };
+    div.appendChild(chip);
+  });
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function pediAiTyping() {
+  const msgs = document.getElementById('pai-messages');
+  if (!msgs) return;
+  const div = document.createElement('div');
+  div.className = 'pai-typing';
+  div.innerHTML = '<div class="pai-dot"></div><div class="pai-dot"></div><div class="pai-dot"></div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+window.enviarPediAI = function() {
+  const inp = document.getElementById('pai-input');
+  if (!inp) return;
+  const texto = inp.value.trim();
+  if (!texto) return;
+  inp.value = '';
+  pediAiEnviar(texto);
+};
+
+async function pediAiEnviar(texto) {
+  pediAiAddMsg('user', texto);
+  pediAiTyping();
+
+  const estab = getEstab();
+  _pediAiHistory.push({ role: 'user', content: texto });
+  if (_pediAiHistory.length > 10) _pediAiHistory = _pediAiHistory.slice(-10);
+
+  // Verifica se quer analisar preços
+  const querAnalise = /preço|precos|lucro|analis|cardápio|valores/i.test(texto);
+
+  try {
+    let body = { action: 'chat', messages: _pediAiHistory, context: { loja: { nome: estab?.nome, tipo: estab?.tipo_estabelecimento, cidade: estab?.cidade } } };
+
+    if (querAnalise) {
+      // Busca itens do cardápio para análise
+      const { data: prods } = await getSupa().from('produtos').select('nome,preco,categoria').eq('estabelecimento_id', estab.id).eq('disponivel', true).limit(30);
+      if (prods?.length) {
+        body = { action: 'analyze_menu', context: { itens: prods, tipo_estabelecimento: estab?.tipo_estabelecimento || 'restaurante' } };
+      }
+    }
+
+    const rawText = await (await fetch('/api/pedi-ai', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    })).text();
+
+    let json; try { json = JSON.parse(rawText); } catch(e) { throw new Error(rawText.slice(0, 100)); }
+    if (json.error) throw new Error(json.error);
+
+    const resposta = json.structured?.resposta || json.content || '';
+    _pediAiHistory.push({ role: 'assistant', content: resposta });
+    pediAiAddMsg('ai', resposta);
+
+    // Mostra análise de preços se houver
+    if (json.structured?.analise?.length) {
+      pediAiMostraAnalise(json.structured.analise, json.structured.dica_geral);
+    }
+
+    // Chips contextuais
+    if (querAnalise) {
+      pediAiAddChips(['📈 Quero ajustar os preços', '💡 Mais dicas', '✅ Ok, entendi']);
+    }
+
+  } catch(e) {
+    pediAiAddMsg('ai', '❌ Ops! Tive um problema: ' + e.message + '. Tente novamente!');
+  }
+}
+
+function pediAiMostraAnalise(analise, dica) {
+  const msgs = document.getElementById('pai-messages');
+  if (!msgs) return;
+  const div = document.createElement('div');
+  div.className = 'pai-analise';
+  const STATUS = { ok: ['✅','pai-status-ok'], baixo: ['⬆️','pai-status-low'], alto: ['⬇️','pai-status-high'] };
+  div.innerHTML = '<div style="font-size:.72rem;font-weight:800;color:#333;margin-bottom:8px">📊 Análise de Preços</div>'
+    + analise.slice(0,8).map(function(it) {
+        const [em, cls] = STATUS[it.status] || ['•', ''];
+        const sugerido = it.preco_sugerido > 0 && it.preco_sugerido !== it.preco_atual
+          ? ' → <strong>R$ ' + Number(it.preco_sugerido).toFixed(2).replace('.',',') + '</strong>' : '';
+        return '<div class="pai-analise-item">'
+          + '<span style="flex:1;font-size:.75rem;font-weight:600">' + it.nome + '</span>'
+          + '<span style="font-size:.72rem;color:#888">R$ ' + Number(it.preco_atual).toFixed(2).replace('.',',') + sugerido + '</span>'
+          + '<span class="' + cls + '">' + em + '</span>'
+          + '</div>';
+      }).join('')
+    + (dica ? '<div style="font-size:.7rem;color:#666;margin-top:8px;padding-top:8px;border-top:1px solid #f5f5f5">💡 ' + dica + '</div>' : '');
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// Mostra botão PEDI-AI quando no dashboard
+document.addEventListener('DOMContentLoaded', function() {
+  // O botão é mostrado pelo initDashboard
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// ONBOARDING — Primeiros passos para novos usuários
+// ════════════════════════════════════════════════════════════════════════════
+
+var _obStep   = 1;
+var _obDados  = {};
+var _obTipos  = [
+  {em:'🍔',nm:'Hamburgueria',val:'hamburgueria'},
+  {em:'🍕',nm:'Pizzaria',val:'pizzaria'},
+  {em:'🍽️',nm:'Restaurante',val:'restaurante'},
+  {em:'🥤',nm:'Bar / Drinks',val:'bar'},
+  {em:'🥖',nm:'Padaria',val:'padaria'},
+  {em:'☕',nm:'Cafeteria',val:'cafeteria'},
+  {em:'🍣',nm:'Japonês',val:'japones'},
+  {em:'🌮',nm:'Lanches',val:'lanchonete'},
+  {em:'🛒',nm:'Outro',val:'outro'},
+];
+
+function verificarOnboarding(estab) {
+  // Só para novos usuários — não tem onboarding_done E não tem produtos
+  const feito = localStorage.getItem('pw_onboarding_done_' + estab.id);
+  if (feito || estab.onboarding_done) return;
+  // Verifica se já tem produtos
+  getSupa().from('produtos').select('id').eq('estabelecimento_id', estab.id).limit(1).then(function(res) {
+    const temProdutos = res.data && res.data.length > 0;
+    if (!temProdutos) {
+      setTimeout(function() { mostrarOnboarding(estab); }, 800);
+    } else {
+      localStorage.setItem('pw_onboarding_done_' + estab.id, '1');
+    }
+  });
+}
+
+function mostrarOnboarding(estab) {
+  _obStep  = 1;
+  _obDados = { nome: estab.nome || '', id: estab.id };
+  const modal = document.getElementById('onboarding-modal');
+  if (modal) { modal.classList.add('show'); renderObStep(1); }
+}
+
+function renderObStep(step) {
+  _obStep = step;
+  const title    = document.getElementById('ob-title');
+  const subtitle = document.getElementById('ob-subtitle');
+  const body     = document.getElementById('ob-body');
+  const dots     = [1,2,3].map(function(i) { return document.getElementById('ob-dot-'+i); });
+
+  dots.forEach(function(d,i) {
+    if(!d) return;
+    d.classList.toggle('active', i+1 === step);
+  });
+
+  const prog = Math.round((step-1)/2*100);
+
+  if (step === 1) {
+    title.textContent    = '👋 Bem-vindo ao PEDIWAY!';
+    subtitle.textContent = 'Vamos deixar sua loja pronta em 3 passos';
+    body.innerHTML = `
+      <div class="ob-progress"><div class="ob-progress-bar"><div class="ob-progress-fill" style="width:0%"></div></div><span style="font-size:.7rem;color:#aaa">Passo 1 de 3</span></div>
+      <div class="ob-ai-msg">Olá! Sou a <strong>PEDI-AI</strong> ✦ e vou te ajudar a configurar tudo rapidinho! Primeiro, me conta: como se chama seu negócio e qual o tipo?</div>
+      <div class="ob-field"><label>Nome do estabelecimento</label>
+        <input class="ob-input" id="ob-nome" placeholder="Ex: Burger da Casa, Pizzaria do João..." value="${_obDados.nome||''}">
+      </div>
+      <div class="ob-field"><label>Tipo de negócio</label>
+        <div class="ob-tipos">${_obTipos.map(function(t){
+          return '<div class="ob-tipo'+(t.val===_obDados.tipo?' selected':'')+'" onclick="obSelecionarTipo(''+t.val+'',this)">'
+            +'<span class="ob-tipo-em">'+t.em+'</span>'
+            +'<span class="ob-tipo-nm">'+t.nm+'</span>'
+            +'</div>';
+        }).join('')}</div>
+      </div>
+      <button class="ob-btn" onclick="obProximo(1)">Continuar →</button>`;
+    setTimeout(function(){const f=body.querySelector('.ob-progress-fill');if(f)f.style.width='5%';},50);
+
+  } else if (step === 2) {
+    title.textContent    = '🍽️ Monte seu cardápio';
+    subtitle.textContent = 'A PEDI-AI vai criar tudo automaticamente';
+    body.innerHTML = `
+      <div class="ob-progress"><div class="ob-progress-bar"><div class="ob-progress-fill" style="width:0%"></div></div><span style="font-size:.7rem;color:#aaa">Passo 2 de 3</span></div>
+      <div class="ob-ai-msg" id="ob-ai-tip">Ótimo, <strong>${_obDados.nome||'sua loja'}</strong>! Agora vou montar seu cardápio. Você tem uma foto do seu cardápio físico?</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+        <button onclick="obUsarScanner()" style="border:2px solid var(--red);border-radius:12px;padding:14px;background:#fff8f8;cursor:pointer;display:flex;align-items:center;gap:12px;font-family:Poppins,sans-serif;text-align:left">
+          <span style="font-size:2rem">📸</span>
+          <div><div style="font-size:.85rem;font-weight:800;color:var(--red)">Fotografar meu cardápio</div><div style="font-size:.7rem;color:#888">A IA detecta todos os itens automaticamente</div></div>
+        </button>
+        <button onclick="obProximo(2)" style="border:2px solid #e5e5e5;border-radius:12px;padding:14px;background:#fafafa;cursor:pointer;display:flex;align-items:center;gap:12px;font-family:Poppins,sans-serif;text-align:left">
+          <span style="font-size:2rem">✏️</span>
+          <div><div style="font-size:.85rem;font-weight:800;color:#333">Adicionar itens manualmente</div><div style="font-size:.7rem;color:#888">Vou cadastrar um por um depois</div></div>
+        </button>
+      </div>`;
+    setTimeout(function(){const f=body.querySelector('.ob-progress-fill');if(f)f.style.width='50%';},50);
+    // Busca dica da IA para este tipo
+    obBuscarDicaIA();
+
+  } else if (step === 3) {
+    title.textContent    = '🎉 Quase lá!';
+    subtitle.textContent = 'Últimos ajustes rápidos';
+    body.innerHTML = `
+      <div class="ob-progress"><div class="ob-progress-bar"><div class="ob-progress-fill" style="width:0%"></div></div><span style="font-size:.7rem;color:#aaa">Passo 3 de 3</span></div>
+      <div class="ob-ai-msg">Perfeito! Agora vamos configurar a entrega. Você pode alterar tudo isso depois nas <strong>Configurações</strong>.</div>
+      <div class="ob-field"><label>Cidade (para taxa de entrega)</label>
+        <input class="ob-input" id="ob-cidade" placeholder="Ex: São Paulo, Belo Horizonte...">
+      </div>
+      <div class="ob-field"><label>Taxa de entrega padrão (R$)</label>
+        <input class="ob-input" id="ob-taxa" type="number" placeholder="Ex: 5.00" step="0.50" min="0">
+      </div>
+      <div class="ob-field"><label>WhatsApp para contato</label>
+        <input class="ob-input" id="ob-whats" type="tel" placeholder="(11) 99999-9999">
+      </div>
+      <button class="ob-btn" onclick="obFinalizar()">🚀 Abrir minha loja!</button>
+      <button class="ob-btn-sec" onclick="fecharOnboarding()">Pular por agora</button>`;
+    setTimeout(function(){const f=body.querySelector('.ob-progress-fill');if(f)f.style.width='100%';},50);
+  }
+}
+
+window.obSelecionarTipo = function(val, el) {
+  _obDados.tipo = val;
+  document.querySelectorAll('.ob-tipo').forEach(function(t){ t.classList.remove('selected'); });
+  if(el) el.classList.add('selected');
+};
+
+window.obProximo = function(fromStep) {
+  if (fromStep === 1) {
+    const nome = (document.getElementById('ob-nome')?.value||'').trim();
+    if (!nome) { showToast('Digite o nome da sua loja!'); return; }
+    _obDados.nome = nome;
+    if (!_obDados.tipo) { showToast('Selecione o tipo do negócio!'); return; }
+    // Salva nome no Supabase
+    getSupa().from('estabelecimentos').update({ nome: nome, tipo_estabelecimento: _obDados.tipo }).eq('id', _obDados.id).then(function(){});
+  }
+  if (fromStep === 2) {
+    renderObStep(3);
+    return;
+  }
+  renderObStep(fromStep + 1);
+};
+
+async function obBuscarDicaIA() {
+  const el = document.getElementById('ob-ai-tip');
+  if (!el) return;
+  try {
+    const raw = await (await fetch('/api/pedi-ai', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'onboarding_step', context:{ step:1, dados:_obDados } })
+    })).text();
+    const json = JSON.parse(raw);
+    if (json.content && el) {
+      el.innerHTML = json.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/
+/g,'<br>');
+    }
+  } catch(e) {}
+}
+
+window.obUsarScanner = function() {
+  fecharOnboarding();
+  setTimeout(function() {
+    const btn = document.querySelector('[onclick="abrirScannerIA()"]');
+    if (btn) btn.click();
+    showToast('📸 Agora fotografe seu cardápio!');
+  }, 300);
+};
+
+window.obFinalizar = async function() {
+  const cidade = document.getElementById('ob-cidade')?.value.trim() || '';
+  const taxa   = parseFloat(document.getElementById('ob-taxa')?.value) || 0;
+  const whats  = document.getElementById('ob-whats')?.value.trim() || '';
+  const estab  = getEstab();
+  if (!estab) return;
+  const updates = {};
+  if (cidade) updates.cidade = cidade;
+  if (taxa)   updates.taxa_entrega = taxa;
+  if (whats)  updates.whatsapp = whats.replace(/\D/g,'');
+  updates.onboarding_done = true;
+  await getSupa().from('estabelecimentos').update(updates).eq('id', estab.id);
+  localStorage.setItem('pw_onboarding_done_' + estab.id, '1');
+  fecharOnboarding();
+  showToast('🎉 Loja configurada! Bem-vindo ao PEDIWAY!');
+  // Abre PEDI-AI para dar boas-vindas
+  setTimeout(function() {
+    const btn = document.getElementById('pedi-ai-btn');
+    if (btn) btn.click();
+  }, 1200);
+};
+
+window.fecharOnboarding = function() {
+  const modal = document.getElementById('onboarding-modal');
+  if (modal) modal.classList.remove('show');
+  const estab = getEstab();
+  if (estab) localStorage.setItem('pw_onboarding_done_' + estab.id, '1');
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// Integração PEDI-AI no Scanner "Cardápio em Segundos"
+// ════════════════════════════════════════════════════════════════════════════
+
+// Após gerar os itens, PEDI-AI analisa os preços automaticamente
+var _iaOriginalRenderLista = null;
+
+window.iaAnalisarPrecosPediAI = async function() {
+  if (!_iaItens || !_iaItens.length) return;
+  const estab = getEstab();
+  try {
+    const rawText = await (await fetch('/api/pedi-ai', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        action: 'analyze_menu',
+        context: {
+          itens: _iaItens.map(function(it){return{nome:it.nome,preco:it.preco,categoria:it.categoria};}),
+          tipo_estabelecimento: estab?.tipo_estabelecimento || 'restaurante'
+        }
+      })
+    })).text();
+    const json = JSON.parse(rawText);
+    if (!json.structured?.analise) return;
+    // Aplica sugestões nos itens
+    json.structured.analise.forEach(function(sug) {
+      const it = _iaItens.find(function(x){return x.nome===sug.nome;});
+      if (it && sug.preco_sugerido > 0 && sug.status !== 'ok') {
+        it._preco_sugerido = sug.preco_sugerido;
+        it._status = sug.status;
+        it._motivo = sug.motivo;
+      }
+    });
+    _iaDicaGeral = json.structured.dica_geral || '';
+    iaRenderListaComAnalise();
+  } catch(e) {}
+};
+
+var _iaDicaGeral = '';
+
+// Override iaRenderLista para incluir análise de preços
+window.iaRenderLista = function() {
+  const lista = ia$('ia-lista-itens');
+  if (!lista || lista.innerHTML === undefined) return;
+  lista.innerHTML = _iaItens.map(function(it) {
+    const preco = it.preco > 0 ? 'R$ ' + Number(it.preco).toFixed(2).replace('.', ',') : '—';
+    const temSugestao = it._preco_sugerido && it._status !== 'ok';
+    const statusIco = {baixo:'⬆️', alto:'⬇️'}[it._status] || '';
+    const precoSug = temSugestao ? ' <span style="color:var(--red);font-weight:800">→ R$ '+Number(it._preco_sugerido).toFixed(2).replace('.',',')+'</span>' : '';
+    return '<label style="display:flex;align-items:flex-start;gap:10px;background:'+(it._sel?'#fff8f8':'#fafafa')+';border:1.5px solid '+(it._sel?'#ffcccc':'#e5e7eb')+';border-radius:10px;padding:10px 12px;cursor:pointer">'
+      + '<input type="checkbox" data-iaid="'+it._id+'" '+(it._sel?'checked':'')
+      + ' onchange="iaToggleItem('+it._id+',this.checked)" style="margin-top:3px;accent-color:var(--red);flex-shrink:0">'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;flex-wrap:wrap">'
+      + '<span>'+(it.emoji||'🍽️')+'</span>'
+      + '<span style="font-size:.83rem;font-weight:800;color:#111">'+it.nome+'</span>'
+      + '<span style="background:#ffe0e0;color:var(--red);font-size:.56rem;font-weight:800;padding:1px 7px;border-radius:50px;margin-left:auto">'+(it.categoria||'OUTROS')+'</span></div>'
+      + (it.descricao?'<div style="font-size:.7rem;color:#888;margin-bottom:3px">'+it.descricao+'</div>':'')
+      + '<div style="font-size:.75rem;font-weight:700;color:#555">'+preco+precoSug
+      + (statusIco?' <span title="'+(it._motivo||'')+'">'+statusIco+'</span>':'')+'</div>'
+      + (it._motivo?'<div style="font-size:.65rem;color:#888;margin-top:2px">'+it._motivo+'</div>':'')
+      + '</div></label>';
+  }).join('');
+  // Dica geral da PEDI-AI
+  if (_iaDicaGeral) {
+    lista.innerHTML += '<div style="background:#fff8f8;border:1.5px solid #ffcccc;border-radius:10px;padding:10px 12px;font-size:.75rem;color:#555;margin-top:4px">💡 <strong>PEDI-AI:</strong> '+_iaDicaGeral+'</div>';
+  }
+};
+
+function iaRenderListaComAnalise() {
+  window.iaRenderLista();
+}
+
+// Modifica analisarCardapioIA para chamar análise de preços após gerar itens
+var _iaOrigAnalisar = window.analisarCardapioIA;
+window.analisarCardapioIA = async function() {
+  _iaDicaGeral = '';
+  if (_iaItens) _iaItens.forEach(function(it){delete it._preco_sugerido;delete it._status;delete it._motivo;});
+  if (typeof _iaOrigAnalisar === 'function') await _iaOrigAnalisar.call(this);
+  // Após gerar, analisa preços com PEDI-AI
+  if (_iaItens && _iaItens.length > 0) {
+    setTimeout(window.iaAnalisarPrecosPediAI, 500);
+  }
+};
