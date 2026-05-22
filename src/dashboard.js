@@ -4858,18 +4858,13 @@ var _obTipos  = [
 ];
 
 function verificarOnboarding(estab) {
-  // Só para novos usuários — não tem onboarding_done E não tem produtos
-  const feito = localStorage.getItem('pw_onboarding_done_' + estab.id);
-  if (feito || estab.onboarding_done) return;
-  // Verifica se já tem produtos
-  getSupa().from('produtos').select('id').eq('estabelecimento_id', estab.id).limit(1).then(function(res) {
-    const temProdutos = res.data && res.data.length > 0;
-    if (!temProdutos) {
-      setTimeout(function() { mostrarOnboarding(estab); }, 800);
-    } else {
-      localStorage.setItem('pw_onboarding_done_' + estab.id, '1');
-    }
-  });
+  // Aparece UMA ÚNICA VEZ para qualquer usuário que ainda não viu
+  const chave = 'pw_ob_visto_' + estab.id;
+  const jaViu = localStorage.getItem(chave) || estab.onboarding_done;
+  if (jaViu) return;
+  // Marca como visto IMEDIATAMENTE para não mostrar de novo
+  localStorage.setItem(chave, '1');
+  setTimeout(function() { mostrarOnboarding(estab); }, 900);
 }
 
 function mostrarOnboarding(estab) {
@@ -4898,11 +4893,11 @@ function renderObStep(step) {
     subtitle.textContent = 'Vamos deixar sua loja pronta em 3 passos';
     body.innerHTML = `
       <div class="ob-progress"><div class="ob-progress-bar"><div class="ob-progress-fill" style="width:0%"></div></div><span style="font-size:.7rem;color:#aaa">Passo 1 de 3</span></div>
-      <div class="ob-ai-msg">Olá! Sou a <strong>PEDI-AI</strong> ✦ e vou te ajudar a configurar tudo rapidinho! Primeiro, me conta: como se chama seu negócio e qual o tipo?</div>
+      <div class="ob-ai-msg">🚀 Você está a <strong>3 passos</strong> de ter sua loja online recebendo pedidos! Vou te ajudar a configurar tudo agora. Bora?</div>
       <div class="ob-field"><label>Nome do estabelecimento</label>
         <input class="ob-input" id="ob-nome" placeholder="Ex: Burger da Casa, Pizzaria do João..." value="${_obDados.nome||''}">
       </div>
-      <div class="ob-field"><label>Tipo de negócio</label>
+      <div class="ob-field"><label>O que você vende?</label>
         <div class="ob-tipos">${_obTipos.map(function(t){
           return '<div class="ob-tipo'+(t.val===_obDados.tipo?' selected':'')+'" onclick="obSelecionarTipo(\'' + t.val + '\',this)">'
             +'<span class="ob-tipo-em">'+t.em+'</span>'
@@ -4910,7 +4905,7 @@ function renderObStep(step) {
             +'</div>';
         }).join('')}</div>
       </div>
-      <button class="ob-btn" onclick="obProximo(1)">Continuar →</button>`;
+      <button class="ob-btn" onclick="obProximo(1)">Vamos lá! →</button>`;
     setTimeout(function(){const f=body.querySelector('.ob-progress-fill');if(f)f.style.width='5%';},50);
 
   } else if (step === 2) {
@@ -4918,15 +4913,16 @@ function renderObStep(step) {
     subtitle.textContent = 'A PEDI-AI vai criar tudo automaticamente';
     body.innerHTML = `
       <div class="ob-progress"><div class="ob-progress-bar"><div class="ob-progress-fill" style="width:0%"></div></div><span style="font-size:.7rem;color:#aaa">Passo 2 de 3</span></div>
-      <div class="ob-ai-msg" id="ob-ai-tip">Ótimo, <strong>${_obDados.nome||'sua loja'}</strong>! Agora vou montar seu cardápio. Você tem uma foto do seu cardápio físico?</div>
+      <div class="ob-ai-msg" id="ob-ai-tip">📸 Lojas com cardápio completo recebem <strong>3x mais pedidos</strong>! Tire uma foto do seu cardápio e a IA cadastra tudo em segundos.</div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
-        <button onclick="obUsarScanner()" style="border:2px solid var(--red);border-radius:12px;padding:14px;background:#fff8f8;cursor:pointer;display:flex;align-items:center;gap:12px;font-family:Poppins,sans-serif;text-align:left">
+        <button onclick="obUsarScanner()" style="border:2px solid var(--red);border-radius:12px;padding:16px;background:#fff8f8;cursor:pointer;display:flex;align-items:center;gap:12px;font-family:Poppins,sans-serif;text-align:left;position:relative">
           <span style="font-size:2rem">📸</span>
-          <div><div style="font-size:.85rem;font-weight:800;color:var(--red)">Fotografar meu cardápio</div><div style="font-size:.7rem;color:#888">A IA detecta todos os itens automaticamente</div></div>
+          <div style="flex:1"><div style="font-size:.88rem;font-weight:800;color:var(--red)">Fotografar meu cardápio agora</div><div style="font-size:.7rem;color:#888;margin-top:2px">A IA detecta todos os itens e preços automaticamente</div></div>
+          <span style="background:var(--red);color:#fff;font-size:.6rem;font-weight:900;padding:2px 8px;border-radius:50px">RECOMENDADO</span>
         </button>
         <button onclick="obProximo(2)" style="border:2px solid #e5e5e5;border-radius:12px;padding:14px;background:#fafafa;cursor:pointer;display:flex;align-items:center;gap:12px;font-family:Poppins,sans-serif;text-align:left">
           <span style="font-size:2rem">✏️</span>
-          <div><div style="font-size:.85rem;font-weight:800;color:#333">Adicionar itens manualmente</div><div style="font-size:.7rem;color:#888">Vou cadastrar um por um depois</div></div>
+          <div><div style="font-size:.85rem;font-weight:800;color:#555">Prefiro adicionar manualmente</div><div style="font-size:.7rem;color:#aaa;margin-top:2px">Você pode usar a IA depois também</div></div>
         </button>
       </div>`;
     setTimeout(function(){const f=body.querySelector('.ob-progress-fill');if(f)f.style.width='50%';},50);
@@ -5026,7 +5022,11 @@ window.fecharOnboarding = function() {
   const modal = document.getElementById('onboarding-modal');
   if (modal) modal.classList.remove('show');
   const estab = getEstab();
-  if (estab) localStorage.setItem('pw_onboarding_done_' + estab.id, '1');
+  if (estab) {
+    localStorage.setItem('pw_ob_visto_' + estab.id, '1');
+    // Salva no banco para não mostrar nem em outros dispositivos
+    try { getSupa().from('estabelecimentos').update({ onboarding_done: true }).eq('id', estab.id).then(function(){}); } catch(e) {}
+  }
 };
 
 // ════════════════════════════════════════════════════════════════════════════
