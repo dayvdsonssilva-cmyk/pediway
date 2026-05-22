@@ -4586,41 +4586,32 @@ window.iaAdicionarSelecionados = async function() {
     } catch(e) { erros++; }
   }
 
-  // 2. Cria grupos de adicionais e seus itens (via tabela produtos com grupo_adicional_id)
+  // 2. Cria grupos de adicionais com opcoes[] — estrutura correta do banco
   let okAdic = 0;
   const adicSel = _iaAdicionais.filter(function(g) { return g._sel !== false; });
   for (const grupo of adicSel) {
     try {
-      // 2a. Cria o GRUPO em grupos_adicionais
-      const { data: grpData, error: grpErr } = await getSupa()
+      // opcoes é um array JSONB: [{nome, preco}, ...]
+      const opcoes = (grupo.itens || []).map(function(it) {
+        return {
+          nome:  String(it.nome || '').slice(0, 80),
+          preco: Number(it.preco) || 0,
+        };
+      });
+      if (!opcoes.length) continue;
+
+      const { error } = await getSupa()
         .from('grupos_adicionais')
         .insert({
           estabelecimento_id: estab.id,
-          nome: String(grupo.grupo || 'Adicionais').slice(0, 60),
-          obrigatorio: false,
-          multiplo: true,
-        })
-        .select()
-        .maybeSingle();
-
-      if (grpErr || !grpData) continue;
-
-      // 2b. Cria cada adicional como PRODUTO com grupo_adicional_id
-      // (mesma estrutura que o gerenciador de adicionais usa)
-      for (const it of (grupo.itens || [])) {
-        await getSupa().from('produtos').insert({
-          estabelecimento_id: estab.id,
-          nome:              String(it.nome || '').slice(0, 120),
-          preco:             Number(it.preco) || 0,
-          emoji:             '🔸',
-          categoria:         'ADICIONAIS',
-          disponivel:        true,
-          promocao:          false,
-          grupo_adicional_id: grpData.id,
+          nome:   String(grupo.grupo || 'Adicionais').slice(0, 60),
+          min:    0,
+          max:    opcoes.length,
+          opcoes: opcoes,
         });
-      }
+      if (error) throw error;
       okAdic++;
-    } catch(e) { console.error('Erro adicional:', e); }
+    } catch(e) { console.error('[IA] Erro grupo adicional:', e.message); }
   }
 
   fecharScannerIA();
