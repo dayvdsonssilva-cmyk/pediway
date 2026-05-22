@@ -6,7 +6,7 @@
         {
           "key": "Content-Type",
           "value": "application/javascript"
-        }, 
+        },
         {
           "key": "Cache-Control",
           "value": "no-cache, no-store, must-revalidate"
@@ -42,7 +42,7 @@
   ],
   "functions": {
     "api/scan-menu.js": {
-      "maxDuration": 30
+      "maxDuration": 60
     },
     "api/pedi-ai.js": {
       "maxDuration": 30
@@ -118,4 +118,4 @@
       "destination": "/cliente.html"
     }
   ]
-} 
+}
