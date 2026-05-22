@@ -4709,64 +4709,133 @@ async function _paiEnviar(texto) {
   }
 }
 
+// ── Mapa: campo Supabase → ID do input na tela ───────────────────────────────
+var _PAI_CAMPO_UI = {
+  'nome':            'cfg-nome',
+  'descricao':       'cfg-desc',
+  'slug':            'cfg-slug',
+  'whatsapp':        'cfg-whats',
+  'cidade':          'cfg-cidade',
+  'estado':          'cfg-estado',
+  'endereco':        'cfg-endereco',
+  'taxa_entrega':    'cfg-taxa',
+  'pedido_minimo':   'cfg-pedido-min',
+  'instagram':       'cfg-instagram',
+  'tiktok':          'cfg-tiktok',
+  'site':            'cfg-site',
+  'telefone':        'cfg-telefone',
+};
+
 // ── Executor de ações no Supabase ─────────────────────────────────────────────
 async function _paiExecutarActions(actions) {
-  const estab = getEstab();
-  if (!estab) return;
-  let ok = 0, erros = 0;
+  // Garante que temos o estabelecimento com ID
+  var estab = getEstab();
+  if (!estab || !estab.id) {
+    _paiAddMsg('ai', '❌ Não encontrei sua loja. Tente recarregar a página.');
+    return;
+  }
 
-  for (const a of actions) {
+  var ok = 0, erros = 0, msgs = [];
+
+  for (var i = 0; i < actions.length; i++) {
+    var a = actions[i];
     try {
+      // ── update_estab: atualiza campo da loja ──────────────────────────────
       if (a.type === 'update_estab') {
-        const upd = {};
-        upd[a.campo] = a.valor;
-        const { error } = await getSupa().from('estabelecimentos').update(upd).eq('id', estab.id);
-        if (error) throw error;
-        // Atualiza estado local
-        try { const o = JSON.parse(localStorage.getItem('pw_estab')||'{}'); o[a.campo]=a.valor; localStorage.setItem('pw_estab',JSON.stringify(o)); window._estab=o; } catch(e) {}
-        ok++;
+        var upd = {};
+        // Coerce tipos corretamente
+        var val = a.valor;
+        if (a.campo === 'taxa_entrega' || a.campo === 'pedido_minimo') {
+          val = parseFloat(String(val).replace(',', '.')) || 0;
+        }
+        upd[a.campo] = val;
 
+        var res = await getSupa().from('estabelecimentos').update(upd).eq('id', estab.id);
+        if (res.error) throw new Error(res.error.message);
+
+        // Atualiza localStorage e estado global
+        try {
+          var stored = JSON.parse(localStorage.getItem('pw_estab') || '{}');
+          stored[a.campo] = val;
+          localStorage.setItem('pw_estab', JSON.stringify(stored));
+          if (window._estab) window._estab[a.campo] = val;
+        } catch(ex) {}
+
+        // Atualiza o campo na tela IMEDIATAMENTE
+        var inputId = _PAI_CAMPO_UI[a.campo];
+        if (inputId) {
+          var el = document.getElementById(inputId);
+          if (el) el.value = val;
+        }
+
+        ok++;
+        msgs.push('✓ ' + a.campo.replace(/_/g,' ') + ' → ' + val);
+
+      // ── toggle_loja: abre/fecha loja ──────────────────────────────────────
       } else if (a.type === 'toggle_loja') {
-        const aberta = typeof a.valor === 'boolean' ? a.valor : a.valor === 'true';
-        const { error } = await getSupa().from('estabelecimentos').update({ loja_aberta: aberta }).eq('id', estab.id);
-        if (error) throw error;
-        try { const o = JSON.parse(localStorage.getItem('pw_estab')||'{}'); o.loja_aberta=aberta; localStorage.setItem('pw_estab',JSON.stringify(o)); window._estab=o; } catch(e) {}
-        // Atualiza toggle visual
-        const tog = document.getElementById('cfg-loja-aberta');
-        if (tog) tog.checked = aberta;
-        ok++;
+        var aberta = (a.valor === true || a.valor === 'true' || a.valor === 'aberta' || a.valor === 1);
+        var res2 = await getSupa().from('estabelecimentos').update({ loja_aberta: aberta }).eq('id', estab.id);
+        if (res2.error) throw new Error(res2.error.message);
 
+        try {
+          var stored2 = JSON.parse(localStorage.getItem('pw_estab') || '{}');
+          stored2.loja_aberta = aberta;
+          localStorage.setItem('pw_estab', JSON.stringify(stored2));
+          if (window._estab) window._estab.loja_aberta = aberta;
+        } catch(ex) {}
+
+        // Atualiza toggle visual (o botão "Aberto/Fechado")
+        var togAberto = document.getElementById('cfg-aberto');
+        if (togAberto) { togAberto.checked = aberta; togAberto.dispatchEvent(new Event('change')); }
+        var badge = document.getElementById('loja-status-badge');
+        if (badge) {
+          badge.textContent = aberta ? 'Aberta' : 'Fechada';
+          badge.className = 'loja-status-badge ' + (aberta ? 'loja-aberta' : 'loja-fechada');
+        }
+        ok++;
+        msgs.push(aberta ? '✓ Loja aberta' : '✓ Loja fechada');
+
+      // ── update_produto: atualiza campo de produto ─────────────────────────
       } else if (a.type === 'update_produto') {
         if (!a.produto_id) { erros++; continue; }
-        const upd = {};
-        upd[a.campo] = a.valor;
-        const { error } = await getSupa().from('produtos').update(upd).eq('id', a.produto_id).eq('estabelecimento_id', estab.id);
-        if (error) throw error;
+        var updP = {};
+        var valP = a.campo === 'preco' ? (parseFloat(String(a.valor).replace(',','.')) || 0) : a.valor;
+        updP[a.campo] = valP;
+        var resP = await getSupa().from('produtos').update(updP).eq('id', a.produto_id).eq('estabelecimento_id', estab.id);
+        if (resP.error) throw new Error(resP.error.message);
         ok++;
+        msgs.push('✓ ' + (a.produto_nome||'Produto') + ' atualizado');
 
+      // ── toggle_produto: ativa/desativa produto ────────────────────────────
       } else if (a.type === 'toggle_produto') {
         if (!a.produto_id) { erros++; continue; }
-        const disp = typeof a.valor === 'boolean' ? a.valor : a.valor === 'true';
-        const { error } = await getSupa().from('produtos').update({ disponivel: disp }).eq('id', a.produto_id).eq('estabelecimento_id', estab.id);
-        if (error) throw error;
+        var dispP = (a.valor === true || a.valor === 'true');
+        var resTP = await getSupa().from('produtos').update({ disponivel: dispP }).eq('id', a.produto_id).eq('estabelecimento_id', estab.id);
+        if (resTP.error) throw new Error(resTP.error.message);
         ok++;
+        msgs.push((dispP ? '✓ Ativado: ' : '✓ Desativado: ') + (a.produto_nome||'Produto'));
       }
+
     } catch(e) {
       erros++;
-      console.error('PEDI-AI action error:', e);
+      console.error('[PEDI-AI] Erro na action:', a, e.message);
     }
   }
 
+  // Feedback visual
   if (ok > 0) {
-    const msg = ok === 1 ? '✅ Feito! Já atualizei para você.' : `✅ ${ok} alterações feitas com sucesso!`;
-    _paiAddMsg('ai', msg + (erros ? `\n⚠️ ${erros} item(ns) não puderam ser alterados.` : '') + '\n\nPrecisa de mais alguma coisa?');
-    // Recarrega dados da loja na tela
+    var feedbackMsg = '✅ ' + (ok === 1 ? 'Alteração feita!' : ok + ' alterações feitas!');
+    if (erros) feedbackMsg += ' (' + erros + ' erro(s))';
+    feedbackMsg += '\n\nPrecisa de mais alguma coisa?';
+    _paiAddMsg('ai', feedbackMsg);
+
+    // Recarrega seção de configurações se estiver aberta
     setTimeout(function() {
-      try { if(typeof carregarEstadosDash==='function') carregarEstadosDash(); } catch(e) {}
-      try { if(typeof renderProdutos==='function') renderProdutos(); } catch(e) {}
-    }, 600);
+      try { if (typeof carregarEstadosDash === 'function') carregarEstadosDash(); } catch(e) {}
+      try { if (typeof renderProdutos === 'function') renderProdutos(); } catch(e) {}
+    }, 800);
   } else if (erros > 0) {
-    _paiAddMsg('ai', '❌ Não consegui fazer as alterações. Verifique se você está logado e tente novamente.');
+    _paiAddMsg('ai', '❌ Não consegui fazer as alterações. Verifique sua conexão e tente novamente.\nSe o problema persistir, ajuste manualmente nas Configurações.');
   }
 }
 
