@@ -212,6 +212,7 @@ export async function initDashboard() {
   const sn = $('dash-store-name'); if (sn) sn.textContent = estab.nome;
   const lu = $('link-url');        if (lu) lu.textContent = `${BASE_URL}/${estab.slug}`;
   const lug = $('link-url-garcom');if (lug) lug.textContent = `${BASE_URL}/comandas/${estab.slug}`;
+  const luk = $('link-url-kds'); if (luk) luk.textContent = `${BASE_URL}/kds/${estab.slug}`;
 
   // Preenche configurações
   preencherConfig(estab);
@@ -637,6 +638,7 @@ export async function salvarConfig() {
     const sn = $('dash-store-name'); if (sn) sn.textContent = nome;
     const lu  = $('link-url');        if (lu)  lu.textContent  = `${BASE_URL}/${slug}`;
     const lug = $('link-url-garcom'); if (lug) lug.textContent = `${BASE_URL}/comandas/${slug}`;
+    const luk2 = $('link-url-kds'); if (luk2) luk2.textContent = `${BASE_URL}/kds/${slug}`;
     const cl  = $('cfg-link-preview');
   if (cl) { cl.textContent = `${BASE_URL}/${slug}`; Object.assign(cl.style,{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',display:'block',maxWidth:'100%'}); }
     const clg = $('cfg-link-garcom'); if (clg) clg.textContent = `${BASE_URL}/comandas/${slug}`;
@@ -2684,6 +2686,26 @@ function abrirAdicionaisGrupo(mesaKey, prodId, nome, preco, emoji, grupo) {
   document.body.style.overflow = 'hidden';
 }
 
+
+window.copiarLinkKDS = function() {
+  const estab = getEstab();
+  if (!estab) return;
+  const slug = estab.slug || estab.id;
+  const url = 'https://pediway.com.br/kds/' + slug;
+  navigator.clipboard.writeText(url).catch(function() {
+    const el = document.createElement('textarea');
+    el.value = url; document.body.appendChild(el);
+    el.select(); document.execCommand('copy'); document.body.removeChild(el);
+  });
+  showToast('✅ Link KDS copiado!');
+};
+
+window.abrirKDS = function() {
+  const estab = getEstab();
+  if (!estab) return;
+  const slug = estab.slug || estab.id;
+  window.open('https://pediway.com.br/kds/' + slug, '_blank');
+};
 
 window.copiarLinkGarcom = function() {
   const estab = getEstab(); if (!estab) return;
