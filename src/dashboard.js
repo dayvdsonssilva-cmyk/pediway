@@ -4858,13 +4858,14 @@ var _obTipos  = [
 ];
 
 function verificarOnboarding(estab) {
-  // Aparece UMA ÚNICA VEZ para qualquer usuário que ainda não viu
+  // Aparece UMA ÚNICA VEZ — verifica APENAS o localStorage (não o banco)
+  // Isso garante que qualquer conta nova vai ver o popup
   const chave = 'pw_ob_visto_' + estab.id;
-  const jaViu = localStorage.getItem(chave) || estab.onboarding_done;
-  if (jaViu) return;
-  // Marca como visto IMEDIATAMENTE para não mostrar de novo
+  if (localStorage.getItem(chave)) return; // já viu antes neste browser
+  // Marca como visto IMEDIATAMENTE para não repetir
   localStorage.setItem(chave, '1');
-  setTimeout(function() { mostrarOnboarding(estab); }, 900);
+  // Mostra após o dashboard carregar completamente
+  setTimeout(function() { mostrarOnboarding(estab); }, 1200);
 }
 
 function mostrarOnboarding(estab) {
