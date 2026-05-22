@@ -1,4 +1,4 @@
-// api/scan-menu.js — ES Module com detecção inteligente de itens vs adicionais
+// api/scan-menu.js — ES Module com detecção inteligente itens + adicionais
 import https from 'node:https';
 import { Buffer } from 'node:buffer';
 
@@ -19,7 +19,7 @@ function openaiPost(apiKey, payload) {
       res.on('data', c => data += c);
       res.on('end', () => resolve({ status: res.statusCode, text: data }));
     });
-    req.setTimeout(25000, () => { req.destroy(); reject(new Error('Timeout')); });
+    req.setTimeout(55000, () => { req.destroy(); reject(new Error('Timeout')); });
     req.on('error', reject);
     req.write(body);
     req.end();
@@ -38,32 +38,33 @@ export default async function handler(req, res) {
 
   const { image, mimeType = 'image/jpeg' } = req.body || {};
   if (!image) return res.status(400).json({ error: 'Imagem não enviada.' });
-  if (image.length > 4000000) return res.status(413).json({ error: 'Imagem muito grande.' });
+  if (image.length > 5000000) return res.status(413).json({ error: 'Imagem muito grande.' });
 
-  const prompt = `Você é especialista em cardápios de restaurantes brasileiros. Analise a imagem e extraia TODOS os itens com inteligência.
+  const prompt = `Você é especialista em cardápios de restaurantes brasileiros. Analise TODO o cardápio na imagem com muita atenção e extraia ABSOLUTAMENTE TODOS os itens e grupos de adicionais.
 
-REGRAS IMPORTANTES:
-1. ITENS são produtos principais que o cliente pede (pratos, bebidas, tamanhos de açaí, pizzas, etc.)
-2. ADICIONAIS são extras/complementos opcionais que acompanham um item (coberturas, ingredientes extras, molhos, etc.)
+REGRAS FUNDAMENTAIS:
+- ITENS = produtos principais que o cliente compra (tamanhos de açaí, pratos, bebidas, etc.)
+- ADICIONAIS = complementos/extras que acompanham os itens (coberturas, frutas, cremes, etc.)
+- Leia TODOS os textos da imagem, mesmo os pequenos
+- Se tiver seções como "COMPLEMENTOS", "FRUTAS", "COBERTURAS" → são grupos de adicionais
+- Se tiver tamanhos diferentes do mesmo produto → cada tamanho é um ITEM separado
+- Coloque preço 0 apenas se realmente não estiver visível
 
 EXEMPLOS:
-- Açaí 300ml, 500ml, 700ml → são ITENS (cada tamanho é um item separado)
-- Granola, leite condensado, morango, banana → são ADICIONAIS (coberturas do açaí)
-- X-Burguer, X-Salada → são ITENS
-- Bacon extra, queijo extra, ovo → são ADICIONAIS
-- Pizza Calabresa, Pizza Margherita → são ITENS
-- Borda recheada, topping extra → ADICIONAIS
-- Coca 350ml, Suco de laranja → ITENS
-- Gelo extra, limão → ADICIONAIS
+✅ Açaí 300ml, 500ml, 700ml → itens separados
+✅ Complementos (Granola R$2, Amendoim R$3) → grupo de adicional "Complementos"
+✅ Frutas (Morango R$2, Banana R$2) → grupo de adicional "Frutas"
+✅ X-Burguer, X-Salada → itens
+✅ Bacon extra, Ovo → grupo de adicional "Extras"
 
-Retorne SOMENTE este JSON válido sem markdown:
+Retorne SOMENTE este JSON sem markdown:
 {
   "itens": [
-    {"nome":"Nome do item","categoria":"CATEGORIA","preco":0.00,"descricao":"desc curta","emoji":"🍔"}
+    {"nome":"Nome exato","categoria":"CATEGORIA","preco":0.00,"descricao":"desc","emoji":"🍔"}
   ],
   "adicionais": [
     {
-      "grupo": "Nome do grupo (ex: Coberturas, Extras, Molhos)",
+      "grupo": "Nome exato do grupo",
       "itens": [
         {"nome":"Nome do adicional","preco":0.00}
       ]
@@ -72,18 +73,23 @@ Retorne SOMENTE este JSON válido sem markdown:
 }
 
 Categorias para itens: LANCHES, PIZZAS, BEBIDAS, SOBREMESAS, PORÇÕES, PRATOS, MASSAS, SALADAS, AÇAÍ, OUTROS
-Se não houver adicionais identificáveis, retorne adicionais como array vazio [].
-Preco: número (0 se não visível). Descricao: max 60 chars.`;
+Se não houver adicionais: "adicionais": []`;
 
   try {
     const result = await openaiPost(apiKey, {
       model: 'gpt-4o-mini',
-      max_tokens: 2500,
+      max_tokens: 4000,
       messages: [{
         role: 'user',
         content: [
           { type: 'text', text: prompt },
-          { type: 'image_url', image_url: { url: `data:${mimeType};base64,${image}`, detail: 'low' } }
+          {
+            type: 'image_url',
+            image_url: {
+              url: `data:${mimeType};base64,${image}`,
+              detail: 'high'   // high = lê texto pequeno — necessário para adicionais
+            }
+          }
         ]
       }]
     });
@@ -101,10 +107,9 @@ Preco: número (0 se não visível). Descricao: max 60 chars.`;
 
     let data;
     try { data = JSON.parse(clean); }
-    catch(e) { return res.status(502).json({ error: 'IA retornou formato inválido.' }); }
+    catch(e) { return res.status(502).json({ error: 'IA retornou formato inválido: ' + clean.slice(0,100) }); }
 
-    // Garante estrutura mínima
-    if (!data.itens) data.itens = [];
+    if (!data.itens)      data.itens = [];
     if (!data.adicionais) data.adicionais = [];
 
     return res.status(200).json(data);
@@ -112,7 +117,7 @@ Preco: número (0 se não visível). Descricao: max 60 chars.`;
   } catch(e) {
     return res.status(500).json({
       error: e.message === 'Timeout'
-        ? 'Análise demorou demais. Tente com foto menor.'
+        ? 'Análise demorou demais. Tente com foto menor ou melhor iluminada.'
         : 'Erro: ' + e.message
     });
   }
