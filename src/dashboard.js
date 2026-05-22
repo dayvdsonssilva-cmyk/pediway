@@ -762,6 +762,7 @@ function renderEmojiGrid() {
 
 // ─── Modal de item ───────────────────────────────────────────────────────────
 export function abrirModalItem() {
+  try{const _eNI=getEstab();if(_eNI)setTimeout(function(){_carregarGruposNoModal(_eNI.id,[]);},100);}catch(e){}
   $('modal-item').classList.add('open');
   ['item-nome','item-desc','item-cat','item-preco','item-preco-orig'].forEach(id => { const el=$(id); if(el) el.value=''; });
   const dd=$('item-desconto-percent'); if(dd) dd.value='0';
@@ -1081,6 +1082,7 @@ export async function salvarItem() {
       categoria:    $('item-cat')?.value.trim().toUpperCase(),
       preco, preco_original: promocao ? preco_orig : null,
       foto_url, fotos_urls, emoji: emojiSel, disponivel: true, promocao,
+      grupos_adicionais_ids: _coletarGruposSelecionados(),
     });
     if (error) throw new Error(error.message);
     await renderCardapio(); fecharModal(); showToast('Item adicionado! ✅');
@@ -1108,6 +1110,7 @@ export async function editarItem(id) {
       const dg=$('desconto-group'); if(dg) dg.style.display=p.promocao?'flex':'none';
     }
     emojiSel = p.emoji || '🍔'; renderEmojiGrid();
+    try{_carregarGruposNoModal(estab.id, p.grupos_adicionais_ids||(p.grupo_adicional_id?[p.grupo_adicional_id]:[]));} catch(e){}
     // Fotos existentes — carrega no mesmo sistema de drag 1:1
     const fotosExist = (p.fotos_urls && p.fotos_urls.length) ? p.fotos_urls : (p.foto_url ? [p.foto_url] : []);
     // Converte URLs existentes para Blob para entrar no mesmo array fotosFiles
@@ -1165,6 +1168,7 @@ export async function editarItem(id) {
             preco:        precoFinalU,
             preco_original: precoOrigU,
             foto_url, fotos_urls, emoji: emojiSel, promocao,
+            grupos_adicionais_ids: _coletarGruposSelecionados(),
             em_promocao: promocao && desconto_pct_u > 0,
             desconto_percent: promocao ? desconto_pct_u : 0,
           }).eq('id', id);
@@ -5191,3 +5195,38 @@ window.analisarCardapioIA = async function() {
     setTimeout(window.iaAnalisarPrecosPediAI, 500);
   }
 };
+
+
+// ── Grupos de Adicionais no modal de produto ─────────────────────────────────
+async function _carregarGruposNoModal(estabId, selecionados) {
+  const wrap = document.getElementById('item-grupos-adic');
+  const empty = document.getElementById('item-grupos-empty');
+  if (!wrap) return;
+  try {
+    const { data: grupos } = await getSupa()
+      .from('grupos_adicionais')
+      .select('id, nome')
+      .eq('estabelecimento_id', estabId)
+      .order('nome');
+
+    if (!grupos || !grupos.length) {
+      wrap.innerHTML = '<span style="font-size:.72rem;color:#aaa">Nenhum grupo criado ainda. Crie em Cardápio → Adicionais.</span>';
+      return;
+    }
+    const selSet = new Set(selecionados || []);
+    wrap.innerHTML = grupos.map(function(g) {
+      const sel = selSet.has(g.id);
+      return '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 0">'
+        + '<input type="checkbox" class="grupo-adic-chk" value="'+g.id+'" '+(sel?'checked':'')+' style="accent-color:var(--red);width:16px;height:16px">'
+        + '<span style="font-size:.8rem;font-weight:'+(sel?'700':'600')+';color:'+(sel?'var(--red)':'#333')+'">'+g.nome+'</span>'
+        + '</label>';
+    }).join('');
+  } catch(e) {
+    wrap.innerHTML = '<span style="font-size:.72rem;color:#aaa">Erro ao carregar grupos.</span>';
+  }
+}
+
+function _coletarGruposSelecionados() {
+  const chks = document.querySelectorAll('.grupo-adic-chk:checked');
+  return Array.from(chks).map(function(c) { return c.value; });
+}
