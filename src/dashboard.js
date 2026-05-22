@@ -4585,11 +4585,7 @@ async function _paiBoasVindas() {
   _paiCtxSent = true;
   const estab = getEstab();
   _paiAddMsg('ai',
-    'Olá! Sou a **PEDI-AI** ✦, sua assistente do PEDIWAY!
-
-Posso ajustar sua loja agora mesmo — nome, taxa de entrega, preços, abrir/fechar, e muito mais.
-
-O que quer que eu faça?'
+    'Ol\u00e1! Sou a **PEDI-AI** \u2726, sua assistente do PEDIWAY!\n\nPosso ajustar sua loja agora mesmo \u2014 nome, taxa de entrega, pre\u00e7os, abrir/fechar, e muito mais.\n\nO que quer que eu fa\u00e7a?'
   );
   _paiChips(['💰 Ajustar taxa de entrega','🏪 Mudar nome da loja','🔓 Abrir/fechar loja','📊 Analisar preços','⚙️ Configurar minha loja']);
 }
