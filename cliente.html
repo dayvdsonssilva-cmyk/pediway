@@ -1748,14 +1748,7 @@ function calcAdicCliMulti() {
 window.toggleAdicCli2 = function(oi, max) { toggleAdicCliMulti(0, oi, max); };
 function calcAdicCli() { calcAdicCliMulti(); }
 
-function calcAdicCli() {
-  if (!_adicCliProd || !_adicCliGrupo) return;
-  let extra = 0;
-  Object.keys(_adicCliSel).forEach(oi => {
-    extra += Number(_adicCliGrupo.opcoes[oi]?.preco || 0);
-  });
-  $('adic-cli-total').textContent = fmt(Number(_adicCliProd.preco) + extra);
-}
+
 
 window.confirmarAdicCli = function() {
   if (!_adicCliProd || !_adicCliGrupos) return;
