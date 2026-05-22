@@ -1,4 +1,4 @@
-// api/scan-menu.js — ES Module (compatível com "type":"module" do projeto)
+// api/scan-menu.js — ES Module com detecção inteligente de itens vs adicionais
 import https from 'node:https';
 import { Buffer } from 'node:buffer';
 
@@ -40,16 +40,45 @@ export default async function handler(req, res) {
   if (!image) return res.status(400).json({ error: 'Imagem não enviada.' });
   if (image.length > 4000000) return res.status(413).json({ error: 'Imagem muito grande.' });
 
-  const prompt = `Analise este cardápio e extraia TODOS os itens visíveis.
-Retorne SOMENTE JSON válido sem markdown:
-{"itens":[{"nome":"Nome","categoria":"CATEGORIA","preco":0.00,"descricao":"desc","emoji":"🍔"}]}
-Categorias: LANCHES, PIZZAS, BEBIDAS, SOBREMESAS, PORÇÕES, PRATOS, MASSAS, SALADAS, OUTROS
+  const prompt = `Você é especialista em cardápios de restaurantes brasileiros. Analise a imagem e extraia TODOS os itens com inteligência.
+
+REGRAS IMPORTANTES:
+1. ITENS são produtos principais que o cliente pede (pratos, bebidas, tamanhos de açaí, pizzas, etc.)
+2. ADICIONAIS são extras/complementos opcionais que acompanham um item (coberturas, ingredientes extras, molhos, etc.)
+
+EXEMPLOS:
+- Açaí 300ml, 500ml, 700ml → são ITENS (cada tamanho é um item separado)
+- Granola, leite condensado, morango, banana → são ADICIONAIS (coberturas do açaí)
+- X-Burguer, X-Salada → são ITENS
+- Bacon extra, queijo extra, ovo → são ADICIONAIS
+- Pizza Calabresa, Pizza Margherita → são ITENS
+- Borda recheada, topping extra → ADICIONAIS
+- Coca 350ml, Suco de laranja → ITENS
+- Gelo extra, limão → ADICIONAIS
+
+Retorne SOMENTE este JSON válido sem markdown:
+{
+  "itens": [
+    {"nome":"Nome do item","categoria":"CATEGORIA","preco":0.00,"descricao":"desc curta","emoji":"🍔"}
+  ],
+  "adicionais": [
+    {
+      "grupo": "Nome do grupo (ex: Coberturas, Extras, Molhos)",
+      "itens": [
+        {"nome":"Nome do adicional","preco":0.00}
+      ]
+    }
+  ]
+}
+
+Categorias para itens: LANCHES, PIZZAS, BEBIDAS, SOBREMESAS, PORÇÕES, PRATOS, MASSAS, SALADAS, AÇAÍ, OUTROS
+Se não houver adicionais identificáveis, retorne adicionais como array vazio [].
 Preco: número (0 se não visível). Descricao: max 60 chars.`;
 
   try {
     const result = await openaiPost(apiKey, {
       model: 'gpt-4o-mini',
-      max_tokens: 2000,
+      max_tokens: 2500,
       messages: [{
         role: 'user',
         content: [
@@ -70,16 +99,20 @@ Preco: número (0 se não visível). Descricao: max 60 chars.`;
     const content = parsed.choices?.[0]?.message?.content || '';
     const clean   = content.replace(/```json|```/g, '').trim();
 
-    let items;
-    try { items = JSON.parse(clean); }
+    let data;
+    try { data = JSON.parse(clean); }
     catch(e) { return res.status(502).json({ error: 'IA retornou formato inválido.' }); }
 
-    return res.status(200).json(items);
+    // Garante estrutura mínima
+    if (!data.itens) data.itens = [];
+    if (!data.adicionais) data.adicionais = [];
+
+    return res.status(200).json(data);
 
   } catch(e) {
     return res.status(500).json({
       error: e.message === 'Timeout'
-        ? 'Análise demorou demais. Tente com foto menor ou melhor iluminada.'
+        ? 'Análise demorou demais. Tente com foto menor.'
         : 'Erro: ' + e.message
     });
   }
