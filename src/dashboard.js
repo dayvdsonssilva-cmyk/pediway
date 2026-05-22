@@ -17,7 +17,7 @@ const CORES = [
   // Gradientes (salvos como string especial)
   'grad:linear-gradient(135deg,#C0392B,#E74C3C)',
   'grad:linear-gradient(135deg,#E67E22,#F39C12)',
-  'grad:linear-gradient(135deg,#27AE60,#1ABC9C)',
+  'grad:linear-gradient(135deg,#27AE60,#1ABC9C)', 
   'grad:linear-gradient(135deg,#2980B9,#8E44AD)',
   'grad:linear-gradient(135deg,#2C3E50,#4CA1AF)',
   'grad:linear-gradient(135deg,#C0392B,#8E44AD)',
