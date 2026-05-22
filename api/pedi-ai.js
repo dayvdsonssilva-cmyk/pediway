@@ -17,7 +17,7 @@ SUAS CAPACIDADES (e apenas essas):
 - Alterar taxa de entrega e pedido mínimo
 - Abrir/fechar a loja
 - Ajustar WhatsApp de contato
-- Ativar/desativar produtos  
+- Ativar/desativar produtos
 - Sugerir e alterar preços de produtos
 - Dar dicas de negócio para restaurantes
 
