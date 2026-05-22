@@ -539,6 +539,51 @@ h3 { font-size:1.2rem; font-weight:700; color:#1a1a1a; }
 .cfg-topic-header.open .cfg-topic-arrow { transform:rotate(180deg); }
 .cfg-topic-body { padding:20px; display:none; flex-direction:column; gap:16px; }
 .cfg-topic-body.open { display:flex; animation:cfg-slide-down .22s cubic-bezier(.4,0,.2,1); }
+
+/* ── Desktop: grid 2 colunas com cards grandes ── */
+@media(min-width:860px){
+  #tab-configuracoes .dash-container { max-width: 100%; padding: 28px 40px; }
+  .cfg-topics-wrap {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    max-width: 100% !important;
+    align-items: start;
+    margin-top: 24px;
+  }
+  .cfg-topic-card {
+    border-radius: 20px;
+    box-shadow: 0 2px 16px rgba(0,0,0,.07);
+    transition: box-shadow .25s, transform .25s;
+    border: 1.5px solid #eee;
+  }
+  .cfg-topic-card:hover {
+    box-shadow: 0 8px 32px rgba(0,0,0,.11);
+    transform: translateY(-3px);
+  }
+  .cfg-topic-header {
+    padding: 26px 28px;
+    gap: 18px;
+    background: #faf8f5;
+  }
+  .cfg-topic-icon {
+    width: 56px; height: 56px;
+    font-size: 1.6rem;
+    border-radius: 16px;
+    border: 1.5px solid #e8e3db;
+    background: #fff;
+  }
+  .cfg-topic-title { font-size: 1.05rem; font-weight: 900; }
+  .cfg-topic-sub   { font-size: .8rem; margin-top: 4px; }
+  .cfg-topic-arrow { width: 28px; height: 28px; }
+  .cfg-topic-body  { padding: 28px; gap: 20px; }
+  /* Card aberto ocupa as 2 colunas inteiras */
+  .cfg-topic-card:has(.cfg-topic-body.open) { grid-column: 1 / -1; }
+  /* Botões de ação abaixo do grid */
+  #tab-configuracoes .btn-primary,
+  #tab-configuracoes [onclick*="ajudaPediway"],
+  #tab-configuracoes [onclick*="ME AJUDA"] { max-width: 480px; margin: 0 auto; display: block; }
+}
 @keyframes cfg-slide-down { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:none} }
 .cfg-actions { max-width:640px; display:flex; flex-direction:column; gap:10px; margin-top:4px; }
 .pgto-band-btn { display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 2px;border-radius:8px;border:1.5px solid #e0dbd5;background:#fff;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s; }
