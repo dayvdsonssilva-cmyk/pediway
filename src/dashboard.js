@@ -4350,6 +4350,7 @@ window.toggleUsaSetores = async function(checked) {
 
 var _iaFotos = []; // [{base64, mimeType, preview}]
 var _iaItens = [];
+var _iaAdicionais = []; // grupos de adicionais detectados
 
 window.abrirScannerIA = function() {
   const m = document.getElementById('modal-scanner-ia');
@@ -4363,7 +4364,7 @@ window.fecharScannerIA = function() {
 function ia$(id) { return document.getElementById(id) || {}; }
 
 function iaReset() {
-  _iaFotos = []; _iaItens = [];
+  _iaFotos = []; _iaItens = []; _iaAdicionais = [];
   ia$('ia-upload-zone').style.display = 'block';
   ia$('ia-thumbs').innerHTML = '';
   ia$('ia-thumbs').style.display = 'none';
@@ -4485,6 +4486,13 @@ window.analisarCardapioIA = async function() {
         const dup = _iaItens.find(function(x) { return x.nome?.toLowerCase() === n.nome?.toLowerCase(); });
         if (!dup) _iaItens.push(n);
       });
+      // Guarda adicionais detectados
+      if (json.adicionais && json.adicionais.length) {
+        json.adicionais.forEach(function(grupo) {
+          const existente = _iaAdicionais.find(function(g) { return g.grupo === grupo.grupo; });
+          if (!existente) _iaAdicionais.push({ ...grupo, _sel: true });
+        });
+      }
     } catch(e) {
       ia$('ia-loading').style.display = 'none';
       ia$('ia-btn-analisar').style.display = 'block';
@@ -4497,7 +4505,8 @@ window.analisarCardapioIA = async function() {
 
   ia$('ia-loading').style.display = 'none';
   ia$('ia-resultados').style.display = 'block';
-  ia$('ia-count').textContent = _iaItens.length;
+  ia$('ia-count').textContent = _iaItens.length
+    + (_iaAdicionais.length ? ' + ' + _iaAdicionais.length + ' grupo(s) adicional' : '');
   iaRenderLista();
 };
 
@@ -4542,6 +4551,8 @@ window.iaAdicionarSelecionados = async function() {
   if (btn) { btn.textContent = 'Adicionando...'; btn.disabled = true; }
 
   let ok = 0, erros = 0;
+
+  // 1. Adiciona os itens principais
   for (const it of sel) {
     try {
       const { error } = await getSupa().from('produtos').insert({
@@ -4558,8 +4569,45 @@ window.iaAdicionarSelecionados = async function() {
     } catch(e) { erros++; }
   }
 
+  // 2. Adiciona os grupos de adicionais detectados
+  let okAdic = 0;
+  const adicSel = _iaAdicionais.filter(function(g) { return g._sel !== false; });
+  for (const grupo of adicSel) {
+    try {
+      // Cria o grupo de adicionais
+      const { data: grpData, error: grpErr } = await getSupa()
+        .from('grupos_adicionais')
+        .insert({
+          estabelecimento_id: estab.id,
+          nome: String(grupo.grupo || 'Adicionais').slice(0, 60),
+          obrigatorio: false,
+          multiplo: true,
+        })
+        .select().maybeSingle();
+
+      if (grpErr || !grpData) continue;
+
+      // Cria os itens do grupo
+      const itensAdic = (grupo.itens || []).map(function(it) {
+        return {
+          grupo_id: grpData.id,
+          nome:  String(it.nome || '').slice(0, 80),
+          preco: Number(it.preco) || 0,
+          disponivel: true,
+        };
+      });
+      if (itensAdic.length) {
+        await getSupa().from('itens_adicionais').insert(itensAdic);
+        okAdic++;
+      }
+    } catch(e) { /* adicional falhou silenciosamente */ }
+  }
+
   fecharScannerIA();
-  showToast('✅ ' + ok + ' itens adicionados ao cardápio!' + (erros ? ' (' + erros + ' erros)' : ''));
+  let msg = '✅ ' + ok + ' itens adicionados!';
+  if (okAdic > 0) msg += ' + ' + okAdic + ' grupo(s) de adicionais!';
+  if (erros) msg += ' (' + erros + ' erros)';
+  showToast(msg);
   setTimeout(function() {
     const cardapioTab = document.querySelector('[data-tab="cardapio"]');
     if (cardapioTab) cardapioTab.click();
@@ -4860,7 +4908,7 @@ var _obTipos  = [
 function verificarOnboarding(estab) {
   // Aparece UMA ÚNICA VEZ — verifica APENAS o localStorage (não o banco)
   // Isso garante que qualquer conta nova vai ver o popup
-  const chave = 'pw_ob_visto_' + estab.id;
+  const chave = 'pw_ob_' + estab.id;
   if (localStorage.getItem(chave)) return; // já viu antes neste browser
   // Marca como visto IMEDIATAMENTE para não repetir
   localStorage.setItem(chave, '1');
@@ -5024,7 +5072,7 @@ window.fecharOnboarding = function() {
   if (modal) modal.classList.remove('show');
   const estab = getEstab();
   if (estab) {
-    localStorage.setItem('pw_ob_visto_' + estab.id, '1');
+    localStorage.setItem('pw_ob_' + estab.id, '1');
     // Salva no banco para não mostrar nem em outros dispositivos
     try { getSupa().from('estabelecimentos').update({ onboarding_done: true }).eq('id', estab.id).then(function(){}); } catch(e) {}
   }
@@ -5095,6 +5143,24 @@ window.iaRenderLista = function() {
   // Dica geral da PEDI-AI
   if (_iaDicaGeral) {
     lista.innerHTML += '<div style="background:#fff8f8;border:1.5px solid #ffcccc;border-radius:10px;padding:10px 12px;font-size:.75rem;color:#555;margin-top:4px">💡 <strong>PEDI-AI:</strong> '+_iaDicaGeral+'</div>';
+  }
+
+  // Seção de adicionais detectados
+  if (_iaAdicionais && _iaAdicionais.length) {
+    lista.innerHTML += '<div style="border-top:2px solid #f0f0f0;margin-top:12px;padding-top:10px">'
+      + '<div style="font-size:.72rem;font-weight:800;color:#555;margin-bottom:8px;display:flex;align-items:center;gap:6px">🧩 Adicionais detectados <span style="background:#e0e7ff;color:#6366f1;font-size:.6rem;font-weight:900;padding:1px 8px;border-radius:50px">GRUPOS</span></div>'
+      + _iaAdicionais.map(function(grupo, gi) {
+          return '<div style="background:#f8f8ff;border:1.5px solid #e5e7ff;border-radius:10px;padding:10px 12px;margin-bottom:6px">'
+            + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+            + '<input type="checkbox" id="adic-chk-'+gi+'" '+(grupo._sel?'checked':'')+' onchange="_iaAdicionais['+gi+']._sel=this.checked" style="accent-color:#6366f1">'
+            + '<label for="adic-chk-'+gi+'" style="font-size:.78rem;font-weight:800;color:#333;cursor:pointer">'+grupo.grupo+'</label>'
+            + '</div>'
+            + (grupo.itens||[]).map(function(it){
+                return '<div style="font-size:.72rem;color:#666;padding:2px 0 2px 22px">• '+it.nome+(it.preco>0?' — R$ '+Number(it.preco).toFixed(2).replace('.',','):'')+'</div>';
+              }).join('')
+            + '</div>';
+        }).join('')
+      + '</div>';
   }
 };
 
