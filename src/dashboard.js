@@ -17,7 +17,7 @@ const CORES = [
   // Gradientes (salvos como string especial)
   'grad:linear-gradient(135deg,#C0392B,#E74C3C)',
   'grad:linear-gradient(135deg,#E67E22,#F39C12)',
-  'grad:linear-gradient(135deg,#27AE60,#1ABC9C)', 
+  'grad:linear-gradient(135deg,#27AE60,#1ABC9C)',
   'grad:linear-gradient(135deg,#2980B9,#8E44AD)',
   'grad:linear-gradient(135deg,#2C3E50,#4CA1AF)',
   'grad:linear-gradient(135deg,#C0392B,#8E44AD)',
@@ -551,7 +551,8 @@ export async function salvarConfig() {
   const estab = getEstab(); if (!estab) return;
 
   const nome     = $('cfg-nome')?.value.trim();
-  const slug     = $('cfg-slug')?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'-');\n  const whats    = ($('cfg-whats')?.value || '').replace(/\D/g,''); // salva só dígitos → evita bug na recuperação de senha
+  const slug     = $('cfg-slug')?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'-');
+  const whats    = ($('cfg-whats')?.value || '').replace(/\D/g,''); // salva só dígitos → evita bug na recuperação de senha
   const desc     = $('cfg-desc')?.value.trim();
   const estado   = $('cfg-estado')?.value || null;
   const cidade   = $('cfg-cidade')?.value.trim() || null;
