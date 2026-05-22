@@ -4364,52 +4364,58 @@ window.goTo = function(screen) {
 
 <script>
 (function() {
-  // Mostra botão PEDI-AI quando dashboard está ativo
-  function checkPediAI() {
-    var screen = document.querySelector('[data-screen="s-dash"].active');
+  var _obFired = false;
+
+  function onDashActive() {
+    // Botão PEDI-AI
     var btn = document.getElementById('pedi-ai-btn');
-    if (btn) btn.classList.toggle('show', !!screen);
-  }
-  var observer = new MutationObserver(checkPediAI);
-  document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.screen').forEach(function(s) {
-      observer.observe(s, { attributes: true, attributeFilter: ['class'] });
-    });
-    checkPediAI();
-  });
+    if (btn) btn.classList.add('show');
 
-  // Dispara onboarding quando dashboard fica ativo
-  // Funciona independente do initDashboard
-  var _obTriggered = false;
-  var obObserver = new MutationObserver(function() {
-    if (_obTriggered) return;
-    var dash = document.querySelector('[data-screen="s-dash"].active');
-    if (!dash) return;
-    _obTriggered = true;
+    // Onboarding — roda só uma vez
+    if (_obFired) return;
+    _obFired = true;
 
-    // Espera o estab carregar (max 5s)
-    var tentativas = 0;
-    var intervalo = setInterval(function() {
-      tentativas++;
-      var estab = typeof getEstab === 'function' ? getEstab() : null;
+    var tries = 0;
+    var poll = setInterval(function() {
+      tries++;
+      var estab = (typeof getEstab === 'function') ? getEstab() : null;
       if (estab && estab.id) {
-        clearInterval(intervalo);
-        var chave = 'pw_ob_visto_' + estab.id;
-        if (!localStorage.getItem(chave)) {
-          localStorage.setItem(chave, '1');
+        clearInterval(poll);
+        var key = 'pw_ob_' + estab.id;
+        if (!localStorage.getItem(key)) {
+          localStorage.setItem(key, '1');
           setTimeout(function() {
             if (typeof mostrarOnboarding === 'function') mostrarOnboarding(estab);
-          }, 1000);
+          }, 800);
         }
       }
-      if (tentativas > 50) clearInterval(intervalo); // timeout 5s
+      if (tries > 80) clearInterval(poll);
     }, 100);
+  }
+
+  function onDashInactive() {
+    var btn = document.getElementById('pedi-ai-btn');
+    if (btn) btn.classList.remove('show');
+  }
+
+  // Observa a tela s-dash ganhar/perder classe active
+  var obs = new MutationObserver(function(mutations) {
+    mutations.forEach(function(m) {
+      if (m.target.dataset && m.target.dataset.screen === 's-dash') {
+        if (m.target.classList.contains('active')) onDashActive();
+        else onDashInactive();
+      }
+    });
   });
 
   document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.screen').forEach(function(s) {
-      obObserver.observe(s, { attributes: true, attributeFilter: ['class'] });
+    // Observa TODAS as screens
+    document.querySelectorAll('.screen').forEach(function(el) {
+      obs.observe(el, { attributes: true, attributeFilter: ['class'] });
     });
+    // Checa estado inicial (caso já esteja ativo)
+    var dash = document.querySelector('[data-screen="s-dash"].active');
+    if (dash) onDashActive();
   });
 })();
 </script>
