@@ -922,14 +922,29 @@ async function carregarProdutos() {
   produtos = data || [];
 
   // Carrega grupos de adicionais vinculados
-  const gIds = [...new Set((produtos).filter(p=>p.grupo_adicional_id).map(p=>p.grupo_adicional_id))];
+  // Suporta múltiplos grupos por produto (grupos_adicionais_ids) + legado (grupo_adicional_id)
+  const gIdsSet = new Set();
+  produtos.forEach(p => {
+    if (p.grupo_adicional_id) gIdsSet.add(p.grupo_adicional_id);
+    if (Array.isArray(p.grupos_adicionais_ids)) p.grupos_adicionais_ids.forEach(id => gIdsSet.add(id));
+  });
+  const gIds = [...gIdsSet];
   if (gIds.length) {
     try {
       const { data: grupos } = await supa.from('grupos_adicionais').select('*').in('id', gIds);
       const gMap = {};
       (grupos||[]).forEach(g => { gMap[g.id] = g; });
       produtos.forEach(p => {
+        // Legado: 1 grupo
         if (p.grupo_adicional_id) p.grupo_adicionais = gMap[p.grupo_adicional_id] || null;
+        // Novo: múltiplos grupos
+        if (Array.isArray(p.grupos_adicionais_ids) && p.grupos_adicionais_ids.length) {
+          p.grupos_lista = p.grupos_adicionais_ids.map(id => gMap[id]).filter(Boolean);
+        } else if (p.grupo_adicionais) {
+          p.grupos_lista = [p.grupo_adicionais];
+        } else {
+          p.grupos_lista = [];
+        }
       });
     } catch(e) { console.warn('grupos adicionais:', e); }
   }
@@ -1124,15 +1139,13 @@ window.mudaQtd = function(d) {
 window.adicionarAoCarrinho = function() {
   if (!prodAtual) return;
   // Se tem grupo vinculado, abre modal de adicionais
-  if (prodAtual.grupo_adicional_id || prodAtual.grupo_adicionais) {
-    const g = prodAtual.grupo_adicionais || null;
-    if (g) {
-      const _p = prodAtual; // salva antes de fecharModal zerá-lo
-      fecharModal();
-      abrirModalAdicionaisCli(_p, g);
-      return;
-    }
-    // grupo ainda não carregado — adiciona sem adicionais
+  // Verifica se produto tem grupos de adicionais
+  const _grupos = prodAtual.grupos_lista || [];
+  if (_grupos.length > 0) {
+    const _p = prodAtual;
+    fecharModal();
+    abrirModalAdicionaisCli(_p, _grupos);
+    return;
   }
   const grupos = Array.isArray(prodAtual.adicionais) ? prodAtual.adicionais : [];
   if (grupos.length > 0) {
@@ -1407,7 +1420,6 @@ window.finalizarPedido = async function() {
       preco:     Number(c.preco) || 0,
       qtd:       Math.max(1, Math.min(99, Number(c.qtd) || 1)),
       emoji:     String(c.emoji || '').slice(0, 10),
-      setor:     c.setor || null,
       adicionais: (c.adicionais || []).map(a => ({
         nome:  String(a.nome || '').slice(0, 80),
         preco: Number(a.preco) || 0,
@@ -1670,55 +1682,71 @@ let _adicCliProd   = null;
 let _adicCliGrupo  = null;
 let _adicCliSel    = {};
 
-window.abrirModalAdicionaisCli = function(p, grupo) {
-  _adicCliProd  = p;
-  _adicCliGrupo = grupo;
-  _adicCliSel   = {};
+// _adicCliGrupos = array de grupos
+window.abrirModalAdicionaisCli = function(p, grupos) {
+  _adicCliProd   = p;
+  _adicCliGrupo  = Array.isArray(grupos) ? grupos[0] : grupos; // legado
+  _adicCliGrupos = Array.isArray(grupos) ? grupos : [grupos];
+  _adicCliSel    = {}; // { grupoIdx: { opcaoIdx: true } }
 
   $('adic-cli-nome').textContent = p.nome;
   $('adic-cli-base').textContent = fmt(p.preco);
 
-  const maxTxt = grupo.max === 1 ? 'Escolha 1' : grupo.min > 0 ? 'Mín. '+grupo.min+', Máx. '+grupo.max : 'Até '+grupo.max;
-  $('adic-cli-grupos').innerHTML = `<div style="margin-bottom:4px">
-    <div style="font-size:.82rem;font-weight:800;margin-bottom:3px">${grupo.nome}${grupo.min>0?' <span style="color:var(--red);font-size:.65rem">*obrigatório</span>':''}</div>
-    <div style="font-size:.68rem;color:#aaa;margin-bottom:10px">${maxTxt}</div>
-    ${(grupo.opcoes||[]).map((o,oi)=>`
-      <div id="adic-opt-${oi}" onclick="toggleAdicCli2(${oi},${grupo.max})"
-        style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px;border:1.5px solid #e0dbd5;border-radius:11px;cursor:pointer;margin-bottom:7px;transition:all .15s">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div id="adic-chk-${oi}" style="width:20px;height:20px;border-radius:50%;border:2px solid #ddd;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:transparent;flex-shrink:0;transition:all .15s">✓</div>
-          <span style="font-size:.85rem;font-weight:600">${o.nome}</span>
-        </div>
-        <span style="font-size:.8rem;font-weight:700;color:var(--red)">${Number(o.preco||0)>0?'+R$ '+Number(o.preco).toFixed(2).replace('.',','):'Grátis'}</span>
-      </div>`).join('')}
-    <div id="adic-aviso" style="font-size:.68rem;color:#ef4444;font-weight:700;display:none">Limite de ${grupo.max} opções atingido</div>
-  </div>`;
+  $('adic-cli-grupos').innerHTML = _adicCliGrupos.map((grupo, gi) => {
+    const maxTxt = grupo.max === 1 ? 'Escolha 1'
+      : grupo.min > 0 ? 'Mín. '+grupo.min+', Máx. '+grupo.max
+      : 'Até '+grupo.max+' opções';
+    return `<div style="margin-bottom:16px">
+      <div style="font-size:.82rem;font-weight:800;margin-bottom:2px">${grupo.nome}${grupo.min>0?'<span style="color:var(--red);font-size:.62rem;margin-left:4px">*obrigatório</span>':''}</div>
+      <div style="font-size:.68rem;color:#aaa;margin-bottom:8px">${maxTxt}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px">
+        ${(grupo.opcoes||[]).map((o,oi)=>`
+          <button id="adic-opt-${gi}-${oi}" onclick="toggleAdicCliMulti(${gi},${oi},${grupo.max})"
+            style="border:1.5px solid #e0dbd5;border-radius:50px;padding:7px 14px;background:#fff;cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:5px">
+            <span style="font-size:.82rem;font-weight:600">${o.nome}</span>
+            ${Number(o.preco||0)>0?`<span style="font-size:.72rem;font-weight:700;color:var(--red)">+R$ ${Number(o.preco).toFixed(2).replace('.',',')}</span>`:''}
+          </button>`).join('')}
+      </div>
+      ${gi < _adicCliGrupos.length-1 ? '<div style="border-top:1px solid #f0f0f0;margin-top:12px"></div>' : ''}
+    </div>`;
+  }).join('');
 
-  calcAdicCli();
+  calcAdicCliMulti();
   $('modal-adic-cli').style.display = 'flex';
   document.body.style.overflow = 'hidden';
 };
 
-window.toggleAdicCli2 = function(oi, max) {
-  if (!_adicCliSel[oi]) {
-    const qtdSel = Object.keys(_adicCliSel).length;
-    if (qtdSel >= max) {
-      const av = $('adic-aviso');
-      if (av) { av.style.display='block'; setTimeout(()=>av.style.display='none',2000); }
-      return;
-    }
-    _adicCliSel[oi] = true;
-    const el = $('adic-opt-'+oi), chk = $('adic-chk-'+oi);
-    if (el)  { el.style.borderColor='var(--red)'; el.style.background='#fff5f5'; }
-    if (chk) { chk.style.background='var(--red)'; chk.style.borderColor='var(--red)'; chk.style.color='#fff'; }
+// Toggle botão chip de adicional (multi-grupo)
+window.toggleAdicCliMulti = function(gi, oi, max) {
+  if (!_adicCliSel[gi]) _adicCliSel[gi] = {};
+  const grpSel = _adicCliSel[gi];
+  const btn = $('adic-opt-'+gi+'-'+oi);
+  if (grpSel[oi]) {
+    delete grpSel[oi];
+    if (btn) { btn.style.borderColor='#e0dbd5'; btn.style.background='#fff'; btn.style.color='inherit'; }
   } else {
-    delete _adicCliSel[oi];
-    const el = $('adic-opt-'+oi), chk = $('adic-chk-'+oi);
-    if (el)  { el.style.borderColor='#e0dbd5'; el.style.background=''; }
-    if (chk) { chk.style.background=''; chk.style.borderColor='#ddd'; chk.style.color='transparent'; }
+    if (Object.keys(grpSel).length >= max) {
+      mostrarToast('Limite de '+max+' opções atingido', '#C0392B'); return;
+    }
+    grpSel[oi] = true;
+    if (btn) { btn.style.borderColor='var(--red)'; btn.style.background='#fff0f0'; btn.style.color='var(--red)'; btn.style.fontWeight='800'; }
   }
-  calcAdicCli();
+  calcAdicCliMulti();
 };
+
+function calcAdicCliMulti() {
+  if (!_adicCliProd || !_adicCliGrupos) return;
+  let extra = 0;
+  _adicCliGrupos.forEach((g, gi) => {
+    const sel = _adicCliSel[gi] || {};
+    Object.keys(sel).forEach(oi => { extra += Number(g.opcoes[parseInt(oi)]?.preco || 0); });
+  });
+  $('adic-cli-total').textContent = fmt(Number(_adicCliProd.preco) + extra);
+}
+
+// Legado
+window.toggleAdicCli2 = function(oi, max) { toggleAdicCliMulti(0, oi, max); };
+function calcAdicCli() { calcAdicCliMulti(); }
 
 function calcAdicCli() {
   if (!_adicCliProd || !_adicCliGrupo) return;
@@ -1730,16 +1758,26 @@ function calcAdicCli() {
 }
 
 window.confirmarAdicCli = function() {
-  if (!_adicCliProd || !_adicCliGrupo) return;
-  const g = _adicCliGrupo;
-  const qtdSel = Object.keys(_adicCliSel).length;
-  if (g.min > 0 && qtdSel < g.min) {
-    mostrarToast('Escolha ao menos ' + g.min + ' opção em "' + g.nome + '"', '#C0392B');
-    return;
+  if (!_adicCliProd || !_adicCliGrupos) return;
+  // Valida obrigatórios
+  for (let gi = 0; gi < _adicCliGrupos.length; gi++) {
+    const g = _adicCliGrupos[gi];
+    const sel = _adicCliSel[gi] || {};
+    if (g.min > 0 && Object.keys(sel).length < g.min) {
+      mostrarToast('Escolha ao menos ' + g.min + ' em "' + g.nome + '"', '#C0392B');
+      return;
+    }
   }
-  const selecionados = Object.keys(_adicCliSel).map(oi => g.opcoes[parseInt(oi)]);
-  const extra = selecionados.reduce((s,o)=>s+Number(o.preco||0),0);
-  const adicFlat = selecionados.filter(o=>o.nome).map(o=>({ nome: o.nome, preco: Number(o.preco||0) }));
+  // Coleta selecionados de todos os grupos
+  let extra = 0;
+  const adicFlat = [];
+  _adicCliGrupos.forEach((g, gi) => {
+    const sel = _adicCliSel[gi] || {};
+    Object.keys(sel).forEach(oi => {
+      const op = g.opcoes[parseInt(oi)];
+      if (op) { extra += Number(op.preco||0); adicFlat.push({ nome: op.nome, preco: Number(op.preco||0) }); }
+    });
+  });
   adicionarItem({ ..._adicCliProd, preco: _adicCliProd.preco + extra, adicionais: adicFlat }, qtdAtual || 1);
   mostrarToast(_adicCliProd.nome + ' adicionado! 🛒', '#1a1a1a');
   fecharModalAdicCli();
@@ -1748,7 +1786,7 @@ window.confirmarAdicCli = function() {
 window.fecharModalAdicCli = function() {
   $('modal-adic-cli').style.display = 'none';
   document.body.style.overflow = '';
-  _adicCliProd = null; _adicCliGrupo = null; _adicCliSel = {};
+  _adicCliProd = null; _adicCliGrupo = null; _adicCliGrupos = []; _adicCliSel = {};
 };
 
 </script>
