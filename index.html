@@ -18,8 +18,8 @@
 }
 body { font-family:'Poppins',sans-serif; font-weight:500; line-height:1.6; min-height:100vh; overflow-x:hidden; max-width:100vw; }
 *, *::before, *::after { box-sizing:border-box; }
-input, select, textarea { max-width:100%; box-sizing:border-box; } 
-.cfg-section { overflow:hidden; } 
+input, select, textarea { max-width:100%; box-sizing:border-box; }
+.cfg-section { overflow:hidden; }
 /* Bloqueia zoom em toda a plataforma */
 
 
@@ -4363,22 +4363,53 @@ window.goTo = function(screen) {
 
 
 <script>
-// Garante que PEDI-AI aparece ao entrar no dashboard
 (function() {
-  var _origGoTo = null;
-  function checkAndShowPediAI() {
+  // Mostra botão PEDI-AI quando dashboard está ativo
+  function checkPediAI() {
     var screen = document.querySelector('[data-screen="s-dash"].active');
     var btn = document.getElementById('pedi-ai-btn');
     if (btn) btn.classList.toggle('show', !!screen);
   }
-  // Observa mudanças de classe nas screens
-  var observer = new MutationObserver(checkAndShowPediAI);
+  var observer = new MutationObserver(checkPediAI);
   document.addEventListener('DOMContentLoaded', function() {
-    var screens = document.querySelectorAll('.screen');
-    screens.forEach(function(s) {
+    document.querySelectorAll('.screen').forEach(function(s) {
       observer.observe(s, { attributes: true, attributeFilter: ['class'] });
     });
-    checkAndShowPediAI();
+    checkPediAI();
+  });
+
+  // Dispara onboarding quando dashboard fica ativo
+  // Funciona independente do initDashboard
+  var _obTriggered = false;
+  var obObserver = new MutationObserver(function() {
+    if (_obTriggered) return;
+    var dash = document.querySelector('[data-screen="s-dash"].active');
+    if (!dash) return;
+    _obTriggered = true;
+
+    // Espera o estab carregar (max 5s)
+    var tentativas = 0;
+    var intervalo = setInterval(function() {
+      tentativas++;
+      var estab = typeof getEstab === 'function' ? getEstab() : null;
+      if (estab && estab.id) {
+        clearInterval(intervalo);
+        var chave = 'pw_ob_visto_' + estab.id;
+        if (!localStorage.getItem(chave)) {
+          localStorage.setItem(chave, '1');
+          setTimeout(function() {
+            if (typeof mostrarOnboarding === 'function') mostrarOnboarding(estab);
+          }, 1000);
+        }
+      }
+      if (tentativas > 50) clearInterval(intervalo); // timeout 5s
+    }, 100);
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.screen').forEach(function(s) {
+      obObserver.observe(s, { attributes: true, attributeFilter: ['class'] });
+    });
   });
 })();
 </script>
