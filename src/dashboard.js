@@ -281,6 +281,23 @@ function preencherConfig(estab) {
   const cc = $('cfg-cartao');   if (cc) cc.checked = estab.aceita_cartao   !== false;
   const cd = $('cfg-dinheiro'); if (cd) cd.checked = estab.aceita_dinheiro !== false;
   // Taxa de serviço
+  // ── Onboarding: aparece UMA VEZ para todo mundo ──────────────────────
+  try {
+    var _obKey = 'pw_ob_' + estab.id;
+    if (!localStorage.getItem(_obKey)) {
+      localStorage.setItem(_obKey, '1');
+      setTimeout(function() {
+        if (typeof mostrarOnboarding === 'function') mostrarOnboarding(estab);
+      }, 1200);
+    }
+  } catch(e) {}
+
+  // ── Botão PEDI-AI ─────────────────────────────────────────────────────
+  try {
+    var _paiBtn = document.getElementById('pedi-ai-btn');
+    if (_paiBtn) _paiBtn.classList.add('show');
+  } catch(e) {}
+
   const ctsToggle = $('cfg-taxa-servico');
   const ctsWrap   = document.getElementById('cfg-taxa-servico-wrap');
   const ctsPerc   = $('cfg-perc-servico');
@@ -4569,12 +4586,12 @@ window.iaAdicionarSelecionados = async function() {
     } catch(e) { erros++; }
   }
 
-  // 2. Adiciona os grupos de adicionais detectados
+  // 2. Cria grupos de adicionais e seus itens (via tabela produtos com grupo_adicional_id)
   let okAdic = 0;
   const adicSel = _iaAdicionais.filter(function(g) { return g._sel !== false; });
   for (const grupo of adicSel) {
     try {
-      // Cria o grupo de adicionais
+      // 2a. Cria o GRUPO em grupos_adicionais
       const { data: grpData, error: grpErr } = await getSupa()
         .from('grupos_adicionais')
         .insert({
@@ -4583,31 +4600,35 @@ window.iaAdicionarSelecionados = async function() {
           obrigatorio: false,
           multiplo: true,
         })
-        .select().maybeSingle();
+        .select()
+        .maybeSingle();
 
       if (grpErr || !grpData) continue;
 
-      // Cria os itens do grupo
-      const itensAdic = (grupo.itens || []).map(function(it) {
-        return {
-          grupo_id: grpData.id,
-          nome:  String(it.nome || '').slice(0, 80),
-          preco: Number(it.preco) || 0,
-          disponivel: true,
-        };
-      });
-      if (itensAdic.length) {
-        await getSupa().from('itens_adicionais').insert(itensAdic);
-        okAdic++;
+      // 2b. Cria cada adicional como PRODUTO com grupo_adicional_id
+      // (mesma estrutura que o gerenciador de adicionais usa)
+      for (const it of (grupo.itens || [])) {
+        await getSupa().from('produtos').insert({
+          estabelecimento_id: estab.id,
+          nome:              String(it.nome || '').slice(0, 120),
+          preco:             Number(it.preco) || 0,
+          emoji:             '🔸',
+          categoria:         'ADICIONAIS',
+          disponivel:        true,
+          promocao:          false,
+          grupo_adicional_id: grpData.id,
+        });
       }
-    } catch(e) { /* adicional falhou silenciosamente */ }
+      okAdic++;
+    } catch(e) { console.error('Erro adicional:', e); }
   }
 
   fecharScannerIA();
-  let msg = '✅ ' + ok + ' itens adicionados!';
-  if (okAdic > 0) msg += ' + ' + okAdic + ' grupo(s) de adicionais!';
-  if (erros) msg += ' (' + erros + ' erros)';
-  showToast(msg);
+  let msg = '✅ ' + ok + ' itens criados';
+  if (okAdic > 0) msg += ' + ' + okAdic + ' grupo(s) de adicionais';
+  if (erros) msg += ' — ' + erros + ' erro(s)';
+  msg += '! Cardápio pronto 🎉';
+  showToast(msg, 4000);
   setTimeout(function() {
     const cardapioTab = document.querySelector('[data-tab="cardapio"]');
     if (cardapioTab) cardapioTab.click();
