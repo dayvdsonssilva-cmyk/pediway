@@ -69,7 +69,9 @@
     .kds-card.s-pendente{border-color:var(--red)}
     .kds-card.s-aceito{border-color:var(--ylw)}
     .kds-card.s-preparando{border-color:var(--blu)}
-    .kds-card.s-pronto{border-color:#2a2a2a;opacity:.5}
+    .kds-card.s-pronto{border-color:#1a3320;opacity:.45;filter:grayscale(.4)}
+    .kds-card.s-preparando{border-color:var(--blu);box-shadow:0 0 0 1px rgba(59,130,246,.25)}
+    .kds-card.s-pendente{border-color:var(--red);box-shadow:0 0 0 1px rgba(232,0,28,.2)}
 
     .ck-hdr{padding:10px 13px;display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid var(--b)}
     .ck-num{font-size:1.2rem;font-weight:900;letter-spacing:-.04em}
@@ -161,8 +163,10 @@ function deveExibir(p,setor){
 }
 
 function getStSetor(p,s){
+  // NUNCA herda o status global — cada setor é 100% independente
   if(p.setores_status&&p.setores_status[s]!==undefined)return p.setores_status[s];
-  return{novo:'pendente',preparo:'preparando',pronto:'pronto',recusado:'pronto'}[p.status]||'pendente';
+  // Se nunca foi marcado neste setor, começa como pendente (independente do status global)
+  return 'pendente';
 }
 
 // SETORES
@@ -238,7 +242,7 @@ function renderFull(){
         const el=document.getElementById('tm-'+p.id);
         if(!el){clearInterval(_timers[p.id]);return;}
         const min=Math.floor((Date.now()-new Date(p.created_at))/60000);
-        el.textContent=tempo(p.created_at);el.classList.toggle('urg',min>=12);
+        el.textContent=tempo(p.created_at);el.classList.toggle('urg',min>=8);
       },1000);
     });
   });
@@ -251,15 +255,14 @@ function cardHTML(p,setor){
   const mesa=p.mesa||((p.endereco||'').match(/Mesa\s*(\d+)/i)||[])[1]||'';
   const local=p.endereco?(p.endereco.startsWith('No local')?(mesa?'📍 Mesa '+mesa:'📍 No local'):'🛵 Delivery'):'🏃 Retirada';
   const hora=new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  const BL={pendente:'🔴 Novo',aceito:'🟡 Aceito',preparando:'🔵 Preparando',pronto:'✅ Pronto'};
-  const BC={pendente:'bp',aceito:'ba',preparando:'bpr',pronto:'bpn'};
+  const BL={pendente:'🔴 NOVO',preparando:'🔵 PREPARANDO',pronto:'✅ PRONTO'};
+  const BC={pendente:'bp',preparando:'bpr',pronto:'bpn'};
   const itensHTML=itens.map(it=>`<div class="ck-item"><div class="ck-qty">${it.qtd}×</div><div style="flex:1"><div class="ck-nome">${it.nome}</div>${it.obs?`<div class="ck-obs">${it.obs}</div>`:''}</div></div>`).join('');
   let btns='';
-  if(st==='pendente')btns=`<button class="ck-btn cb-a" onclick="aceitar('${p.id}')">✓ Aceitar e imprimir</button>`;
-  else if(st==='aceito')btns=`<button class="ck-btn cb-p" onclick="atualizarSt('${p.id}','preparando')">🔥 Em preparo</button><button class="ck-btn cb-pr" onclick="imprimir('${p.id}')">🖨</button>`;
-  else if(st==='preparando')btns=`<button class="ck-btn cb-ok" onclick="atualizarSt('${p.id}','pronto')">✅ Pronto!</button><button class="ck-btn cb-pr" onclick="imprimir('${p.id}')">🖨</button>`;
-  else btns=`<button class="ck-btn cb-s" onclick="atualizarSt('${p.id}','preparando')" style="flex:1">↩ Reabrir</button>`;
-  const timerHTML=st==='pronto'?`<div class="ck-timer" style="color:var(--grn)">${hora}</div>`:`<div class="ck-timer${min>=12?' urg':''}" id="tm-${p.id}">${tempo(p.created_at)}</div>`;
+  if(st==='pendente')btns=`<button class="ck-btn cb-a" style="flex:1;font-size:.95rem" onclick="atualizarSt('${p.id}','preparando')">🔥 Iniciar Preparo</button><button class="ck-btn cb-pr" onclick="imprimir('${p.id}')">🖨</button>`;
+  else if(st==='preparando')btns=`<button class="ck-btn cb-ok" style="flex:1;font-size:.95rem" onclick="atualizarSt('${p.id}','pronto')">✅ Pronto!</button><button class="ck-btn cb-pr" onclick="imprimir('${p.id}')">🖨</button>`;
+  else btns=`<button class="ck-btn cb-s" style="flex:1" onclick="atualizarSt('${p.id}','preparando')">↩ Reabrir</button>`;
+  const timerHTML=st==='pronto'?`<div class="ck-timer" style="color:var(--grn)">${hora}</div>`:`<div class="ck-timer${min>=8?' urg':''}" id="tm-${p.id}">${tempo(p.created_at)}</div>`;
   return `<div class="kds-card s-${st}" id="kc-${p.id}"><div class="ck-hdr"><div style="display:flex;align-items:center;min-width:0"><div class="ck-num">#${num}</div><div class="ck-meta"><div class="ck-cli">${p.cliente_nome||'Cliente'}</div><div class="ck-loc">${local}</div></div></div><div class="ck-hdr-r"><div class="ck-badge ${BC[st]||'bp'}">${BL[st]||'🔴 Novo'}</div>${timerHTML}</div></div><div class="ck-items">${itensHTML}</div>${p.observacao?`<div class="ck-obs-g">${p.observacao}</div>`:''}<div class="ck-ftr">${btns}</div></div>`;
 }
 
@@ -324,8 +327,12 @@ window.atualizarSt=async function(id,novoSt){
   const p=PEDIDOS.find(x=>String(x.id)===String(id));if(!p)return;
   const s=SETOR_ATIVO,sm={...(p.setores_status||{})};sm[s]=novoSt;
   const upd={setores_status:sm};
-  if(Object.values(sm).every(v=>v==='pronto'))upd.status='pronto';
-  if(novoSt==='aceito'&&p.status==='novo')upd.status='preparo';
+  // Só marca global como 'pronto' se TODOS os setores que têm entrada estão prontos
+  // E há pelo menos 1 setor marcado
+  const stValues=Object.values(sm);
+  if(stValues.length>0&&stValues.every(v=>v==='pronto'))upd.status='pronto';
+  if(novoSt==='aceito'&&(p.status==='novo'||p.status==='pendente'))upd.status='preparo';
+  if(novoSt==='preparando')upd.status='preparo';
   const{error}=await db.from('pedidos').update(upd).eq('id',id);
   if(error)return toast('❌ Erro ao atualizar');
   p.setores_status=sm;if(upd.status)p.status=upd.status;
