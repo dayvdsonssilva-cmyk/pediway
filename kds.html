@@ -343,7 +343,9 @@ window.atualizarSt=async function(id,novoSt){
 // CARREGAR — merge inteligente (não substitui, atualiza)
 async function carregar(){
   if(!ESTAB)return;
-  const{data}=await db.from('pedidos').select('*').eq('estabelecimento_id',ESTAB.id).not('status','in','("recusado","finalizado")').order('created_at',{ascending:false}).limit(80);
+  // Apenas pedidos das últimas 12h — evita acúmulo de pedidos antigos
+  const desde = new Date(Date.now() - 12*60*60*1000).toISOString();
+  const{data}=await db.from('pedidos').select('*').eq('estabelecimento_id',ESTAB.id).not('status','in','("recusado","finalizado")').gte('created_at',desde).order('created_at',{ascending:false}).limit(60);
   const novos=(data||[]);
   novos.forEach(p=>enriquecer(p));
 
