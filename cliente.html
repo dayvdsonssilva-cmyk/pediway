@@ -156,9 +156,9 @@
     .carr-opts { display: flex; gap: 10px; }
     .carr-opt-btn { flex: 1; padding: 11px; border: 2px solid var(--border); border-radius: 12px; font-family: 'Poppins',sans-serif; font-size: 0.8rem; font-weight: 700; cursor: pointer; background: none; color: #555; transition: all 0.15s; }
     .carr-opt-btn.ativo { border-color: var(--red); color: var(--red); background: rgba(192,57,43,0.06); }
-    .bandeira-btn { display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 4px;border-radius:10px;border:2px solid var(--border);background:#fff;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s; }
-    .bandeira-btn.ativo { border-color:var(--red);background:rgba(192,57,43,.05); }
-    .bandeira-btn:hover { border-color:#bbb; }
+    
+    
+    
     #campos-entrega, #campos-retirada { display: none; }
     #campos-entrega.show, #campos-retirada.show { display: block; }
 /* ── CARRINHO 3 PASSOS ── */
@@ -491,16 +491,7 @@
           <button class="carr-opt-btn"       id="tipo-debito"  onclick="selecionarTipoCartao('debito')"  style="flex:1">💳 Débito</button>
         </div>
         <div class="carr-section-title">Bandeira</div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px" id="bandeiras-grid">
-          <button class="bandeira-btn ativo" id="band-visa"      onclick="selecionarBandeira('visa')"><span style="font-size:1.2rem">💙</span><span style="font-size:.65rem;font-weight:800">Visa</span></button>
-          <button class="bandeira-btn"       id="band-master"    onclick="selecionarBandeira('master')"><span style="font-size:1.2rem">🔴</span><span style="font-size:.65rem;font-weight:800">Master</span></button>
-          <button class="bandeira-btn"       id="band-elo"       onclick="selecionarBandeira('elo')"><span style="font-size:1.2rem">⭐</span><span style="font-size:.65rem;font-weight:800">Elo</span></button>
-          <button class="bandeira-btn"       id="band-hipercard" onclick="selecionarBandeira('hipercard')"><span style="font-size:1.2rem">🔶</span><span style="font-size:.65rem;font-weight:800">Hiper</span></button>
-          <button class="bandeira-btn"       id="band-amex"      onclick="selecionarBandeira('amex')"><span style="font-size:1.2rem">🔵</span><span style="font-size:.65rem;font-weight:800">Amex</span></button>
-          <button class="bandeira-btn"       id="band-cabal"     onclick="selecionarBandeira('cabal')"><span style="font-size:1.2rem">🟢</span><span style="font-size:.65rem;font-weight:800">Cabal</span></button>
-          <button class="bandeira-btn"       id="band-pix-cred"  onclick="selecionarBandeira('pix-cred')"><span style="font-size:1.2rem">💜</span><span style="font-size:.65rem;font-weight:800">PIX C.</span></button>
-          <button class="bandeira-btn"       id="band-outro"     onclick="selecionarBandeira('outro')"><span style="font-size:1.2rem">💳</span><span style="font-size:.65rem;font-weight:800">Outro</span></button>
-        </div>
+        
       </div>
 
       <!-- Troco -->
@@ -1365,13 +1356,6 @@ window.selecionarTipoCartao = function(tipo) {
   });
 };
 
-window.selecionarBandeira = function(band) {
-  bandeira = band;
-  document.querySelectorAll('.bandeira-btn').forEach(b => b.classList.remove('ativo'));
-  const sel = $('band-' + band);
-  if (sel) sel.classList.add('ativo');
-};
-
 window.selecionarTroco = function(sim) {
   precisaTroco = sim;
   $('troco-nao').classList.toggle('ativo', !sim);
@@ -1431,7 +1415,7 @@ window.finalizarPedido = async function() {
     const taxaEntrega = (opcaoEntrega === 'entrega' && estab?.taxa_entrega) ? Number(estab.taxa_entrega) : 0;
     const total       = Math.round((subtotal + taxaEntrega) * 100) / 100; // arredonda centavos
     const pagamento = opcaoPag === 'cartao'
-      ? `cartao-${tipoCartao}-${bandeira}`   // ex: "cartao-credito-visa"
+      ? ('cartao-' + (tipoCartao || 'credito'))   // ex: "cartao-credito"
       : opcaoPag;
     const troco       = (opcaoPag === 'dinheiro' && precisaTroco) ? ($('cli-troco')?.value.trim() || '') : '';
 
