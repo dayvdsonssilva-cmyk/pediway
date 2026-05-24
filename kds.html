@@ -326,13 +326,9 @@ window.imprimir=function(id){
 window.atualizarSt=async function(id,novoSt){
   const p=PEDIDOS.find(x=>String(x.id)===String(id));if(!p)return;
   const s=SETOR_ATIVO,sm={...(p.setores_status||{})};sm[s]=novoSt;
+  // KDS NUNCA altera o status global — só o dashboard faz isso
+  // KDS só controla setores_status de cada setor independentemente
   const upd={setores_status:sm};
-  // Só marca global como 'pronto' se TODOS os setores que têm entrada estão prontos
-  // E há pelo menos 1 setor marcado
-  const stValues=Object.values(sm);
-  if(stValues.length>0&&stValues.every(v=>v==='pronto'))upd.status='pronto';
-  if(novoSt==='aceito'&&(p.status==='novo'||p.status==='pendente'))upd.status='preparo';
-  if(novoSt==='preparando')upd.status='preparo';
   const{error}=await db.from('pedidos').update(upd).eq('id',id);
   if(error)return toast('❌ Erro ao atualizar');
   p.setores_status=sm;if(upd.status)p.status=upd.status;
