@@ -508,7 +508,8 @@ window.gcEnviar=async function(){
       return {nome:String(i.nome||'').slice(0,120),preco:prodReal?Number(prodReal.preco):Number(i.preco)||0,qtd:Math.max(1,Math.min(99,Number(i.qtd)||1)),emoji:String(i.emoji||'').slice(0,10)};
     });
     const total=Math.round(itensSeguro.reduce((s,i)=>s+i.preco*i.qtd,0)*100)/100;
-    const{error}=await db.from('pedidos').insert({estabelecimento_id:estab.id,cliente_nome:nome,cliente_whats:'',endereco:('No local — '+mesaAtual).slice(0,100),itens:itensSeguro,total,status:'novo',pagamento:'No local'});
+    // Pedido de mesa é automaticamente aceito (garçom já está ali)
+const{error}=await db.from('pedidos').insert({estabelecimento_id:estab.id,cliente_nome:nome,cliente_whats:'',endereco:('No local — '+mesaAtual).slice(0,100),itens:itensSeguro,total,status:'preparo',pagamento:'No local'});
     if(error)throw new Error('Erro ao registrar pedido.');
     carrinhos[mesaAtual]=[];renderCarrinho();
     // Limpa nome para próxima pessoa poder se identificar
