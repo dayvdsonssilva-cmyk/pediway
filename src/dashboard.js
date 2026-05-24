@@ -1328,8 +1328,8 @@ async function renderPedidos() {
           ${pgto ? '<span style="background:#f0e9e0;padding:2px 8px;border-radius:50px;font-size:.65rem;font-weight:700;color:#888">'+(pgto)+'</span>' : ''}
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${p.status==='novo'?'<button class="btn-ped-aceitar" onclick="aceitarPedido(\''+p.id+'\')">✓ Aceitar</button><button class="btn-ped-recusar" onclick="recusarPedido(\''+p.id+'\')">✕ Recusar</button>':''}
-          ${p.status==='preparo'?'<button class="btn-ped-aceitar" onclick="marcarPronto(\''+p.id+'\')">✅ Pronto</button>':''}
+          ${(p.status==='novo'&&!(p.endereco||'').startsWith('No local'))?'<button class="btn-ped-aceitar" onclick="aceitarPedido(\''+p.id+'\')">✓ Aceitar</button><button class="btn-ped-recusar" onclick="recusarPedido(\''+p.id+'\')">✕ Recusar</button>':''}
+          ${p.status==='preparo'?'<button class="btn-ped-aceitar" onclick="marcarPronto(\''+p.id+'\')">'+(((p.endereco||'').startsWith('No local'))?'✅ Entregue na mesa':'✅ Pronto')+'</button>':''}
           <button class="btn-ped-imprimir" onclick="verPedido('${p.id}')">🖨️ Ver</button>
         </div>
       </div>
@@ -1437,7 +1437,7 @@ window.verPedido = async function(id) {
       <hr style="border:none;border-top:1px solid var(--border)">
       <div style="display:flex;justify-content:space-between;font-weight:800"><span>Total</span><span>R$ ${Number(p.total||0).toFixed(2).replace('.',',')}</span></div>
       <div style="display:flex;gap:8px;margin-top:8px">
-        ${p.status==='novo'?'<button class="btn-ped-aceitar" onclick="aceitarPedido('+p.id+');fecharModalPedido()">Aceitar</button><button class="btn-ped-recusar" onclick="recusarPedido('+p.id+');fecharModalPedido()">Recusar</button>':''}
+        ${(p.status==='novo'&&!(p.endereco||'').startsWith('No local'))?'<button class="btn-ped-aceitar" onclick="aceitarPedido('+p.id+');fecharModalPedido()">Aceitar</button><button class="btn-ped-recusar" onclick="recusarPedido('+p.id+');fecharModalPedido()">Recusar</button>':''}
         <button class="btn-ped-imprimir" onclick="imprimirPedido('${p.id}')">🖨️ Imprimir</button>
       </div>
     </div>`;
