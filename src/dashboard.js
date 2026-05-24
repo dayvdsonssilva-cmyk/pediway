@@ -3332,26 +3332,40 @@ window.enviarPedidoComanda = async function() {
   if (btn) { btn.disabled=true; btn.textContent='Enviando...'; }
   try {
     const nomeCliente = _nomeComanda[_mesaAtual] || _mesaAtual;
-    const { error } = await getSupa().from('pedidos').insert({
+    const itens = carr.map(i=>({nome:i.nome,preco:i.preco,qtd:i.qtd,emoji:i.emoji,setor:i.setor||null}));
+
+    // Pedido do dashboard já nasce aceito — operador está no caixa
+    const { data: pedidoNovo, error } = await getSupa().from('pedidos').insert({
       estabelecimento_id: estab.id,
       cliente_nome:       nomeCliente,
       cliente_whats:      '',
       endereco:           'No local — ' + _mesaAtual,
-      itens:              carr.map(i=>({nome:i.nome,preco:i.preco,qtd:i.qtd,emoji:i.emoji,setor:i.setor||null})),
+      itens,
       total,
-      status:             'novo',
+      status:             'preparo',
       pagamento:          'No local',
-    });
+    }).select().maybeSingle();
+
     if (error) throw error;
+
+    // Imprime ticket da cozinha automaticamente
+    if (pedidoNovo) {
+      try { await imprimirPorSetor(pedidoNovo, estab.nome || ''); } catch(e) {}
+    }
+
     _carrinhoComanda[_mesaAtual] = [];
-    showToast('Pedido enviado para a cozinha! 🍽️');
+    showToast('✅ Pedido enviado e impresso!');
     renderCarrinhoComanda(_mesaAtual);
     await carregarPedidosMesas();
     renderPedidosComanda(_mesaAtual);
+
+    // Muda para aba "Pedidos" para mostrar o que foi enviado
+    window.switchComandaTab('pedidos');
+
   } catch(e) {
     showToast('Erro ao enviar: ' + e.message, 'error');
   } finally {
-    if (btn) { btn.disabled=false; btn.textContent='Enviar para cozinha 🍳'; }
+    if (btn) { btn.disabled=false; btn.textContent='🍳 Enviar e imprimir'; }
   }
 };
 
