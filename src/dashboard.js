@@ -4000,20 +4000,47 @@ async function atualizarResumoCaixa() {
   if (!estab || !_caixaAberto || !_caixaAbertura) return;
   var fmt = function(v) { return 'R$ ' + Number(v||0).toFixed(2).replace('.',','); };
   try {
-    var res = await getSupa().from('pedidos').select('total,pagamento')
-      .eq('estabelecimento_id', estab.id).gte('created_at', _caixaAbertura.hora);
+    // Busca pedidos aceitos desde a abertura do caixa
+    var res = await getSupa().from('pedidos')
+      .select('total,pagamento,status')
+      .eq('estabelecimento_id', estab.id)
+      .gte('created_at', _caixaAbertura.hora)
+      .not('status', 'in', '("recusado","novo")'); // só pedidos aceitos
+
     var todos = res.data || [];
-    var totalPix      = todos.filter(function(p){return p.pagamento==='PIX';}).reduce(function(s,p){return s+Number(p.total||0);},0);
-    var totalCartao   = todos.filter(function(p){return ['CRÉDITO','DÉBITO','CARTÃO'].includes(p.pagamento);}).reduce(function(s,p){return s+Number(p.total||0);},0);
-    var totalDinheiro = todos.filter(function(p){return p.pagamento==='DINHEIRO';}).reduce(function(s,p){return s+Number(p.total||0);},0);
-    var totalGeral    = totalPix + totalCartao + totalDinheiro + Number(_caixaAbertura.valorAbertura||0);
+
+    // Pagamento salvo como: 'pix', 'dinheiro', 'cartao-credito-*', 'cartao-debito-*', 'No local'
+    var pag = function(p) { return String(p.pagamento||'').toLowerCase(); };
+    var som = function(arr) { return arr.reduce(function(s,p){return s+Number(p.total||0);},0); };
+
+    var totalPix      = som(todos.filter(function(p){ return pag(p)==='pix'; }));
+    var totalCredito  = som(todos.filter(function(p){ return pag(p).startsWith('cartao-credito'); }));
+    var totalDebito   = som(todos.filter(function(p){ return pag(p).startsWith('cartao-debito'); }));
+    var totalCartao   = totalCredito + totalDebito;
+    var totalDinheiro = som(todos.filter(function(p){ return pag(p)==='dinheiro'; }));
+    var totalMesa     = som(todos.filter(function(p){ return pag(p)==='no local'; }));
+    var totalVendas   = totalPix + totalCartao + totalDinheiro + totalMesa;
+    var totalCaixa    = totalVendas + Number(_caixaAbertura.valorAbertura||0);
+
     var el = function(id){return document.getElementById(id);};
     if (el('caixa-total-pix'))      el('caixa-total-pix').textContent      = fmt(totalPix);
+    if (el('caixa-total-credito'))  el('caixa-total-credito').textContent  = fmt(totalCredito);
+    if (el('caixa-total-debito'))   el('caixa-total-debito').textContent   = fmt(totalDebito);
     if (el('caixa-total-cartao'))   el('caixa-total-cartao').textContent   = fmt(totalCartao);
     if (el('caixa-total-dinheiro')) el('caixa-total-dinheiro').textContent = fmt(totalDinheiro);
-    if (el('caixa-total-geral'))    el('caixa-total-geral').textContent    = fmt(totalGeral);
-    if (el('caixa-num-pedidos'))    el('caixa-num-pedidos').textContent    = todos.length + ' pedido(s)';
-  } catch(e) {}
+    if (el('caixa-total-mesa'))     el('caixa-total-mesa').textContent     = fmt(totalMesa);
+    if (el('caixa-total-vendas'))   el('caixa-total-vendas').textContent   = fmt(totalVendas);
+    if (el('caixa-total-geral'))    el('caixa-total-geral').textContent    = fmt(totalCaixa);
+    if (el('caixa-num-pedidos'))    el('caixa-num-pedidos').textContent    = todos.length;
+
+    // Diferença físico vs esperado
+    var fisico = parseFloat((el('caixa-fisico')?.value||'0').replace(',','.')) || 0;
+    var diff = fisico - totalCaixa;
+    if (el('caixa-diferenca')) {
+      el('caixa-diferenca').textContent = fmt(diff);
+      el('caixa-diferenca').style.color = diff >= 0 ? '#16a34a' : '#dc2626';
+    }
+  } catch(e) { console.error('Caixa error:', e); }
 }
 window.atualizarResumoCaixa = atualizarResumoCaixa;
 
