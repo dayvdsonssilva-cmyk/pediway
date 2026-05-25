@@ -1322,6 +1322,32 @@ async function renderPedidos() {
         <span class="pedido-status ${cls}" style="white-space:nowrap;flex-shrink:0">${lbl}</span>
       </div>
       ${itensStr ? '<div style="font-size:.82rem;color:#666;background:#faf8f5;border-radius:8px;padding:8px 10px;margin-bottom:10px;line-height:1.5">'+(itensStr)+'</div>' : ''}
+      ${(function(){
+        const ss = p.setores_status || {};
+        const keys = Object.keys(ss);
+        if (!keys.length) return '';
+        const total = keys.length;
+        const prontos = keys.filter(function(k){return ss[k]==='pronto';}).length;
+        const allPronto = prontos === total;
+        const pct = Math.round(prontos/total*100);
+        const setorChips = keys.map(function(k){
+          const isPronto = ss[k]==='pronto';
+          const isPrep = ss[k]==='preparando';
+          const EM = {cozinha:'🍔',bar:'🥤',grill:'🔥',pizza:'🍕',sobremesa:'🍰',padaria:'🥖',caixa:'💰',geral:'📋'};
+          const em = EM[k.toLowerCase()]||'🏷️';
+          const cor = isPronto?'#dcfce7;color:#16a34a':isPrep?'#dbeafe;color:#2563eb':'#fee2e2;color:#dc2626';
+          return '<span style="background:'+cor+';border-radius:50px;padding:1px 8px;font-size:.62rem;font-weight:800">'+em+' '+k+'</span>';
+        }).join(' ');
+        return '<div style="margin-bottom:10px">'
+          + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'
+          + '<div style="display:flex;gap:4px;flex-wrap:wrap">'+setorChips+'</div>'
+          + (allPronto?'<span style="font-size:.68rem;font-weight:800;color:#16a34a">✅ Tudo pronto!</span>':'<span style="font-size:.65rem;color:#aaa">'+prontos+'/'+total+' prontos</span>')
+          + '</div>'
+          + '<div style="height:5px;background:#f0f0f0;border-radius:50px;overflow:hidden">'
+          + '<div style="height:100%;width:'+pct+'%;background:'+(allPronto?'#22c55e':'#f59e0b')+';border-radius:50px;transition:width .4s ease"></div>'
+          + '</div>'
+          + '</div>';
+      })()}
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:1rem;font-weight:800;color:var(--red)">${totalFmt}</span>
@@ -4045,12 +4071,15 @@ async function atualizarResumoCaixa() {
     if (el('caixa-total-geral'))    el('caixa-total-geral').textContent    = fmt(totalCaixa);
     if (el('caixa-num-pedidos'))    el('caixa-num-pedidos').textContent    = todos.length;
 
+    // Fundo inicial (valor de abertura)
+    if (el('caixa-fundo-display')) el('caixa-fundo-display').textContent = fmt(Number(_caixaAbertura.valorAbertura||0));
     // Diferença físico vs esperado
     var fisico = parseFloat((el('caixa-fisico')?.value||'0').replace(',','.')) || 0;
     var diff = fisico - totalCaixa;
     if (el('caixa-diferenca')) {
-      el('caixa-diferenca').textContent = fmt(diff);
-      el('caixa-diferenca').style.color = diff >= 0 ? '#16a34a' : '#dc2626';
+      el('caixa-diferenca').textContent = fmt(Math.abs(diff)) + (diff < 0 ? ' (falta)' : diff > 0 ? ' (sobra)' : '');
+      el('caixa-diferenca').style.color = diff < 0 ? '#dc2626' : diff > 0 ? '#16a34a' : '#555';
+      el('caixa-diferenca').style.fontWeight = diff !== 0 ? '900' : '700';
     }
   } catch(e) { console.error('Caixa error:', e); }
 }
@@ -4334,6 +4363,43 @@ window.imprimirComprovanteCliente = async function(id) {
 // ═══════════════════════════════════════════════════════════════════════════
 // HISTÓRICO DE CAIXAS
 // ═══════════════════════════════════════════════════════════════════════════
+// Reimprime comprovante de fechamento de um caixa histórico
+window.reimprimirCaixa = function(idx) {
+  try {
+    var estab = getEstab();
+    var hist = JSON.parse(localStorage.getItem('pw_caixa_hist_' + (estab&&estab.id)) || '[]');
+    var h = hist[idx]; if (!h) return;
+    var fmt = function(v) { return 'R$ ' + Number(v||0).toFixed(2).replace('.',','); };
+    var nl = '
+', sep = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+    var corpo = [
+      '    COMPROVANTE DE FECHAMENTO',
+      sep,
+      (estab&&estab.nome||'').toUpperCase(),
+      sep,
+      'Operador:   ' + (h.operador||'—'),
+      'Abertura:   ' + new Date(h.aberturaEm||'').toLocaleString('pt-BR'),
+      'Fechamento: ' + new Date(h.fechadoEm||'').toLocaleString('pt-BR'),
+      sep,
+      '  PIX:            ' + fmt(h.totalPix),
+      '  CRÉDITO:        ' + fmt(h.totalCredito||0),
+      '  DÉBITO:         ' + fmt(h.totalDebito||0),
+      '  DINHEIRO:       ' + fmt(h.totalDinheiro),
+      '  MESA/LOCAL:     ' + fmt(h.totalMesa||0),
+      sep,
+      '  TOTAL VENDAS:   ' + fmt(h.totalVendas||(h.totalGeral - h.valorAbertura)),
+      '  FUNDO INICIAL:  ' + fmt(h.valorAbertura||0),
+      '  TOTAL CAIXA:    ' + fmt(h.totalGeral),
+      sep,
+      '  PEDIDOS: ' + (h.numPedidos||0),
+    ].join(nl);
+    var w = window.open('', '_blank', 'width=340,height=500');
+    if (!w) return;
+    w.document.write('<pre style="font-family:monospace;font-size:13px;padding:16px;white-space:pre-wrap">' + corpo + '</pre>');
+    w.document.close(); w.focus(); setTimeout(function(){w.print();}, 300);
+  } catch(e) {}
+};
+
 function renderHistoricoCaixa() {
   var estab = getEstab();
   var el    = document.getElementById('caixa-historico');
@@ -4360,7 +4426,7 @@ function renderHistoricoCaixa() {
         + '</div>'
         + '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #f0ebe4;display:flex;justify-content:space-between;align-items:center">'
         + '<span style="font-size:.8rem;font-weight:800;color:#555">TOTAL EM CAIXA</span>'
-        + '<span style="font-size:.9rem;font-weight:900;color:#16a34a">' + fmt(h.totalGeral) + '</span>'
+        + '<span style="font-size:.9rem;font-weight:900;color:#16a34a">' + fmt(h.totalGeral) + '</span>' + '<button onclick="reimprimirCaixa('+i+')" style="margin-left:8px;background:none;border:1.5px solid #ddd;border-radius:6px;padding:3px 9px;font-size:.65rem;font-weight:700;color:#666;cursor:pointer">🖨 Reimprimir</button>'
         + '</div>'
         + '</div>';
     }).join('');
