@@ -1370,6 +1370,19 @@ window.selecionarTroco = function(sim) {
 window.finalizarPedido = async function() {
   if (!lojaEstaAberta(estab)) return mostrarToast(estab?.horarios ? '🕐 Fora do horário de atendimento.' : 'Loja fechada no momento.', '#333');
   if (!carrinho.length) return mostrarToast('Sua sacola está vazia.', '#333');
+
+  // Valida pedido mínimo
+  try {
+    var _pedMin = Number(estab?.pedido_minimo || 0);
+    if (_pedMin > 0) {
+      var _totalCart = carrinho.reduce(function(s,i){return s+Number(i.preco||0)*Math.max(1,i.qtd||1);},0);
+      if (_totalCart < _pedMin) {
+        mostrarToast('Pedido mínimo: R$ '+_pedMin.toFixed(2).replace('.',',')+'. Faltam R$ '+(_pedMin-_totalCart).toFixed(2).replace('.',',')+'!','#c0392b');
+        return;
+      }
+    }
+  } catch(_e) {}
+
   const nome  = $('cli-nome')?.value.trim();
   const whats = $('cli-whats')?.value.replace(/\D/g,'');
   const rua    = ($('cli-rua')?.value || '').trim();
