@@ -1819,6 +1819,18 @@ function iniciarRealtime() {
       'postgres_changes',
       { event: 'UPDATE', schema: 'public', table: 'pedidos' },
       async payload => {
+        // Notifica dashboard quando KDS marca como pronto
+        const _ant = payload.old || {};
+        const _novo = payload.new || {};
+        if (_novo.setores_status && JSON.stringify(_novo.setores_status) !== JSON.stringify(_ant.setores_status)) {
+          const _allPronto = Object.keys(_novo.setores_status||{}).length > 0 &&
+            Object.values(_novo.setores_status||{}).every(function(v){return v==='pronto';});
+          if (_allPronto && !(_ant.setores_status && Object.values(_ant.setores_status||{}).every(function(v){return v==='pronto';}))) {
+            const _numP = '#' + String(_novo.id||'').slice(-4).toUpperCase();
+            showToast('🍽️ Pedido ' + _numP + ' PRONTO na cozinha!', 4000);
+            try{const _ctx=new AudioContext();[880,1100,1320].forEach(function(f,idx){const o=_ctx.createOscillator(),g=_ctx.createGain();o.connect(g);g.connect(_ctx.destination);o.frequency.value=f;o.start(_ctx.currentTime+idx*.12);o.stop(_ctx.currentTime+idx*.12+.1);g.gain.setValueAtTime(.25,_ctx.currentTime+idx*.12);});}catch(e){}
+          }
+        }
         const p = payload.new;
         if (!p || p.estabelecimento_id !== estab.id) return;
         await renderPedidos(); // atualiza visão geral (stat-pedidos, stat-faturamento)
@@ -4092,22 +4104,34 @@ window.abrirCaixa = async function() {
 window.fecharCaixa = async function() {
   if (!confirm('Confirma o fechamento do caixa? Um comprovante será gerado.')) return;
   var estab = getEstab();
-  if (!estab) return;
-  var agora = new Date();
-  var fmt   = function(v){return 'R$ ' + Number(v||0).toFixed(2).replace('.',',');};
-  var totalPix = 0, totalCartao = 0, totalDinheiro = 0, numPedidos = 0;
+  if (!estab || !_caixaAbertura) { showToast('Caixa não está aberto.'); return; }
+  var agora     = new Date();
+  var abertura  = _caixaAbertura; // salva referência ANTES de resetar
+  var fmt       = function(v){return 'R$ ' + Number(v||0).toFixed(2).replace('.',',');};
+  var pag       = function(p){return String(p.pagamento||'').toLowerCase();};
+  var som       = function(arr){return arr.reduce(function(s,p){return s+Number(p.total||0);},0);};
+  var fisico    = parseFloat((document.getElementById('caixa-fisico')?.value||'0').replace(',','.')) || 0;
+  var obs       = document.getElementById('caixa-obs-fechamento')?.value || '';
+
+  var totalPix=0, totalCredito=0, totalDebito=0, totalDinheiro=0, totalMesa=0, numPedidos=0;
   try {
-    var res = await getSupa().from('pedidos').select('total,pagamento,cliente_nome,created_at')
+    var res = await getSupa().from('pedidos').select('total,pagamento,status')
       .eq('estabelecimento_id', estab.id)
-      .gte('created_at', _caixaAbertura?.hora || agora.toISOString())
+      .gte('created_at', abertura.hora)
+      .not('status','in','("recusado","novo")')
       .order('created_at', {ascending: true});
     var todos = res.data || [];
     numPedidos    = todos.length;
-    totalPix      = todos.filter(function(p){return p.pagamento==='PIX';}).reduce(function(s,p){return s+Number(p.total||0);},0);
-    totalCartao   = todos.filter(function(p){return ['CRÉDITO','DÉBITO','CARTÃO'].includes(p.pagamento);}).reduce(function(s,p){return s+Number(p.total||0);},0);
-    totalDinheiro = todos.filter(function(p){return p.pagamento==='DINHEIRO';}).reduce(function(s,p){return s+Number(p.total||0);},0);
-  } catch(e) {}
-  var totalGeral    = totalPix + totalCartao + totalDinheiro + Number(_caixaAbertura?.valorAbertura||0);
+    totalPix      = som(todos.filter(function(p){return pag(p)==='pix';}));
+    totalCredito  = som(todos.filter(function(p){return pag(p).startsWith('cartao-credito');}));
+    totalDebito   = som(todos.filter(function(p){return pag(p).startsWith('cartao-debito');}));
+    totalDinheiro = som(todos.filter(function(p){return pag(p)==='dinheiro';}));
+    totalMesa     = som(todos.filter(function(p){return pag(p)==='no local';}));
+  } catch(e) { console.error('Caixa fechamento:', e); }
+  var totalCartao   = totalCredito + totalDebito;
+  var totalVendas   = totalPix + totalCartao + totalDinheiro + totalMesa;
+  var totalGeral    = totalVendas + Number(abertura.valorAbertura||0);
+  var diferenca     = fisico - totalGeral;
   try { localStorage.removeItem('pw_caixa_' + estab?.id); } catch(e) {}
   pararAutoRefreshCaixa();
   _caixaAberto = false; _caixaAbertura = null; _caixaId = null;
@@ -4123,9 +4147,9 @@ window.fecharCaixa = async function() {
     var hist = JSON.parse(localStorage.getItem('pw_caixa_hist_' + estab?.id) || '[]');
     hist.unshift({
       fechadoEm:      agora.toISOString(),
-      operador:       _caixaAbertura?.operador || 'Operador',
-      aberturaEm:     _caixaAbertura?.hora || agora.toISOString(),
-      valorAbertura:  Number(_caixaAbertura?.valorAbertura || 0),
+      operador:       abertura?.operador || 'Operador',
+      aberturaEm:     abertura?.hora || agora.toISOString(),
+      valorAbertura:  Number(abertura?.valorAbertura || 0),
       totalPix:       totalPix,
       totalCartao:    totalCartao,
       totalDinheiro:  totalDinheiro,
@@ -4155,8 +4179,8 @@ window.fecharCaixa = async function() {
     cnpj,
     inst ? 'Instagram: ' + inst : '',
     sep,
-    'Operador:   ' + (_caixaAbertura?.operador || 'Operador'),
-    'Abertura:   ' + new Date(_caixaAbertura?.hora || agora).toLocaleString('pt-BR'),
+    'Operador:   ' + (abertura?.operador || 'Operador'),
+    'Abertura:   ' + new Date(abertura?.hora || agora).toLocaleString('pt-BR'),
     'Fechamento: ' + agora.toLocaleString('pt-BR'),
     sep,
     'FUNDO DE CAIXA INICIAL:   ' + fmt(_caixaAbertura?.valorAbertura || 0),
@@ -4164,13 +4188,17 @@ window.fecharCaixa = async function() {
     '  RECEBIMENTOS DO PERÍODO',
     sep,
     '  PIX:               ' + fmt(totalPix),
-    '  CARTÃO:            ' + fmt(totalCartao),
+    '  CARTÃO CRÉDITO:    ' + fmt(totalCredito),
+    '  CARTÃO DÉBITO:     ' + fmt(totalDebito),
     '  DINHEIRO:          ' + fmt(totalDinheiro),
+    '  MESA/LOCAL:        ' + fmt(totalMesa),
     sep,
-    '  SUBTOTAL VENDAS:   ' + fmt(totalPix + totalCartao + totalDinheiro),
-    '  FUNDO INICIAL:   + ' + fmt(_caixaAbertura?.valorAbertura || 0),
+    '  SUBTOTAL VENDAS:   ' + fmt(totalVendas),
+    '  FUNDO INICIAL:   + ' + fmt(abertura.valorAbertura || 0),
     sep,
-    '  TOTAL EM CAIXA:    ' + fmt(totalGeral),
+    '  TOTAL ESPERADO:    ' + fmt(totalGeral),
+    '  FÍSICO CONTADO:    ' + fmt(fisico),
+    '  DIFERENÇA:         ' + fmt(diferenca) + (diferenca < 0 ? ' (falta)' : diferenca > 0 ? ' (sobra)' : ''),
     sep,
     '  Nº DE PEDIDOS: ' + numPedidos,
     sep,
@@ -4220,7 +4248,7 @@ window.fecharCaixa = async function() {
     + '<div class="row"><span class="lbl">Fechamento</span><span class="val">' + agora.toLocaleString('pt-BR') + '</span></div>'
     + '<hr class="sep-dash">'
     + '<div class="sec">Fundo de Caixa</div>'
-    + '<div class="row"><span class="lbl">Valor inicial</span><span class="val">' + fmt(_caixaAbertura && _caixaAbertura.valorAbertura ? _caixaAbertura.valorAbertura : 0) + '</span></div>'
+    + '<div class="row"><span class="lbl">Valor inicial</span><span class="val">' + fmt(abertura && abertura.valorAbertura ? abertura.valorAbertura : 0) + '</span></div>'
     + '<hr class="sep-dash">'
     + '<div class="sec">Recebimentos</div>'
     + '<div class="row"><span class="lbl">PIX</span><span class="val">' + fmt(totalPix) + '</span></div>'
