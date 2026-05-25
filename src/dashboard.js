@@ -136,7 +136,7 @@ function atualizarLinkSuporte() {
   const cfg = JSON.parse(localStorage.getItem('pw_ceo_cfg') || '{}');
   // Valida que wpp contém apenas dígitos (evita javascript: ou URLs maliciosas)
   const wppRaw = String(cfg.wpp || '5500000000000').replace(/\D/g, '');
-  const wpp = wppRaw.length >= 10 && wppRaw.length <= 15 ? wppRaw : '5500000000000';
+  const wpp = wppRaw.length >= 10 && wppRaw.length < 16 ? wppRaw : '5500000000000';
   const msg = encodeURIComponent(String(cfg.wppMsg || 'Olá! Preciso de ajuda com o PEDIWAY.').slice(0, 500));
   const link = document.getElementById('link-me-ajuda');
   if (link) link.href = `https://wa.me/${wpp}?text=${msg}`;
