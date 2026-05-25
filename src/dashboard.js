@@ -1378,8 +1378,6 @@ async function renderPedidos() {
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           ${(p.status==='novo'&&!(p.endereco||'').startsWith('No local'))?'<button class="btn-ped-aceitar" onclick="aceitarPedido(\''+p.id+'\')">✓ Aceitar</button><button class="btn-ped-recusar" onclick="recusarPedido(\''+p.id+'\')">✕ Recusar</button>':''}
           ${p.status==='preparo'?'<button class="btn-ped-aceitar" onclick="marcarPronto(\''+p.id+'\')">'+(((p.endereco||'').startsWith('No local'))?'✅ Entregue na mesa':'✅ Pronto')+'</button>':''
-      + (p.status==='pronto'&&!(p.endereco||'').startsWith('No local')?'<button class="btn-ped-aceitar" style="background:#2563eb" onclick="marcarSaiuEntrega(\''+p.id+'\')">🚚 Saiu para entrega</button>':''
-      + (p.status==='saiu_entrega'?'<button class="btn-ped-aceitar" onclick="marcarPronto(\''+p.id+'\')">✅ Entregue</button>':'')  )}
           <button class="btn-ped-imprimir" onclick="verPedido('${p.id}')">🖨️ Ver</button>
         </div>
       </div>
