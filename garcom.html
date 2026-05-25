@@ -358,7 +358,8 @@ function iniciarRealtime(){
 Object.keys(pedMesas).forEach(k=>{
   const idx=pedMesas[k].findIndex(x=>x.id===p.id);
   if(idx>=0){
-    if(['pronto','recusado'].includes(p.status)){
+    // Mesa: só remove quando finalizado ou recusado (pronto = ainda na mesa)
+    if(['finalizado','recusado'].includes(p.status)){
       pedMesas[k].splice(idx,1);
       if(!pedMesas[k].length)delete pedMesas[k];
     } else {
@@ -580,8 +581,8 @@ window.gcConfirmarFechamento=async function(){
 function renderHistorico(){
   atualizarTotalMesa();const el=$('gc-historico');if(!el)return;
   const peds=pedMesas[mesaAtual]||[];
-  const stC={novo:'s-novo',preparo:'s-preparo',pronto:'s-pronto'};
-  const stL={novo:'⏳ Aguardando',preparo:'🍳 Preparando',pronto:'✅ Pronto'};
+  const stC={novo:'s-novo',preparo:'s-preparo',pronto:'s-pronto',finalizado:'s-pronto'};
+  const stL={novo:'⏳ Aguardando',preparo:'🍳 Em Preparo',pronto:'✅ Pronto p/ Servir',finalizado:'✔️ Entregue'};
   if(!peds.length){el.innerHTML='<div style="color:#aaa;font-size:.8rem;text-align:center;padding:24px">Nenhum pedido lancado</div>';return;}
 
   // Agrupa pedidos pelo nome do cliente
