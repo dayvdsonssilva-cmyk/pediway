@@ -3214,6 +3214,7 @@ async function carregarPedidosMesas() {
     .eq('estabelecimento_id', estab.id)
     .ilike('endereco', 'No local%')
     .in('status', ['novo', 'preparo', 'pronto'])  // inclui pronto (mesa ainda ocupada)
+    .gte('created_at', new Date(new Date().setHours(0,0,0,0)).toISOString())  // só de hoje
     .order('created_at', { ascending: true });
 
   _pedidosMesas = {};
@@ -3969,6 +3970,30 @@ window.toggleCfgTaxaServico = function(ativo) {
 
 // ── Accordion das configurações ───────────────────────────────────────────────
 // Abre modal de configuração ao clicar no card
+// Salva lendo do modal (evita confusão com IDs duplicados no DOM)
+window.salvarCfgModal = function() {
+  const ov = document.getElementById('cfg-modal-overlay');
+  const mb = document.getElementById('cfg-modal-body');
+  if (!mb || !ov || !ov._sourceBody) { salvarConfiguracoes(); fecharCfgModal(); return; }
+
+  // Copia valores do modal para os inputs originais
+  mb.querySelectorAll('input,select,textarea').forEach(function(el) {
+    if (!el.id) return;
+    // Remove prefixo se existir, busca no body original
+    const orig = ov._sourceBody.querySelector('[id="' + el.id + '"]');
+    if (orig) {
+      if (el.type === 'checkbox') orig.checked = el.checked;
+      else orig.value = el.value;
+    }
+  });
+
+  fecharCfgModal();
+  // Aguarda um tick para garantir que o DOM atualizou antes de salvar
+  setTimeout(function() {
+    try { salvarConfiguracoes(); } catch(e) { console.error('salvarCfg:', e); }
+  }, 50);
+};
+
 window.fecharCfgModal = function() {
   const ov = document.getElementById('cfg-modal-overlay');
   if (!ov) return;
