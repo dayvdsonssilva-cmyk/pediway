@@ -4370,8 +4370,7 @@ window.reimprimirCaixa = function(idx) {
     var hist = JSON.parse(localStorage.getItem('pw_caixa_hist_' + (estab&&estab.id)) || '[]');
     var h = hist[idx]; if (!h) return;
     var fmt = function(v) { return 'R$ ' + Number(v||0).toFixed(2).replace('.',','); };
-    var nl = '
-', sep = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+    var nl = '\n', sep = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
     var corpo = [
       '    COMPROVANTE DE FECHAMENTO',
       sep,
