@@ -190,6 +190,7 @@
       <div class="hist-hdr">
         <span class="hist-hdr-lbl">Pedidos da mesa</span>
         <button class="btn-print" onclick="gcImprimir()" title="Imprimir comanda completa">&#128424; Imprimir</button>
+      <button id="btn-fechar-conta" onclick="abrirFechamentoConta()" style="display:none;background:#16a34a;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-family:inherit;font-size:.82rem;font-weight:800;cursor:pointer;white-space:nowrap">💳 Fechar conta</button>
         <button class="btn-print" id="btn-thermal" onclick="conectarImpressora()" title="Conectar impressora térmica ESC/POS" style="background:#f0f6ff;border-color:#3b82f6;color:#3b82f6;display:none">🖨 Térmica</button>
       </div>
       <div id="gc-historico"></div>
@@ -621,8 +622,73 @@ function renderHistorico(){
 
 function atualizarTotalMesa(){
   const peds=pedMesas[mesaAtual]||[];const el=$('gc-modal-total');
-  if(el)el.textContent=fmtR(peds.reduce((s,p)=>s+Number(p.total||0),0));
+  const total=peds.reduce((s,p)=>s+Number(p.total||0),0);
+  if(el)el.textContent=fmtR(total);
+  // Mostra botão "Fechar conta" se há pedidos ativos
+  const btnFechar=document.getElementById('btn-fechar-conta');
+  if(btnFechar) btnFechar.style.display=peds.length>0?'block':'none';
 }
+
+// ── FECHAR CONTA DA MESA ──────────────────────────────────────────────────────
+window.abrirFechamentoConta=function(){
+  if(!mesaAtual)return;
+  const peds=pedMesas[mesaAtual]||[];
+  const total=peds.reduce((s,p)=>s+Number(p.total||0),0);
+  const modal=document.getElementById('gc-modal-fechamento');
+  const totalEl=document.getElementById('fc-total');
+  if(totalEl)totalEl.textContent=fmtR(total);
+  if(modal)modal.style.display='flex';
+};
+
+window.fecharModalFechamento=function(){
+  const modal=document.getElementById('gc-modal-fechamento');
+  if(modal)modal.style.display='none';
+};
+
+window.confirmarFechamentoConta=async function(){
+  if(!mesaAtual||!estab)return;
+  const peds=pedMesas[mesaAtual]||[];
+  if(!peds.length)return;
+
+  const pagRadios=document.querySelectorAll('input[name="fc-pag"]');
+  let pagamento='dinheiro';
+  pagRadios.forEach(function(r){if(r.checked)pagamento=r.value;});
+
+  const troco=pagamento==='dinheiro'?(document.getElementById('fc-troco')?.value||''):'';
+  const obs=document.getElementById('fc-obs')?.value||'';
+
+  const btn=document.getElementById('btn-confirmar-fechamento');
+  if(btn){btn.disabled=true;btn.textContent='Fechando...';}
+
+  try{
+    // Finaliza todos os pedidos da mesa
+    const ids=peds.map(function(p){return p.id;});
+    for(const id of ids){
+      await db.from('pedidos').update({
+        status:'finalizado',
+        pagamento:pagamento,
+        observacao:obs||undefined
+      }).eq('id',id);
+    }
+    fecharModalFechamento();
+    // Remove mesa do painel
+    delete pedMesas[mesaAtual];
+    fechadas.add(mesaAtual);
+    const mesa=mesaAtual;mesaAtual=null;
+    renderMesas();
+    $('gc-modal').style.display='none';
+    toast('✅ '+mesa+' fechada! '+fmtR(peds.reduce(function(s,p){return s+Number(p.total||0);},0))+' ('+pagamento+')','#22C55E');
+  }catch(e){
+    toast('Erro ao fechar conta: '+(e.message||e),'#C0392B');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='✅ Fechar e finalizar';}
+  }
+};
+
+window.gcMostrarTroco=function(val){
+  const wrap=document.getElementById('fc-troco-wrap');
+  if(wrap)wrap.style.display=val==='dinheiro'?'block':'none';
+};
 
 window.gcImprimir=function(){
   if(!mesaAtual)return;
@@ -949,5 +1015,50 @@ if('serial' in navigator){
 }
 init();
 </script>
+<!-- MODAL FECHAMENTO DE CONTA -->
+<div id="gc-modal-fechamento" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:20px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.25);overflow:hidden">
+    <div style="background:#16a34a;padding:20px 24px 16px">
+      <div style="font-size:1rem;font-weight:900;color:#fff">💳 Fechar conta</div>
+      <div style="font-size:.78rem;color:rgba(255,255,255,.8);margin-top:4px">Selecione a forma de pagamento</div>
+    </div>
+    <div style="padding:20px 24px">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:.75rem;color:#888;margin-bottom:4px">Total da mesa</div>
+        <div id="fc-total" style="font-size:1.8rem;font-weight:900;color:#16a34a">R$ 0,00</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        <label style="border:2px solid #e5e5e5;border-radius:12px;padding:12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:.15s" onclick="this.style.borderColor='#16a34a';gcMostrarTroco('pix');document.querySelectorAll('.fc-opt').forEach(function(x){x.style.borderColor='#e5e5e5';});this.style.borderColor='#16a34a'">
+          <input type="radio" name="fc-pag" value="pix" onchange="gcMostrarTroco(this.value)" style="accent-color:#16a34a">
+          <span style="font-size:.85rem;font-weight:700">🔷 PIX</span>
+        </label>
+        <label style="border:2px solid #e5e5e5;border-radius:12px;padding:12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:.15s">
+          <input type="radio" name="fc-pag" value="cartao-credito" onchange="gcMostrarTroco(this.value)" style="accent-color:#16a34a">
+          <span style="font-size:.85rem;font-weight:700">💳 Crédito</span>
+        </label>
+        <label style="border:2px solid #e5e5e5;border-radius:12px;padding:12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:.15s">
+          <input type="radio" name="fc-pag" value="cartao-debito" onchange="gcMostrarTroco(this.value)" style="accent-color:#16a34a">
+          <span style="font-size:.85rem;font-weight:700">💳 Débito</span>
+        </label>
+        <label style="border:2px solid #e5e5e5;border-radius:12px;padding:12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:.15s">
+          <input type="radio" name="fc-pag" value="dinheiro" checked onchange="gcMostrarTroco(this.value)" style="accent-color:#16a34a">
+          <span style="font-size:.85rem;font-weight:700">💵 Dinheiro</span>
+        </label>
+      </div>
+      <div id="fc-troco-wrap" style="margin-bottom:12px">
+        <label style="font-size:.72rem;color:#666;font-weight:700;display:block;margin-bottom:4px">Troco para (R$)</label>
+        <input id="fc-troco" type="number" placeholder="Ex: 50,00" step="0.50" min="0" style="width:100%;border:1.5px solid #e5e5e5;border-radius:10px;padding:10px 12px;font-family:inherit;font-size:.9rem;outline:none">
+      </div>
+      <div style="margin-bottom:16px">
+        <label style="font-size:.72rem;color:#666;font-weight:700;display:block;margin-bottom:4px">Observação (opcional)</label>
+        <input id="fc-obs" type="text" placeholder="Ex: pagou com cartão da empresa" style="width:100%;border:1.5px solid #e5e5e5;border-radius:10px;padding:10px 12px;font-family:inherit;font-size:.85rem;outline:none">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="fecharModalFechamento()" style="flex:1;background:none;border:1.5px solid #ddd;border-radius:12px;padding:12px;font-family:inherit;font-size:.85rem;font-weight:700;color:#888;cursor:pointer">Cancelar</button>
+        <button id="btn-confirmar-fechamento" onclick="confirmarFechamentoConta()" style="flex:2;background:#16a34a;color:#fff;border:none;border-radius:12px;padding:12px;font-family:inherit;font-size:.88rem;font-weight:800;cursor:pointer">✅ Fechar e finalizar</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
