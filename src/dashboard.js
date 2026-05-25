@@ -41,6 +41,25 @@ let realtimeSub = null;
 let pollingId   = null;
 let _audioAtual = null; // instância de Audio ativa
 let pedidosConhecidos = new Set();
+var _novosPedidosPendentes = new Set();
+var _somLoop = null;
+function pararSomPedidos(){if(_somLoop){clearInterval(_somLoop);_somLoop=null;}}
+function tocarSomNovoPedido(idP){
+  _novosPedidosPendentes.add(idP);
+  if(_somLoop)return;
+  function bip(){
+    if(!_novosPedidosPendentes.size){pararSomPedidos();return;}
+    try{var a=new Audio('/notificacao.mp3');a.volume=0.8;a.play().catch(function(){
+      try{var ctx=new AudioContext(),o=ctx.createOscillator(),g=ctx.createGain();
+        o.connect(g);g.connect(ctx.destination);o.frequency.value=880;
+        g.gain.setValueAtTime(0.4,ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);
+        o.start(ctx.currentTime);o.stop(ctx.currentTime+0.4);}catch(e){}});
+    }catch(e){}
+  }
+  bip();_somLoop=setInterval(bip,5000);
+}
+function marcarPedidoOuvido(idP){_novosPedidosPendentes.delete(idP);}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -298,6 +317,9 @@ function preencherConfig(estab) {
     var _paiBtn = document.getElementById('pedi-ai-btn');
     if (_paiBtn) _paiBtn.classList.add('show');
   } catch(e) {}
+
+  // Inicia verificação automática de horário de funcionamento
+  try { iniciarAutoHorario(); } catch(e) {}
 
   const ctsToggle = $('cfg-taxa-servico');
   const ctsWrap   = document.getElementById('cfg-taxa-servico-wrap');
@@ -1355,7 +1377,9 @@ async function renderPedidos() {
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           ${(p.status==='novo'&&!(p.endereco||'').startsWith('No local'))?'<button class="btn-ped-aceitar" onclick="aceitarPedido(\''+p.id+'\')">✓ Aceitar</button><button class="btn-ped-recusar" onclick="recusarPedido(\''+p.id+'\')">✕ Recusar</button>':''}
-          ${p.status==='preparo'?'<button class="btn-ped-aceitar" onclick="marcarPronto(\''+p.id+'\')">'+(((p.endereco||'').startsWith('No local'))?'✅ Entregue na mesa':'✅ Pronto')+'</button>':''}
+          ${p.status==='preparo'?'<button class="btn-ped-aceitar" onclick="marcarPronto(\''+p.id+'\')">'+(((p.endereco||'').startsWith('No local'))?'✅ Entregue na mesa':'✅ Pronto')+'</button>':''
+      + (p.status==='pronto'&&!(p.endereco||'').startsWith('No local')?'<button class="btn-ped-aceitar" style="background:#2563eb" onclick="marcarSaiuEntrega(\''+p.id+'\')">🚚 Saiu para entrega</button>':''
+      + (p.status==='saiu_entrega'?'<button class="btn-ped-aceitar" onclick="marcarPronto(\''+p.id+'\')">✅ Entregue</button>':'')  )}
           <button class="btn-ped-imprimir" onclick="verPedido('${p.id}')">🖨️ Ver</button>
         </div>
       </div>
@@ -1402,6 +1426,7 @@ function removerCardNovo(id) {
 }
 
 window.aceitarPedido = async function(id) {
+  marcarPedidoOuvido(id); // Para o som quando pedido é aceito
   pararNotif();
   // Busca o pedido para saber o tipo antes de aceitar
   const { data: ped } = await getSupa().from('pedidos').select('endereco').eq('id', id).maybeSingle();
@@ -1434,6 +1459,15 @@ window.recusarPedido = async function(id) {
   removerCardNovo(id); showToast('Pedido recusado.');
   await carregarPedidosMesas(); renderMesas();
   await renderPedidos();
+};
+
+window.marcarSaiuEntrega = async function(id) {
+  try {
+    var { error } = await getSupa().from('pedidos').update({ status: 'saiu_entrega' }).eq('id', id);
+    if (error) throw error;
+    showToast('🚚 Pedido saiu para entrega!');
+    await renderPedidos();
+  } catch(e) { showToast('Erro: ' + e.message); }
 };
 
 window.marcarPronto = async function(id) {
@@ -2863,7 +2897,8 @@ function _cardPedidoMesa(p, mesa, fmtR, stCor, stLbl) {
 
   // Badge de status — destaque visual forte
   const stBadge = {
-    novo:    { bg:'#fef3c7', cor:'#92400e', icon:'🔔', txt:'Aguardando' },
+    novo:         { bg:'#fef3c7', cor:'#92400e', icon:'🔔', txt:'Aguardando' },
+    saiu_entrega: { bg:'#dbeafe', cor:'#1e40af', icon:'🚚', txt:'Saiu p/ entrega' },
     preparo: { bg:'#f0fdf4', cor:'#16a34a', icon:'✅', txt:'Na cozinha' },
     pronto:  { bg:'#dcfce7', cor:'#15803d', icon:'✅', txt:'Pronto'     },
   }[p.status] || { bg:'#f3f4f6', cor:'#555', icon:'', txt: p.status };
@@ -4034,6 +4069,65 @@ setInterval(function() { verificarExpiracaoQuente(); }, 60 * 60 * 1000);
 // ═══════════════════════════════════════════════════════════════════════════
 // CAIXA — PERSISTENTE (localStorage primário, Supabase secundário)
 // ═══════════════════════════════════════════════════════════════════════════
+
+// ── HORÁRIO AUTOMÁTICO ────────────────────────────────────────────────────────
+(function() {
+  var _autoHorarioInterval = null;
+
+  function verificarHorarioAuto() {
+    try {
+      var estab = getEstab();
+      if (!estab || !estab.horarios) return;
+      var horarios = estab.horarios;
+      if (!Array.isArray(horarios) || !horarios.length) return;
+
+      var agora = new Date();
+      var diaSemana = agora.getDay(); // 0=dom, 1=seg...
+      var horaAtual = agora.getHours() * 60 + agora.getMinutes();
+
+      var diaAtivo = horarios.find(function(h) {
+        return Array.isArray(h.dias) && h.dias.includes(diaSemana) && h.ativo !== false;
+      });
+
+      var deveEstarAberta = false;
+      if (diaAtivo && diaAtivo.abertura && diaAtivo.fechamento) {
+        var parts1 = diaAtivo.abertura.split(':');
+        var parts2 = diaAtivo.fechamento.split(':');
+        var abMin = parseInt(parts1[0]) * 60 + parseInt(parts1[1] || 0);
+        var feMin = parseInt(parts2[0]) * 60 + parseInt(parts2[1] || 0);
+        deveEstarAberta = horaAtual >= abMin && horaAtual < feMin;
+      }
+
+      var estaAberta = !!estab.loja_aberta;
+      if (deveEstarAberta !== estaAberta) {
+        getSupa().from('estabelecimentos')
+          .update({ loja_aberta: deveEstarAberta })
+          .eq('id', estab.id)
+          .then(function(res) {
+            if (!res.error) {
+              try {
+                var stored = JSON.parse(localStorage.getItem('pw_estab') || '{}');
+                stored.loja_aberta = deveEstarAberta;
+                localStorage.setItem('pw_estab', JSON.stringify(stored));
+                if (window._estab) window._estab.loja_aberta = deveEstarAberta;
+              } catch(e) {}
+              showToast(deveEstarAberta ? '🟢 Loja aberta automaticamente!' : '🔴 Loja fechada automaticamente!');
+              // Atualiza toggle visual
+              var tog = document.getElementById('cfg-aberto');
+              if (tog) { tog.checked = deveEstarAberta; }
+            }
+          });
+      }
+    } catch(e) {}
+  }
+
+  window.iniciarAutoHorario = function() {
+    if (_autoHorarioInterval) clearInterval(_autoHorarioInterval);
+    verificarHorarioAuto();
+    _autoHorarioInterval = setInterval(verificarHorarioAuto, 60000); // Verifica a cada minuto
+  };
+})();
+
 var _caixaAberto   = false;
 var _caixaAbertura = null;
 var _caixaId       = null;
@@ -5494,4 +5588,4 @@ async function _carregarGruposNoModal(estabId, selecionados) {
 function _coletarGruposSelecionados() {
   const chks = document.querySelectorAll('.grupo-adic-chk:checked');
   return Array.from(chks).map(function(c) { return c.value; });
-}  
+}
