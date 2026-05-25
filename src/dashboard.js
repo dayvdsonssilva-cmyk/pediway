@@ -3930,26 +3930,61 @@ window.toggleCfgTaxaServico = function(ativo) {
 };
 
 // ── Accordion das configurações ───────────────────────────────────────────────
+// Abre modal de configuração ao clicar no card
+window.fecharCfgModal = function() {
+  const ov = document.getElementById('cfg-modal-overlay');
+  if (ov) ov.style.display = 'none';
+};
+
+// Fecha ao clicar fora
+document.addEventListener('click', function(e) {
+  const ov = document.getElementById('cfg-modal-overlay');
+  if (ov && e.target === ov) ov.style.display = 'none';
+});
+
+function abrirCfgModal(header) {
+  const card  = header.closest('.cfg-topic-card');
+  const body  = card?.querySelector('.cfg-topic-body');
+  const icon  = header.querySelector('.cfg-topic-icon')?.textContent || '';
+  const title = header.querySelector('.cfg-topic-title')?.textContent || '';
+  const sub   = header.querySelector('.cfg-topic-sub')?.textContent || '';
+  if (!body) return;
+
+  const ov  = document.getElementById('cfg-modal-overlay');
+  const mb  = document.getElementById('cfg-modal-body');
+  const mtt = document.getElementById('cfg-modal-title');
+  const mst = document.getElementById('cfg-modal-sub');
+  const mic = document.getElementById('cfg-modal-icon');
+  if (!ov || !mb) return;
+
+  if (mic) mic.textContent = icon;
+  if (mtt) mtt.textContent = title;
+  if (mst) mst.textContent = sub;
+  mb.innerHTML = '';
+  // Clone body content into modal
+  const clone = body.cloneNode(true);
+  clone.style.display = 'flex';
+  clone.style.flexDirection = 'column';
+  clone.style.gap = '16px';
+  // Move real inputs into modal (sync changes)
+  Array.from(body.children).forEach(function(child) {
+    mb.appendChild(child);
+  });
+  ov.style.display = 'flex';
+  // Restore on close
+  ov.dataset.sourceCard = card.dataset.section || '';
+}
+
 window.initCfgAccordion = function() {
-  document.querySelectorAll('.cfg-topic-header').forEach(header => {
+  document.querySelectorAll('.cfg-topic-header').forEach(function(header) {
     if (header.dataset.accordion) return;
     header.dataset.accordion = '1';
+    // Muda seta para indicar "abre modal"
+    const arr = header.querySelector('.cfg-topic-arrow');
+    if (arr) arr.innerHTML = '&#8594;';
     header.addEventListener('click', function(e) {
       if (e.target.closest('input,button,label,select,a')) return;
-      const card = this.closest('.cfg-topic-card');
-      const body = card?.querySelector('.cfg-topic-body');
-      if (!body) return;
-      const isOpen = body.classList.contains('open');
-      // Fecha todos
-      document.querySelectorAll('.cfg-topic-body.open').forEach(b => {
-        b.classList.remove('open');
-        b.closest('.cfg-topic-card')?.querySelector('.cfg-topic-header')?.classList.remove('open');
-      });
-      // Abre o clicado se estava fechado
-      if (!isOpen) {
-        body.classList.add('open');
-        this.classList.add('open');
-      }
+      abrirCfgModal(header);
     });
   });
 };
@@ -4408,7 +4443,7 @@ function renderHistoricoCaixa() {
     var hist = JSON.parse(localStorage.getItem('pw_caixa_hist_' + estab.id) || '[]');
     if (!hist.length) { el.innerHTML = '<div style="text-align:center;color:#aaa;font-size:.82rem;padding:24px">Nenhum fechamento registrado ainda</div>'; return; }
     var fmt = function(v){return 'R$ ' + Number(v||0).toFixed(2).replace('.',',');};
-    el.innerHTML = hist.map(function(h) {
+    el.innerHTML = hist.map(function(h, i) {
       var dt = new Date(h.fechadoEm).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
       var ab = new Date(h.aberturaEm).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
       return '<div style="border:1.5px solid #f0ebe4;border-radius:12px;padding:12px;margin-bottom:8px;background:#fff">'
