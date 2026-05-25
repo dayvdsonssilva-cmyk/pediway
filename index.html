@@ -540,49 +540,77 @@ h3 { font-size:1.2rem; font-weight:700; color:#1a1a1a; }
 .cfg-topic-body { padding:20px; display:none; flex-direction:column; gap:16px; }
 .cfg-topic-body.open { display:flex; animation:cfg-slide-down .22s cubic-bezier(.4,0,.2,1); }
 
-/* ── Desktop: grid 2 colunas com cards grandes ── */
+/* ── Desktop: configurações em grid 2 colunas visual premium ── */
 @media(min-width:860px){
-  #tab-configuracoes .dash-container { max-width: 100%; padding: 28px 40px; }
+  #tab-configuracoes .dash-container {
+    max-width: 100%; padding: 32px 48px;
+  }
+  #tab-configuracoes h2 {
+    font-size: 1.5rem; margin-bottom: 4px;
+  }
   .cfg-topics-wrap {
     display: grid !important;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
     max-width: 100% !important;
     align-items: start;
     margin-top: 24px;
   }
+  /* Card fechado: visual de painel clicável */
   .cfg-topic-card {
-    border-radius: 20px;
-    box-shadow: 0 2px 16px rgba(0,0,0,.07);
-    transition: box-shadow .25s, transform .25s;
-    border: 1.5px solid #eee;
+    border-radius: 18px;
+    border: 1.5px solid #ece7df;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    transition: all .2s ease;
+    overflow: visible;
   }
-  .cfg-topic-card:hover {
-    box-shadow: 0 8px 32px rgba(0,0,0,.11);
-    transform: translateY(-3px);
+  .cfg-topic-card:not(:has(.cfg-topic-body.open)):hover {
+    border-color: var(--red);
+    box-shadow: 0 6px 24px rgba(232,0,28,.12);
+    transform: translateY(-2px);
   }
+  /* Header mais generoso */
   .cfg-topic-header {
-    padding: 26px 28px;
-    gap: 18px;
-    background: #faf8f5;
+    padding: 22px 24px !important;
+    gap: 16px !important;
+    background: linear-gradient(135deg,#fefcfa,#faf5ef) !important;
+    border-radius: 18px !important;
+    transition: background .2s;
   }
+  .cfg-topic-header.open {
+    border-radius: 18px 18px 0 0 !important;
+    background: #fff !important;
+  }
+  /* Ícone grande com fundo colorido */
   .cfg-topic-icon {
-    width: 56px; height: 56px;
-    font-size: 1.6rem;
-    border-radius: 16px;
-    border: 1.5px solid #e8e3db;
-    background: #fff;
+    width: 54px !important; height: 54px !important;
+    font-size: 1.5rem !important;
+    border-radius: 15px !important;
+    background: #fff !important;
+    border: 2px solid #ece7df !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
   }
-  .cfg-topic-title { font-size: 1.05rem; font-weight: 900; }
-  .cfg-topic-sub   { font-size: .8rem; margin-top: 4px; }
-  .cfg-topic-arrow { width: 28px; height: 28px; }
-  .cfg-topic-body  { padding: 28px; gap: 20px; }
-  /* Card aberto ocupa as 2 colunas inteiras */
-  .cfg-topic-card:has(.cfg-topic-body.open) { grid-column: 1 / -1; }
-  /* Botões de ação abaixo do grid */
-  #tab-configuracoes .btn-primary,
-  #tab-configuracoes [onclick*="ajudaPediway"],
-  #tab-configuracoes [onclick*="ME AJUDA"] { max-width: 480px; margin: 0 auto; display: block; }
+  .cfg-topic-title { font-size: 1rem !important; font-weight: 900 !important; letter-spacing: -.01em; }
+  .cfg-topic-sub   { font-size: .76rem !important; margin-top: 5px !important; line-height: 1.4; }
+  .cfg-topic-arrow { width: 28px !important; height: 28px !important; }
+  /* Card aberto: ocupa 2 colunas */
+  .cfg-topic-card:has(.cfg-topic-body.open) {
+    grid-column: 1 / -1;
+    border-color: var(--red);
+    box-shadow: 0 4px 24px rgba(232,0,28,.1);
+  }
+  .cfg-topic-body { padding: 28px 32px !important; gap: 20px !important; }
+  /* Botões de ação centralizados */
+  .cfg-action-btns {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 8px;
+    max-width: 580px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .cfg-action-btns .btn-primary { flex: 1; }
 }
 @keyframes cfg-slide-down { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:none} }
 .cfg-actions { max-width:640px; display:flex; flex-direction:column; gap:10px; margin-top:4px; }
