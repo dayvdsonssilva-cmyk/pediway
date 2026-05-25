@@ -2880,8 +2880,8 @@ function _cardPedidoMesa(p, mesa, fmtR, stCor, stLbl) {
       </span>
     </div>
 
-    <!-- Indicador cozinha inline -->
-    ${p.status !== 'pronto' ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:5px 10px;border-radius:8px;background:'+(enviado?'#f0fdf4':'#fff5f5')+';border:1px solid '+(enviado?'#bbf7d0':'#fecaca')+'">       <span style="font-size:.75rem">'+(enviado ? '✅' : '⏳')+'</span>       <span style="font-size:.72rem;font-weight:700;color:'+(enviado?'#15803d':'#C0392B')+'">'+(enviado ? 'Enviado para a cozinha' : 'Aguardando envio para cozinha')+'</span>     </div>' : ''}
+    <!-- Indicador cozinha: só mostra se ainda não foi para cozinha -->
+    ${p.status === 'novo' ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:5px 10px;border-radius:8px;background:#fff5f5;border:1px solid #fecaca"><span>⏳</span><span style="font-size:.72rem;font-weight:700;color:#C0392B">Aguardando envio para cozinha</span></div>' : (p.status==='preparo'?'<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:5px 10px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0"><span>🍳</span><span style="font-size:.72rem;font-weight:700;color:#15803d">Na cozinha</span></div>':'')}
 
     <!-- Itens -->
     <div style="background:#faf8f5;border-radius:8px;padding:8px 10px;margin-bottom:10px">
@@ -2892,7 +2892,7 @@ function _cardPedidoMesa(p, mesa, fmtR, stCor, stLbl) {
     <!-- Ações -->
     <div style="display:flex;gap:6px;flex-wrap:wrap">
       ${p.status==='novo' ? '<button class="btn-ped-aceitar" style="padding:7px 12px;font-size:.75rem" onclick="aceitarPedido('+p.id+')">Aceitar</button>       <button class="btn-ped-recusar" style="padding:7px 10px;font-size:.75rem" onclick="recusarPedido('+p.id+')">Recusar</button>' : ''}
-      ${p.status !== 'pronto' ? '<button class="btn-ped-imprimir" style="font-size:.75rem;background:'+(enviado?'#f0fdf4':'#fff5f5')+';border:1.5px solid '+(enviado?'#16a34a':'#C0392B')+';color:'+(enviado?'#16a34a':'#C0392B')+';font-weight:700" onclick="imprimirCozinha('+p.id+')">         '+(enviado ? '✓ Reenviado' : '🖨️ Enviar cozinha')+'       </button>' : ''}
+      ${p.status==='novo' ? '<button class="btn-ped-imprimir" style="font-size:.75rem;background:#fff5f5;border:1.5px solid #C0392B;color:#C0392B;font-weight:700" onclick="imprimirCozinha('+p.id+')">🖨️ Enviar cozinha</button>' : ''}
       <button class="btn-ped-imprimir" style="font-size:.75rem" onclick="verPedido('${p.id}')">Ver mais</button>
     </div>
   </div>`;
@@ -4894,7 +4894,7 @@ function _paiChips(opts) {
   const msgs = document.getElementById('pai-messages');
   if (!msgs) return;
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-top:4px';
+  wrap.className = 'pai-chips-wrap';
   opts.forEach(function(op) {
     const b = document.createElement('button');
     b.className = 'pai-chip';
