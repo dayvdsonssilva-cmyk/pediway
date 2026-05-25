@@ -2830,8 +2830,10 @@ window.renderHistoricoMesas = async function() {
 
   lista.innerHTML = Object.entries(porMesa).map(([mesa, peds]) => {
     const num       = mesa.replace('Mesa ','');
-    const ativos    = peds.filter(p => ['novo','preparo'].includes(p.status));
-    const prontos   = peds.filter(p => p.status === 'pronto');
+    // 'pronto' = KDS marcou pronto mas garçom ainda não fechou = mesa ainda ativa
+    const ativos    = peds.filter(p => ['novo','preparo','pronto'].includes(p.status));
+    const prontos   = [];  // prontos agora fazem parte de "ativos"
+    const finalizados = peds.filter(p => p.status === 'finalizado');
     const temAtivo  = ativos.length > 0;
     // Total = só pedidos ativos (mesa aberta). Histórico tem o total completo separado.
     const totalMesa = ativos.reduce((s,p) => s+Number(p.total||0), 0);
@@ -3211,7 +3213,7 @@ async function carregarPedidosMesas() {
     .select('*')
     .eq('estabelecimento_id', estab.id)
     .ilike('endereco', 'No local%')
-    .in('status', ['novo', 'preparo'])   // só pedidos ativos
+    .in('status', ['novo', 'preparo', 'pronto'])  // inclui pronto (mesa ainda ocupada)
     .order('created_at', { ascending: true });
 
   _pedidosMesas = {};
@@ -3339,6 +3341,9 @@ window.salvarNomeComanda = function(val) {
 
 // ── Troca de tab dentro do modal ──────────────────────────────────────────────
 window.switchComandaTab = function(tab) {
+  // Normaliza aliases
+  if (tab === 'pedidos' || tab === 'novo') tab = 'pedido';
+  if (tab === 'historico' || tab === 'comanda') tab = 'hist';
   document.querySelectorAll('.ctab').forEach(b => b.classList.remove('ativo'));
   document.getElementById('ctab-' + tab)?.classList.add('ativo');
   document.getElementById('cpanel-pedido').style.display = tab === 'pedido' ? 'flex' : 'none';
@@ -3430,8 +3435,8 @@ window.enviarPedidoComanda = async function() {
     await carregarPedidosMesas();
     renderPedidosComanda(_mesaAtual);
 
-    // Muda para aba "Pedidos" para mostrar o que foi enviado
-    window.switchComandaTab('pedidos');
+    // Muda para aba da Comanda para mostrar o que foi enviado
+    window.switchComandaTab('hist');
 
   } catch(e) {
     showToast('Erro ao enviar: ' + e.message, 'error');
@@ -3966,7 +3971,23 @@ window.toggleCfgTaxaServico = function(ativo) {
 // Abre modal de configuração ao clicar no card
 window.fecharCfgModal = function() {
   const ov = document.getElementById('cfg-modal-overlay');
-  if (ov) ov.style.display = 'none';
+  if (!ov) return;
+  // Sincroniza valores do modal de volta ao body original (para salvar depois)
+  if (ov._sourceBody) {
+    const mb = document.getElementById('cfg-modal-body');
+    if (mb) {
+      mb.querySelectorAll('input,select,textarea').forEach(function(el) {
+        if (!el.id) return;
+        const orig = ov._sourceBody.querySelector('#' + el.id);
+        if (orig) {
+          if (el.type === 'checkbox') orig.checked = el.checked;
+          else orig.value = el.value;
+        }
+      });
+    }
+  }
+  ov.style.display = 'none';
+  ov._sourceBody = null;
 };
 
 // Fecha ao clicar fora
@@ -3993,19 +4014,12 @@ function abrirCfgModal(header) {
   if (mic) mic.textContent = icon;
   if (mtt) mtt.textContent = title;
   if (mst) mst.textContent = sub;
-  mb.innerHTML = '';
-  // Clone body content into modal
-  const clone = body.cloneNode(true);
-  clone.style.display = 'flex';
-  clone.style.flexDirection = 'column';
-  clone.style.gap = '16px';
-  // Move real inputs into modal (sync changes)
-  Array.from(body.children).forEach(function(child) {
-    mb.appendChild(child);
-  });
+  // Clona o conteúdo SEM mover o DOM original (evita destruir ao fechar)
+  mb.innerHTML = body.innerHTML;
+  mb.style.cssText = 'overflow-y:auto;flex:1;padding:24px 28px;display:flex;flex-direction:column;gap:16px';
+  // Guarda referência ao body original para sincronizar ao salvar
+  ov._sourceBody = body;
   ov.style.display = 'flex';
-  // Restore on close
-  ov.dataset.sourceCard = card.dataset.section || '';
 }
 
 window.initCfgAccordion = function() {
