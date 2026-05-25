@@ -516,7 +516,18 @@ const CFG_KEY = 'pw_ceo_cfg_v2';
 let cfg = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
 // PIN inicial — troque após o primeiro acesso em Configurações
 if (!cfg.codigo) { cfg.codigo = 'Mandão@Deyvin2026'; localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
-const saveCfg = () => localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+const saveCfg = () => {
+  localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+  // Sincroniza para Supabase (persiste mesmo limpando cache)
+  db.from('pediway_config').upsert({
+    id: 'global',
+    wpp: cfg.wpp || null,
+    wpp_msg: cfg.wppMsg || null,
+    preco_pro: Number(cfg.precoPro || 49),
+    preco_prem: Number(cfg.precoPrem || 99),
+    updated_at: new Date().toISOString()
+  }).then(function(r){ if(r.error) console.warn('Config sync:', r.error.message); });
+};
 const $R = v => 'R$ ' + Number(v||0).toFixed(2).replace('.',',');
 
 // Formata número de telefone/WhatsApp → (88) 98888-8888
@@ -755,7 +766,18 @@ function handleAction(a, id, extra) {
 }
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
-function carregarCfg() {
+async function carregarCfg() {
+  // Tenta carregar do Supabase (fonte de verdade)
+  try {
+    const { data } = await db.from('pediway_config').select('*').eq('id','global').maybeSingle();
+    if (data) {
+      if (data.wpp)       cfg.wpp       = data.wpp;
+      if (data.wpp_msg)   cfg.wppMsg    = data.wpp_msg;
+      if (data.preco_pro) cfg.precoPro  = String(data.preco_pro);
+      if (data.preco_prem)cfg.precoPrem = String(data.preco_prem);
+      localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
+    }
+  } catch(e) { console.warn('carregarCfg Supabase:', e.message); }
   gel('cfg-wpp').value       = cfg.wpp    || '';
   gel('cfg-wpp-msg').value   = cfg.wppMsg || 'Olá! Preciso de ajuda com o PEDIWAY.';
   gel('cfg-preco-pro').value  = cfg.precoPro  || '49';
@@ -790,7 +812,6 @@ gel('btn-invalidar-sessao').addEventListener('click', () => {
 gel('btn-salvar-preco').addEventListener('click', () => {
   cfg.precoPro  = gel('cfg-preco-pro').value  || '49';
   cfg.precoPrem = gel('cfg-preco-prem').value || '99';
-  db.from('pediway_config').upsert({id:'global',preco_pro:Number(cfg.precoPro),preco_prem:Number(cfg.precoPrem),updated_at:new Date().toISOString()});
   saveCfg(); toast('Preços salvos e sincronizados!');
 });
 gel('btn-desativar-inad').addEventListener('click', async () => {
@@ -819,22 +840,33 @@ gel('btn-exportar').addEventListener('click', () => {
 // ── LOAD ──────────────────────────────────────────────────────────────────────
 async function load() {
   toast('Carregando dados...','#f59e0b');
-  const [r1,r2,r3] = await Promise.all([
-    db.from('estabelecimentos').select('*').order('created_at',{ascending:false}),
-    db.from('pedidos').select('id,cliente_nome,cliente_whats,status,total,pagamento,troco,taxa_entrega,endereco,itens,created_at,estabelecimento_id,estabelecimentos(nome,slug)').order('created_at',{ascending:false}).limit(2000),
-    db.from('avaliacoes').select('*,estabelecimentos(nome)').order('created_at',{ascending:false}).limit(500),
-  ]);
-  lojas      = r1.data || [];
-  peds       = r2.data || [];
-  avaliacoes = r3.data || [];
-  renderVisao();
-  renderLojas(lojas);
-  renderPeds(peds);
-  renderFin();
-  renderAssinaturas();
-  carregarCancelamentos();
-  popularFiltroLojas();
-  toast('Dados atualizados ✅');
+  try {
+    // Carrega em paralelo com tratamento individual de erros
+    const [r1, r2, r3] = await Promise.all([
+      db.from('estabelecimentos').select('*').order('created_at',{ascending:false}),
+      db.from('pedidos').select('id,cliente_nome,cliente_whats,status,total,pagamento,troco,taxa_entrega,endereco,itens,created_at,estabelecimento_id,estabelecimentos(nome,slug)').order('created_at',{ascending:false}).limit(2000),
+      db.from('avaliacoes').select('*,estabelecimentos(nome)').order('created_at',{ascending:false}).limit(500).then(r => r).catch(() => ({ data: [] })),
+    ]);
+    lojas      = r1.data || [];
+    peds       = r2.data || [];
+    avaliacoes = r3.data || [];
+
+    if (r1.error) throw new Error('Lojas: ' + r1.error.message);
+    if (r2.error) console.warn('Pedidos:', r2.error.message);
+
+    renderVisao();
+    renderLojas(lojas);
+    renderPeds(peds);
+    renderFin();
+    renderAssinaturas();
+    try { carregarCancelamentos(); } catch(e) { console.warn('Cancelamentos:', e.message); }
+    popularFiltroLojas();
+    await carregarCfg();
+    toast('Dados atualizados ✅');
+  } catch(e) {
+    toast('Erro ao carregar: ' + e.message, '#ef4444');
+    console.error('[load]', e);
+  }
 }
 
 function popularFiltroLojas() {
@@ -1301,7 +1333,8 @@ window.toggleAvalLoja = function(uid) {
 gel('fil-loja-aval').addEventListener('change', renderAvaliacoes);
 gel('fil-nota-aval').addEventListener('change', renderAvaliacoes);
 async function carregarCancelamentos() {
-  const {data} = await db.from('cancelamentos_plano').select('*,estabelecimentos(nome,slug)').order('created_at',{ascending:false});
+  const {data, error} = await db.from('cancelamentos_plano').select('*,estabelecimentos(nome,slug)').order('created_at',{ascending:false});
+  if (error) { console.warn('cancelamentos_plano:', error.message); return; }
   const lista = data||[];
   const naoLidos = lista.filter(c=>!c.lido).length;
   sessionStorage.setItem('ceo_cancel_nao_lidos', naoLidos);
