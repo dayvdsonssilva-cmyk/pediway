@@ -1376,9 +1376,9 @@ async function renderPedidos() {
           ${pgto ? '<span style="background:#f0e9e0;padding:2px 8px;border-radius:50px;font-size:.65rem;font-weight:700;color:#888">'+(pgto)+'</span>' : ''}
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${(p.status==='novo'&&!(p.endereco||'').startsWith('No local'))?'<button class="btn-ped-aceitar" onclick="aceitarPedido(\''+p.id+'\')">✓ Aceitar</button><button class="btn-ped-recusar" onclick="recusarPedido(\''+p.id+'\')">✕ Recusar</button>':''}
-          ${p.status==='preparo'?'<button class="btn-ped-aceitar" onclick="marcarPronto(\''+p.id+'\')">'+(((p.endereco||'').startsWith('No local'))?'✅ Entregue na mesa':'✅ Pronto')+'</button>':''
-          <button class="btn-ped-imprimir" onclick="verPedido('${p.id}')">🖨️ Ver</button>
+          ${(p.status==='novo'&&!(p.endereco||'').startsWith('No local'))?'<button class="btn-ped-aceitar" onclick="aceitarPedido(\''+p.id+'\')">&#10003; Aceitar</button><button class="btn-ped-recusar" onclick="recusarPedido(\''+p.id+'\')">&#10005; Recusar</button>':''}
+          ${p.status==='preparo'?'<button class="btn-ped-aceitar" onclick="marcarPronto(\''+p.id+'\')">'+(((p.endereco||'').startsWith('No local'))?'&#10003; Entregue na mesa':'&#10003; Pronto')+'</button>':''}
+          <button class="btn-ped-imprimir" onclick="verPedido('${p.id}')">Ver</button>
         </div>
       </div>
     </div>`;
