@@ -193,7 +193,7 @@ function renderFull(){
 
     const todos=PEDIDOS.filter(p=>deveExibir(p,s));
     const ativos=todos.filter(p=>getStSetor(p,s)!=='pronto').sort((a,b)=>{const sa=getStSetor(a,s),sb=getStSetor(b,s);return sa!==sb?(ord[sa]||0)-(ord[sb]||0):new Date(a.created_at)-new Date(b.created_at);});
-    const prontos=todos.filter(p=>getStSetor(p,s)==='pronto').sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,5);
+    const prontos=todos.filter(p=>getStSetor(p,s)==='pronto').sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,8);
 
     // Identifica cards existentes para não recriar (evita jumps)
     const existentes=new Set([...main.querySelectorAll('.kds-card')].map(el=>el.id));
@@ -224,7 +224,7 @@ function renderFull(){
 
     if(prontos.length){
       const sec=document.createElement('div');sec.className='sec-label';
-      sec.innerHTML='<div class="sec-line"></div><div class="sec-txt">✅ Concluídos recentes</div><div class="sec-line"></div>';
+      sec.innerHTML='<div class="sec-line"></div><div class="sec-txt">✅ Prontos <span style="background:#22c55e;color:#fff;border-radius:50px;padding:1px 10px;font-size:.7rem;font-weight:900;margin-left:4px">' + prontos.length + '</span></div><div class="sec-line"></div>';
       main.appendChild(sec);
       prontos.forEach(p=>{const div=document.createElement('div');div.innerHTML=cardHTML(p,s);main.appendChild(div.firstElementChild);});
     }
@@ -233,6 +233,9 @@ function renderFull(){
     main.scrollTop=scrollTop; // restaura scroll
 
     if(cnt)cnt.textContent=ativos.length;
+    // Badge de prontos no header
+    const pBadge=document.getElementById('hdr-prontos-badge');
+    if(pBadge){ pBadge.textContent=prontos.length||''; pBadge.style.display=prontos.length?'inline-block':'none'; }
     empty.classList.toggle('show',todos.length===0);
 
     // Timers — só ativos
@@ -325,15 +328,19 @@ window.imprimir=function(id){
 // ATUALIZAR STATUS
 window.atualizarSt=async function(id,novoSt){
   const p=PEDIDOS.find(x=>String(x.id)===String(id));if(!p)return;
+  // Animação imediata no card antes de salvar
+  if(novoSt==='pronto'){
+    const card=document.getElementById('kc-'+id);
+    if(card){card.style.transition='all .3s ease';card.style.transform='scale(.95)';card.style.opacity='.35';}
+  }
   const s=SETOR_ATIVO,sm={...(p.setores_status||{})};sm[s]=novoSt;
   // KDS NUNCA altera o status global — só o dashboard faz isso
-  // KDS só controla setores_status de cada setor independentemente
   const upd={setores_status:sm};
   const{error}=await db.from('pedidos').update(upd).eq('id',id);
   if(error)return toast('❌ Erro ao atualizar');
-  p.setores_status=sm;if(upd.status)p.status=upd.status;
+  p.setores_status=sm;
   renderFull();renderTabs();
-  toast({aceito:'✓ Aceito!',preparando:'🔥 Em preparo',pronto:'✅ Pronto!'}[novoSt]||'Atualizado');
+  toast({preparando:'🔥 Em preparo!',pronto:'✅ Pronto!'}[novoSt]||'Atualizado');
 };
 
 // CARREGAR — merge inteligente (não substitui, atualiza)
