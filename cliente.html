@@ -1174,13 +1174,15 @@ window.adicionarAoCarrinho = function() {
   mostrarToast('Adicionado! 🛒', '#1a1a1a');
 };
 window.adicionarDireto = function(p) {
-  const grupo = p.grupo_adicionais;
-  if (grupo) {
-    // Abre modal de adicionais
-    abrirModalAdicionaisCli(p, grupo);
+  // Suporta múltiplos grupos (grupos_lista) e legado (grupo_adicionais)
+  const grupos = p.grupos_lista && p.grupos_lista.length
+    ? p.grupos_lista
+    : (p.grupo_adicionais ? [p.grupo_adicionais] : []);
+  if (grupos.length > 0) {
+    abrirModalAdicionaisCli(p, grupos);
   } else {
     adicionarItem(p, 1);
-    mostrarToast(`${p.nome} adicionado! 🛒`, '#1a1a1a');
+    mostrarToast(p.nome + ' adicionado! 🛒', '#1a1a1a');
   }
 };
 
