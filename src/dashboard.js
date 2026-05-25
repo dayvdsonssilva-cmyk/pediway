@@ -4915,6 +4915,75 @@ window.enviarPediAI = function() {
   _paiEnviar(t);
 };
 
+// Analisa nota fiscal/fatura enviada como imagem
+window.paiEnviarNota = function(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  input.value = '';
+  _paiAddMsg('user', '📄 Enviando nota fiscal para análise...');
+  _paiTyping();
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const b64 = e.target.result.split(',')[1];
+    // Comprime se muito grande
+    const img = new Image();
+    img.onload = async function() {
+      const MAX = 1200;
+      let w = img.width, h = img.height;
+      if (w > MAX) { h = Math.round(h*MAX/w); w = MAX; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const compressed = canvas.toDataURL('image/jpeg', 0.82).split(',')[1];
+      try {
+        const estab = getEstab();
+        const { data: prods } = await getSupa().from('produtos').select('id,nome,preco,categoria').eq('estabelecimento_id', estab.id).limit(20);
+        const raw = await (await fetch('/api/pedi-ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image: compressed,
+            imagePrompt: 'Analise esta nota fiscal. Produtos do cardápio: ' + JSON.stringify((prods||[]).map(function(p){return p.nome+' (R$'+p.preco+')';})) + '. Calcule margens e sugira preços de venda com 65% de margem.',
+            messages: [],
+            context: { estab: { nome: estab.nome, tipo: estab.tipo_estabelecimento } }
+          })
+        })).text();
+        let json; try { json = JSON.parse(raw); } catch(e) { throw new Error(raw.slice(0,100)); }
+        if (json.error) throw new Error(json.error);
+        _paiAddMsg('ai', json.resposta || 'Análise concluída!');
+        // Mostra tabela de análise fiscal
+        if (json.analise_fiscal?.length) {
+          _paiMostraAnalise(json.analise_fiscal);
+        }
+      } catch(e) {
+        _paiAddMsg('ai', '❌ Erro na análise: ' + e.message);
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+function _paiMostraAnalise(analise) {
+  const msgs = document.getElementById('pai-messages');
+  if (!msgs) return;
+  const div = document.createElement('div');
+  div.style.cssText = 'background:#fff8f8;border:1.5px solid #ffcccc;border-radius:10px;padding:10px 12px;margin-top:4px;font-size:.75rem';
+  div.innerHTML = '<div style="font-size:.72rem;font-weight:800;color:#333;margin-bottom:8px">📊 Análise de Custos</div>'
+    + analise.slice(0,10).map(function(it) {
+        const sugerido = it.preco_venda_sugerido > 0
+          ? ' → <strong style="color:var(--red)">Venda: R$ '+Number(it.preco_venda_sugerido).toFixed(2).replace('.',',')+'</strong>' : '';
+        return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #fff0f0">'
+          + '<span style="flex:1;font-weight:600">'+it.ingrediente+'</span>'
+          + '<span style="color:#888">R$ '+Number(it.custo_unitario||0).toFixed(2).replace('.',',')+'</span>'
+          + sugerido
+          + '<span style="background:#dcfce7;color:#16a34a;font-size:.6rem;font-weight:800;padding:1px 6px;border-radius:50px">'+it.margem+'</span>'
+          + '</div>';
+      }).join('');
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
 // ── Envio para API e execução ─────────────────────────────────────────────────
 async function _paiEnviar(texto) {
   _paiAddMsg('user', texto);
@@ -4934,8 +5003,13 @@ async function _paiEnviar(texto) {
       body: JSON.stringify({
         messages: _paiHistory,
         context: {
-          estab: { id: estab.id, nome: estab.nome, cidade: estab.cidade, taxa_entrega: estab.taxa_entrega, pedido_minimo: estab.pedido_minimo, whatsapp: estab.whatsapp, loja_aberta: estab.loja_aberta, tipo_estabelecimento: estab.tipo_estabelecimento },
-          produtos: prods || []
+          estab: {
+            id: estab.id, nome: estab.nome, cidade: estab.cidade,
+            taxa_entrega: estab.taxa_entrega, pedido_minimo: estab.pedido_minimo,
+            whatsapp: estab.whatsapp, loja_aberta: estab.loja_aberta,
+            tipo_estabelecimento: estab.tipo_estabelecimento
+          },
+          produtos: (prods||[]).slice(0,20)
         }
       })
     })).text();
