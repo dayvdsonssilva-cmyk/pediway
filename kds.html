@@ -156,9 +156,21 @@ function enriquecer(p){(p.itens||[]).forEach(it=>{if(!it.setor&&it.nome){const s
 function filtrarItens(itens,setor){if(!Array.isArray(itens))return[];const cs=itens.filter(it=>it.setor);if(!cs.length)return itens;return cs.filter(it=>it.setor.toLowerCase()===setor.toLowerCase());}
 
 function deveExibir(p,setor){
-  if(p.setores_status&&Object.keys(p.setores_status).length)return Object.prototype.hasOwnProperty.call(p.setores_status,setor);
+  // Verifica se o setor tem itens relevantes neste pedido
   const cs=(p.itens||[]).filter(it=>it.setor);
-  if(cs.length)return cs.some(it=>it.setor.toLowerCase()===setor.toLowerCase());
+  const temSetorNosItens = cs.length > 0;
+  const setorTemItens = cs.some(it=>it.setor.toLowerCase()===setor.toLowerCase());
+
+  // Se o pedido tem setores_status com entradas
+  if(p.setores_status && Object.keys(p.setores_status).length){
+    // Se ESTE setor já tem entrada → sempre exibe (para mostrar status)
+    if(Object.prototype.hasOwnProperty.call(p.setores_status,setor)) return true;
+    // Se outros setores têm entrada mas este não:
+    // Exibe se os itens do pedido incluem este setor (ou se não há info de setor nos itens)
+    return temSetorNosItens ? setorTemItens : true;
+  }
+  // Sem setores_status: usa setor dos itens ou exibe para todos
+  if(temSetorNosItens) return setorTemItens;
   return true;
 }
 
