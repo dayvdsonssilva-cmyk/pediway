@@ -10,7 +10,7 @@
   <style>
     /* ── FORÇA MODO CLARO ── */
     :root { color-scheme: only light; }
-    @media (prefers-color-scheme: dark) { :root { color-scheme: only light; } } 
+    @media (prefers-color-scheme: dark) { :root { color-scheme: only light; } }
 
     /* ── RESET ── */
     html { touch-action: pan-y; }
@@ -1666,6 +1666,7 @@ init();
 // ── Modal de adicionais do cliente ────────────────────────────────────────────
 let _adicCliProd   = null;
 let _adicCliGrupo  = null;
+let _adicCliGrupos = [];
 let _adicCliSel    = {};
 
 // _adicCliGrupos = array de grupos
