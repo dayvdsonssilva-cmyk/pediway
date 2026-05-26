@@ -3755,9 +3755,16 @@ window.executarFecharComanda = async function() {
   // Salva pagamento + status nos pedidos da mesa
   const ids = peds.map(p=>p.id);
   if (ids.length) {
+    // Normaliza pagamento para o padrão do caixa
+    const _PAG_NORM = {
+      'PIX': 'pix', 'DINHEIRO': 'dinheiro',
+      'CRÉDITO': 'cartao-credito', 'DÉBITO': 'cartao-debito',
+      'CARTÃO': 'cartao-credito'
+    };
+    const _pagNorm = _PAG_NORM[_pagamentoComanda] || _pagamentoComanda.toLowerCase();
     await getSupa().from('pedidos').update({
       status: 'finalizado',
-      pagamento: _pagamentoComanda,
+      pagamento: _pagNorm,
     }).in('id', ids);
   }
 
@@ -4252,7 +4259,7 @@ async function atualizarResumoCaixa() {
     var res = await getSupa().from('pedidos')
       .select('total,pagamento,status')
       .eq('estabelecimento_id', estab.id)
-      .gte('created_at', _caixaAbertura.hora)
+      .gte('created_at', new Date(new Date().setHours(0,0,0,0)).toISOString())
       .neq('status', 'recusado')
       .neq('status', 'novo');
 
@@ -4263,8 +4270,8 @@ async function atualizarResumoCaixa() {
     var som = function(arr) { return arr.reduce(function(s,p){return s+Number(p.total||0);},0); };
 
     var totalPix      = som(todos.filter(function(p){ return pag(p)==='pix'; }));
-    var totalCredito  = som(todos.filter(function(p){ return pag(p).startsWith('cartao-credito'); }));
-    var totalDebito   = som(todos.filter(function(p){ return pag(p).startsWith('cartao-debito'); }));
+    var totalCredito  = som(todos.filter(function(p){ return pag(p).startsWith('cartao-credito') || pag(p)==='crédito' || pag(p)==='credito'; }));
+    var totalDebito   = som(todos.filter(function(p){ return pag(p).startsWith('cartao-debito') || pag(p)==='débito' || pag(p)==='debito'; }));
     var totalCartao   = totalCredito + totalDebito;
     var totalDinheiro = som(todos.filter(function(p){ return pag(p)==='dinheiro'; }));
     var totalMesa     = som(todos.filter(function(p){ return pag(p)==='no local'; }));
