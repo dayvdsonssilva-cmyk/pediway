@@ -4395,15 +4395,24 @@ window.fecharCaixa = async function() {
   // Salva no histórico local
   try {
     var hist = JSON.parse(localStorage.getItem('pw_caixa_hist_' + estab?.id) || '[]');
+    var fisicoVal = parseFloat((document.getElementById('caixa-fisico')?.value||'0').replace(',','.')) || 0;
+    var difVal    = fisicoVal - totalGeral;
     hist.unshift({
       fechadoEm:      agora.toISOString(),
       operador:       abertura?.operador || 'Operador',
+      obs:            document.getElementById('caixa-obs-fechamento')?.value || '',
       aberturaEm:     abertura?.hora || agora.toISOString(),
       valorAbertura:  Number(abertura?.valorAbertura || 0),
       totalPix:       totalPix,
+      totalCredito:   totalCredito,
+      totalDebito:    totalDebito,
       totalCartao:    totalCartao,
       totalDinheiro:  totalDinheiro,
+      totalMesa:      totalMesa,
+      totalVendas:    totalVendas,
       totalGeral:     totalGeral,
+      fisico:         fisicoVal,
+      diferenca:      difVal,
       numPedidos:     numPedidos,
     });
     if (hist.length > 20) hist = hist.slice(0, 20);
@@ -4629,26 +4638,39 @@ function renderHistoricoCaixa() {
     var hist = JSON.parse(localStorage.getItem('pw_caixa_hist_' + estab.id) || '[]');
     if (!hist.length) { el.innerHTML = '<div style="text-align:center;color:#aaa;font-size:.82rem;padding:24px">Nenhum fechamento registrado ainda</div>'; return; }
     var fmt = function(v){return 'R$ ' + Number(v||0).toFixed(2).replace('.',',');};
+    var fmt2 = function(v){return 'R$ '+Number(v||0).toFixed(2).replace('.',',');};
     el.innerHTML = hist.map(function(h, i) {
-      var dt = new Date(h.fechadoEm).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-      var ab = new Date(h.aberturaEm).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-      return '<div style="border:1.5px solid #f0ebe4;border-radius:12px;padding:12px;margin-bottom:8px;background:#fff">'
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
-        + '<div style="font-size:.78rem;font-weight:800;color:#1a1a1a">' + dt + '</div>'
-        + '<div style="font-size:.72rem;color:#888">Operador: ' + (h.operador||'—') + '</div>'
+      var dt  = new Date(h.fechadoEm).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      var ab  = new Date(h.aberturaEm).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      var fe  = new Date(h.fechadoEm).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      var dif = Number(h.diferenca || 0);
+      var difCor = dif < 0 ? '#dc2626' : dif > 0 ? '#16a34a' : '#555';
+      var difTxt = dif === 0 ? '' : (dif<0?'\u25bc Quebra ':'\u25b2 Sobra ')+fmt2(Math.abs(dif));
+      var bord   = dif < 0 ? '#fecaca' : '#f0ebe4';
+      var bg     = dif < 0 ? '#fff8f8' : '#fff';
+      return '<div style="border:1.5px solid '+bord+';border-radius:12px;padding:14px;margin-bottom:8px;background:'+bg+'">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">'
+        + '<div><div style="font-size:.8rem;font-weight:800">' + dt + '</div>'
+        + '<div style="font-size:.72rem;color:#888;margin-top:2px">Operador: <b>' + (h.operador||'—') + '</b>'+(h.obs?' · '+h.obs:'')+'</div></div>'
+        + (difTxt ? '<div style="font-size:.72rem;font-weight:900;color:'+difCor+';padding:3px 9px;background:'+difCor+'20;border-radius:50px">' + difTxt + '</div>' : '')
         + '</div>'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:.75rem">'
-        + '<span style="color:#888">Abertura:</span><span style="font-weight:700;text-align:right">' + ab + '</span>'
-        + '<span style="color:#888">PIX:</span><span style="font-weight:700;text-align:right">' + fmt(h.totalPix) + '</span>'
-        + '<span style="color:#888">Cartão:</span><span style="font-weight:700;text-align:right">' + fmt(h.totalCartao) + '</span>'
-        + '<span style="color:#888">Dinheiro:</span><span style="font-weight:700;text-align:right">' + fmt(h.totalDinheiro) + '</span>'
+        + '<span style="color:#888">Turno:</span><span style="font-weight:700;text-align:right">' + ab + ' – ' + fe + '</span>'
+        + '<span style="color:#888">PIX:</span><span style="font-weight:700;text-align:right">' + fmt2(h.totalPix) + '</span>'
+        + '<span style="color:#888">Crédito:</span><span style="font-weight:700;text-align:right">' + fmt2(h.totalCredito||0) + '</span>'
+        + '<span style="color:#888">Débito:</span><span style="font-weight:700;text-align:right">' + fmt2(h.totalDebito||0) + '</span>'
+        + '<span style="color:#888">Dinheiro:</span><span style="font-weight:700;text-align:right">' + fmt2(h.totalDinheiro) + '</span>'
+        + (h.totalMesa?'<span style="color:#888">Mesa:</span><span style="font-weight:700;text-align:right">' + fmt2(h.totalMesa) + '</span>':'')
+        + '<span style="color:#888">Fundo inicial:</span><span style="font-weight:700;text-align:right">' + fmt2(h.valorAbertura) + '</span>'
+        + (h.fisico?'<span style="color:#888">Físico contado:</span><span style="font-weight:700;color:'+difCor+';text-align:right">' + fmt2(h.fisico) + '</span>':'')
         + '<span style="color:#888">Pedidos:</span><span style="font-weight:700;text-align:right">' + (h.numPedidos||0) + '</span>'
         + '</div>'
-        + '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #f0ebe4;display:flex;justify-content:space-between;align-items:center">'
-        + '<span style="font-size:.8rem;font-weight:800;color:#555">TOTAL EM CAIXA</span>'
-        + '<span style="font-size:.9rem;font-weight:900;color:#16a34a">' + fmt(h.totalGeral) + '</span>' + '<button onclick="reimprimirCaixa('+i+')" style="margin-left:8px;background:none;border:1.5px solid #ddd;border-radius:6px;padding:3px 9px;font-size:.65rem;font-weight:700;color:#666;cursor:pointer">🖨 Reimprimir</button>'
-        + '</div>'
-        + '</div>';
+        + '<div style="margin-top:10px;padding-top:8px;border-top:1px solid '+bord+';display:flex;justify-content:space-between;align-items:center">'
+        + '<span style="font-size:.82rem;font-weight:800;color:#555">TOTAL EM CAIXA</span>'
+        + '<div style="display:flex;align-items:center;gap:8px">'
+        + '<button onclick="reimprimirCaixa('+i+')" style="background:none;border:1.5px solid #ddd;border-radius:6px;padding:3px 9px;font-size:.65rem;font-weight:700;color:#666;cursor:pointer">\ud83d\udda8 Reimprimir</button>'
+        + '<span style="font-size:.92rem;font-weight:900;color:#16a34a">' + fmt2(h.totalGeral) + '</span>'
+        + '</div></div></div>';
     }).join('');
   } catch(e) {
     el.innerHTML = '<div style="text-align:center;color:#aaa;font-size:.82rem;padding:24px">Erro ao carregar histórico</div>';
