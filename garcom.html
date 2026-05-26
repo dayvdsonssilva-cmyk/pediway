@@ -326,7 +326,7 @@ async function loadPedidos(){
   const{data}=await db.from('pedidos').select('id,cliente_nome,endereco,itens,total,status,pagamento,created_at')
     .eq('estabelecimento_id',estab.id)
     .ilike('endereco','No local%')
-    .in('status',['novo','preparo'])
+    .in('status',['novo','preparo','pronto'])
     .order('created_at',{ascending:true});
   pedMesas={};
   (data||[]).forEach(p=>{const parts=(p.endereco||'').split('—');if(parts.length<2)return;const key=parts[1].trim();if(!pedMesas[key])pedMesas[key]=[];pedMesas[key].push(p);});
@@ -382,11 +382,11 @@ function renderMesas(){
   const n=numMesas();const grid=$('gc-grid');if(!grid)return;
   const allP=Object.values(pedMesas).flat();
   const allAtivos=allP.filter(p=>['novo','preparo'].includes(p.status));
-  const mOcup=Object.keys(pedMesas).filter(k=>pedMesas[k].some(p=>['novo','preparo'].includes(p.status))).length;
+  const mOcup=Object.keys(pedMesas).filter(k=>pedMesas[k].some(p=>['novo','preparo','pronto'].includes(p.status))).length;
   const tot=allAtivos.reduce((s,p)=>s+Number(p.total||0),0);
   $('gc-ocup').textContent=mOcup;$('gc-peds').textContent=allP.length;$('gc-total').textContent='R$'+tot.toFixed(0);
   grid.innerHTML=Array.from({length:n},(_,i)=>{
-    const num=i+1,key='Mesa '+num,peds=pedMesas[key]||[],ativ=peds.length>0,fech=fechadas.has(key);
+    const num=i+1,key='Mesa '+num,peds=pedMesas[key]||[],ativ=peds.filter(function(p){return['novo','preparo','pronto'].includes(p.status);}).length>0,fech=fechadas.has(key);
     const ativos=peds.filter(p=>['novo','preparo'].includes(p.status));
     const t=ativos.reduce((s,p)=>s+Number(p.total||0),0);
     const q=ativos.reduce((s,p)=>s+(Array.isArray(p.itens)?p.itens.reduce((a,i)=>a+(i.qtd||1),0):0),0);
