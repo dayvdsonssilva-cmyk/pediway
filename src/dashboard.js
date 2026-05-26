@@ -1284,10 +1284,17 @@ window.abrirStoryDash = function(url, tipo) {
 // ─────────────────────────────────────────────────────────────────────────────
 // PEDIDOS
 // ─────────────────────────────────────────────────────────────────────────────
-async function renderPedidos() {
+async function renderPedidos(pedidosExternos) {
   const estab = getEstab(); if (!estab) return;
-  const { data } = await getSupa().from('pedidos').select('*')
-    .eq('estabelecimento_id', estab.id).order('created_at', { ascending: false }).limit(50);
+  // Usa dados externos (filtro de período) ou busca do banco
+  var data;
+  if (pedidosExternos) {
+    data = pedidosExternos;
+  } else {
+    const r = await getSupa().from('pedidos').select('*')
+      .eq('estabelecimento_id', estab.id).order('created_at', { ascending: false }).limit(50);
+    data = r.data;
+  }
 
   // Delivery/retirada na aba Pedidos, mesas na aba Comandas
   const pedidos    = (data || []).filter(p => !((p.endereco||'').startsWith('No local')));
@@ -2107,13 +2114,16 @@ window.buscarPeriodoFinanceiro = async function() {
   // Re-busca do banco com o range real (não fica limitado ao cache de 500)
   var q = getSupa().from('pedidos').select('*')
     .eq('estabelecimento_id', estab.id)
+    .neq('status','recusado')
     .order('created_at', { ascending: false });
   if (deVal)  q = q.gte('created_at', deVal + 'T00:00:00');
   if (ateVal) q = q.lte('created_at', ateVal + 'T23:59:59');
 
-  const { data } = await q.limit(2000);
+  const { data, error } = await q.limit(2000);
+  if (error) { showToast('Erro na busca: ' + error.message, 2000); return; }
   _finPedidos = data || [];
   renderFinanceiro();
+  showToast('✅ ' + (_finPedidos.length) + ' pedidos encontrados');
 };
 
 function exportarCSV() {
@@ -4109,7 +4119,7 @@ window.filtrarPedidosData = async function() {
     cont.innerHTML = '<div style="color:#aaa;text-align:center;padding:32px">Nenhum pedido neste período</div>';
     return;
   }
-  cont.innerHTML = data.map(function(p) { return cardHtml(p); }).join('');
+  await renderPedidos(data);
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -4347,7 +4357,8 @@ window.fecharCaixa = async function() {
     var res = await getSupa().from('pedidos').select('total,pagamento,status')
       .eq('estabelecimento_id', estab.id)
       .gte('created_at', abertura.hora)
-      .not('status','in','("recusado","novo")')
+      .neq('status','recusado')
+      .neq('status','novo')
       .order('created_at', {ascending: true});
     var todos = res.data || [];
     numPedidos    = todos.length;
