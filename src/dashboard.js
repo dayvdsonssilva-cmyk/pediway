@@ -2097,8 +2097,22 @@ function setFinPeriodo(p, btn) {
   if (p !== 'custom') renderFinanceiro();
 }
 
-window.buscarPeriodoFinanceiro = function() {
+window.buscarPeriodoFinanceiro = async function() {
+  const estab  = getEstab(); if (!estab) return;
+  const deVal  = document.getElementById('fin-data-de')?.value;
+  const ateVal = document.getElementById('fin-data-ate')?.value;
+  if (!deVal && !ateVal) return;
   _finPeriodo = 'custom';
+
+  // Re-busca do banco com o range real (não fica limitado ao cache de 500)
+  var q = getSupa().from('pedidos').select('*')
+    .eq('estabelecimento_id', estab.id)
+    .order('created_at', { ascending: false });
+  if (deVal)  q = q.gte('created_at', deVal + 'T00:00:00');
+  if (ateVal) q = q.lte('created_at', ateVal + 'T23:59:59');
+
+  const { data } = await q.limit(2000);
+  _finPedidos = data || [];
   renderFinanceiro();
 };
 
@@ -2802,12 +2816,13 @@ window.renderHistoricoMesas = async function() {
   const lista = document.getElementById('mesas-historico-lista');
   if (!lista) return;
 
-  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  // Usa 30h atrás para cobrir timezone Brasil (UTC-3) + pedidos da madrugada
+  const desde = new Date(Date.now() - 30 * 60 * 60 * 1000).toISOString();
   const { data } = await getSupa().from('pedidos').select('*')
     .eq('estabelecimento_id', estab.id)
     .ilike('endereco', 'No local%')
     .neq('status', 'recusado')
-    .gte('created_at', hoje.toISOString())
+    .gte('created_at', desde)
     .order('created_at', { ascending: false });
 
   if (!data?.length) {
@@ -2830,10 +2845,9 @@ window.renderHistoricoMesas = async function() {
 
   lista.innerHTML = Object.entries(porMesa).map(([mesa, peds]) => {
     const num       = mesa.replace('Mesa ','');
-    // 'pronto' = KDS marcou pronto mas garçom ainda não fechou = mesa ainda ativa
     const ativos    = peds.filter(p => ['novo','preparo','pronto'].includes(p.status));
-    const prontos   = [];  // prontos agora fazem parte de "ativos"
-    const finalizados = peds.filter(p => p.status === 'finalizado');
+    const prontos   = peds.filter(p => p.status === 'finalizado'); // histórico: já finalizados
+    const finalizados = prontos;
     const temAtivo  = ativos.length > 0;
     // Total = só pedidos ativos (mesa aberta). Histórico tem o total completo separado.
     const totalMesa = ativos.reduce((s,p) => s+Number(p.total||0), 0);
@@ -3214,7 +3228,7 @@ async function carregarPedidosMesas() {
     .eq('estabelecimento_id', estab.id)
     .ilike('endereco', 'No local%')
     .in('status', ['novo', 'preparo', 'pronto'])  // inclui pronto (mesa ainda ocupada)
-    .gte('created_at', new Date(new Date().setHours(0,0,0,0)).toISOString())  // só de hoje
+    .gte('created_at', new Date(Date.now() - 30*60*60*1000).toISOString())  // últimas 30h (cobre timezone BR)
     .order('created_at', { ascending: true });
 
   _pedidosMesas = {};
@@ -4045,6 +4059,12 @@ function abrirCfgModal(header) {
   // Guarda referência ao body original para sincronizar ao salvar
   ov._sourceBody = body;
   ov.style.display = 'flex';
+  // Dispara change em selects cascata (estado→cidade) para popular opções
+  setTimeout(function() {
+    mb.querySelectorAll('select').forEach(function(sel) {
+      if (sel.value) sel.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  }, 80);
 }
 
 window.initCfgAccordion = function() {
@@ -4064,18 +4084,32 @@ window.initCfgAccordion = function() {
 // ═══════════════════════════════════════════════════════════════════════════
 // FILTRO DE PEDIDOS POR DATA
 // ═══════════════════════════════════════════════════════════════════════════
-window.filtrarPedidosData = function() {
+window.filtrarPedidosData = async function() {
+  const estab  = getEstab(); if (!estab) return;
   const deVal  = document.getElementById('ped-data-de')?.value;
   const ateVal = document.getElementById('ped-data-ate')?.value;
-  document.querySelectorAll('#todos-pedidos .pedido-card').forEach(function(card) {
-    const dataStr = card.dataset.createdAt || card.dataset.criado || '';
-    if (!dataStr) { card.style.display = ''; return; }
-    const d = new Date(dataStr);
-    var mostrar = true;
-    if (deVal && d < new Date(deVal + 'T00:00:00')) mostrar = false;
-    if (ateVal && d > new Date(ateVal + 'T23:59:59')) mostrar = false;
-    card.style.display = mostrar ? '' : 'none';
-  });
+
+  if (!deVal && !ateVal) {
+    // Sem filtro: recarrega normal
+    await renderPedidos(); return;
+  }
+
+  // Re-busca do banco com datas reais
+  var q = getSupa().from('pedidos')
+    .select('id,cliente_nome,cliente_whats,status,total,taxa_entrega,pagamento,troco,endereco,itens,created_at,estabelecimento_id')
+    .eq('estabelecimento_id', estab.id)
+    .order('created_at', { ascending: false });
+  if (deVal)  q = q.gte('created_at', deVal + 'T00:00:00');
+  if (ateVal) q = q.lte('created_at', ateVal + 'T23:59:59');
+
+  const { data } = await q.limit(1000);
+  const cont = document.getElementById('todos-pedidos');
+  if (!cont) return;
+  if (!data?.length) {
+    cont.innerHTML = '<div style="color:#aaa;text-align:center;padding:32px">Nenhum pedido neste período</div>';
+    return;
+  }
+  cont.innerHTML = data.map(function(p) { return cardHtml(p); }).join('');
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
