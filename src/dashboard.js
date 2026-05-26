@@ -4253,7 +4253,8 @@ async function atualizarResumoCaixa() {
       .select('total,pagamento,status')
       .eq('estabelecimento_id', estab.id)
       .gte('created_at', _caixaAbertura.hora)
-      .not('status', 'in', '("recusado","novo")'); // só pedidos aceitos
+      .neq('status', 'recusado')
+      .neq('status', 'novo');
 
     var todos = res.data || [];
 
