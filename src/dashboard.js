@@ -3756,7 +3756,7 @@ window.executarFecharComanda = async function() {
   const ids = peds.map(p=>p.id);
   if (ids.length) {
     await getSupa().from('pedidos').update({
-      status: 'pronto',
+      status: 'finalizado',
       pagamento: _pagamentoComanda,
     }).in('id', ids);
   }
