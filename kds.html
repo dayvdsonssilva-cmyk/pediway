@@ -156,10 +156,13 @@ function enriquecer(p){(p.itens||[]).forEach(it=>{if(!it.setor&&it.nome){const s
 function filtrarItens(itens,setor){if(!Array.isArray(itens))return[];const cs=itens.filter(it=>it.setor);if(!cs.length)return itens;return cs.filter(it=>it.setor.toLowerCase()===setor.toLowerCase());}
 
 function deveExibir(p,setor){
-  // REGRA SIMPLES: setor vê o pedido se tem itens deste setor (ou sem info de setor)
   // setores_status NUNCA afeta a visibilidade — só o status visual do card
   const cs=(p.itens||[]).filter(it=>it.setor&&it.setor.trim());
-  if(!cs.length) return true; // sem info de setor → todos os setores veem
+
+  if(!cs.length){
+    // Sem setor nos itens → só aparece no setor GERAL (ou se há apenas 1 setor)
+    return setor==='geral' || SETORES.length <= 1;
+  }
   return cs.some(it=>it.setor.trim().toLowerCase()===setor.toLowerCase());
 }
 
