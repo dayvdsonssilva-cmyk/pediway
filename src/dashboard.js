@@ -4259,7 +4259,7 @@ async function atualizarResumoCaixa() {
     var res = await getSupa().from('pedidos')
       .select('total,pagamento,status')
       .eq('estabelecimento_id', estab.id)
-      .gte('created_at', new Date(new Date().setHours(0,0,0,0)).toISOString())
+      .gte('created_at', _caixaAbertura.hora)
       .neq('status', 'recusado')
       .neq('status', 'novo');
 
@@ -4340,9 +4340,10 @@ window.abrirCaixa = async function() {
   var obs           = (document.getElementById('caixa-obs-abertura')?.value.trim() || '').slice(0,300);
   var agora         = new Date();
   _caixaAberto   = true;
-  _caixaAbertura = { valorAbertura: valorAbertura, operador: operador, obs: obs, hora: agora.toISOString(), aberto: true };
+  // Sempre usa NOW como início — nunca herda sessão anterior
+  _caixaAbertura = { valorAbertura: valorAbertura, operador: operador, obs: obs, hora: new Date().toISOString(), aberto: true };
   try { localStorage.setItem('pw_caixa_' + estab.id, JSON.stringify(_caixaAbertura)); } catch(e) {}
-  aplicarUICaixaAberto(operador, agora.toISOString());
+  aplicarUICaixaAberto(operador, _caixaAbertura.hora);
   await atualizarResumoCaixa();
   iniciarAutoRefreshCaixa();
   showToast('✅ Caixa aberto!');
@@ -4383,6 +4384,7 @@ window.fecharCaixa = async function() {
   try { localStorage.removeItem('pw_caixa_' + estab?.id); } catch(e) {}
   pararAutoRefreshCaixa();
   _caixaAberto = false; _caixaAbertura = null; _caixaId = null;
+  try { localStorage.removeItem('pw_caixa_' + estab.id); } catch(e) {} // limpa sessão
   var el = function(id){return document.getElementById(id);};
   if (el('caixa-status-card'))  el('caixa-status-card').style.background  = 'linear-gradient(135deg,#1a1a1a,#333)';
   if (el('caixa-status-label')) el('caixa-status-label').textContent       = '— Fechado —';
