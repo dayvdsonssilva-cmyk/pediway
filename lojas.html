@@ -928,7 +928,8 @@ function filtrarLojas() {
     const mb = !_busca  || (l.nome||'').toLowerCase().includes(_busca.toLowerCase());
 
     if(_catAtiva==='promo') {
-      return mc && mb && (lojasComPromo.has(l.id) || l.promocao_ativa);
+      // Só aparece se tem produto real com em_promocao=true e desconto_percent>0
+      return mc && mb && lojasComPromo.has(l.id);
     }
     if(_catAtiva==='all') return mc && mb;
 
@@ -2884,4 +2885,4 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 </body>
-</html> 
+</html>
