@@ -29,8 +29,8 @@
 </div>
 
 <!DOCTYPE html>
-<html lang="pt-BR"> 
-<head> 
+<html lang="pt-BR">
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#C0001A"><meta name="theme-color" content="#C0001A" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#C0001A" media="(prefers-color-scheme: dark)"><meta name="color-scheme" content="only light">
@@ -113,10 +113,10 @@ html,body{height:100%;overflow:hidden;background:#FFFFFF;font-family:var(--font)
 /* Card B — horizontal: logo grande + info lado a lado */
 .store-card-b{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 2px 14px rgba(232,0,28,.08);border:1px solid var(--accent2);cursor:pointer;transition:transform .15s,box-shadow .15s;display:flex;align-items:stretch;}
 .store-card-b:active{transform:scale(.98);}
-.store-card-b-img{width:110px;flex-shrink:0;position:relative;overflow:hidden;}
-.store-card-b-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
-.store-card-b-img .store-card-b-emoji{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:44px;}
-.store-card-b-body{flex:1;padding:14px 14px 12px;display:flex;flex-direction:column;justify-content:space-between;min-width:0;}
+.store-card-b-img{width:90px;height:90px;flex-shrink:0;position:relative;overflow:hidden;border-radius:14px;margin:12px 0 12px 12px;align-self:center;}
+.store-card-b-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:14px;}
+.store-card-b-img .store-card-b-emoji{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:38px;background:var(--accent2);border-radius:14px;}
+.store-card-b-body{flex:1;padding:12px 14px 12px 10px;display:flex;flex-direction:column;justify-content:space-between;min-width:0;}
 .store-card-b-nome{font-size:15px;font-weight:800;color:var(--dark);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .store-card-b-meta{display:flex;gap:5px;flex-wrap:wrap;}
 .store-card-b-tag{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:var(--gray);font-weight:500;background:var(--cream);padding:3px 7px;border-radius:6px;}
@@ -927,8 +927,7 @@ function filtrarLojas() {
     const mb = !_busca  || (l.nome||'').toLowerCase().includes(_busca.toLowerCase());
 
     if(_catAtiva==='promo') {
-      // Só aparece na aba Promoção se tem produto com desconto ativo de verdade
-      return mc && mb && lojasComPromo.has(l.id);
+      return mc && mb && (lojasComPromo.has(l.id) || l.promocao_ativa);
     }
     if(_catAtiva==='all') return mc && mb;
 
@@ -979,7 +978,7 @@ let _cardStyle = 'A';
 
 function storeCardHTML(l) {
   const ab = l._aberto !== undefined ? l._aberto : calcularAberto(l);
-  const temPromo = _promoItems.some(p=>p.estabelecimento_id===l.id);
+  const temPromo = l.promocao_ativa || _promoItems.some(p=>p.estabelecimento_id===l.id);
   const promosDaLoja = _promoItems.filter(p=>p.estabelecimento_id===l.id).map(p=>p.desconto);
   const maxDesc = temPromo && promosDaLoja.length ? Math.max(...promosDaLoja, l.desconto_percent||0) : (l.desconto_percent||0);
   if(_cardStyle === 'B') return storeCardHTMLb(l, ab, temPromo);
