@@ -427,7 +427,16 @@ function crpDraw() {
   ctx.fillRect(sx + safe, sy, W - sx - safe, safe);
   ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2;
   if (_CRP.safePrefix === 'cso') {
-    ctx.beginPath(); ctx.arc(W/2, H/2, safe/2, 0, Math.PI*2); ctx.stroke();
+    // Guia: quadrado arredondado (border-radius equivalente)
+    var r = safe * 0.13; // raio das bordas (~16px proporcional)
+    var x0 = (W-safe)/2, y0 = (H-safe)/2, s = safe;
+    ctx.beginPath();
+    ctx.moveTo(x0+r, y0);
+    ctx.lineTo(x0+s-r, y0); ctx.quadraticCurveTo(x0+s, y0, x0+s, y0+r);
+    ctx.lineTo(x0+s, y0+s-r); ctx.quadraticCurveTo(x0+s, y0+s, x0+s-r, y0+s);
+    ctx.lineTo(x0+r, y0+s); ctx.quadraticCurveTo(x0, y0+s, x0, y0+s-r);
+    ctx.lineTo(x0, y0+r); ctx.quadraticCurveTo(x0, y0, x0+r, y0);
+    ctx.closePath(); ctx.stroke();
   } else {
     ctx.strokeRect(sx, sy, safe, safe);
   }
@@ -534,7 +543,14 @@ function crpGetBlob(canvasId, stageId, safePrefix, isCircle, callback) {
   const out = document.createElement('canvas');
   out.width = safe; out.height = safe;
   const ctx = out.getContext('2d');
-  if (isCircle) { ctx.beginPath(); ctx.arc(safe/2, safe/2, safe/2, 0, Math.PI*2); ctx.clip(); }
+  // Clip: quadrado arredondado proporcional ao tamanho
+  var _r = safe * 0.13;
+  ctx.beginPath();
+  ctx.moveTo(_r, 0); ctx.lineTo(safe-_r, 0); ctx.quadraticCurveTo(safe, 0, safe, _r);
+  ctx.lineTo(safe, safe-_r); ctx.quadraticCurveTo(safe, safe, safe-_r, safe);
+  ctx.lineTo(_r, safe); ctx.quadraticCurveTo(0, safe, 0, safe-_r);
+  ctx.lineTo(0, _r); ctx.quadraticCurveTo(0, 0, _r, 0);
+  ctx.closePath(); ctx.clip();
   ctx.drawImage(cvs, sx, sx, safe, safe, 0, 0, safe, safe);
   out.toBlob(callback, 'image/jpeg', 0.92);
 }
@@ -568,7 +584,7 @@ window.fecharCrop = function() {
   crpCleanup();
 };
 window.confirmarCrop = function() {
-  crpGetBlob('crop-canvas', 'crop-stage', 'cso', true, blob => {
+  crpGetBlob('crop-canvas', 'crop-stage', 'cso', false, blob => {
     if (!blob) return;
     logoFile = new File([blob], 'logo.jpg', { type: 'image/jpeg' });
     mostrarLogoPreview(URL.createObjectURL(blob));
