@@ -142,7 +142,8 @@ html,body{height:100%;overflow:hidden;background:#FFFFFF;font-family:var(--font)
 /* Capa do estabelecimento */
 .store-capa{flex-shrink:0;/* background definido via cor_primaria do estabelecimento */}
 .loja-capa-header{display:flex;align-items:center;gap:14px;padding:18px 16px 10px;}
-.loja-capa-logo{width:68px;height:68px;border-radius:16px;flex-shrink:0;background:rgba(255,255,255,.15);border:2.5px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font-size:32px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.loja-capa-logo{width:72px;height:72px;border-radius:16px;flex-shrink:0;background:#000;border:2.5px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:32px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.3);}
+.loja-capa-logo img{width:100%;height:100%;object-fit:cover;transform:scale(1.35);transform-origin:center;}
 .loja-capa-logo img{width:100%;height:100%;object-fit:cover;display:block;}
 .loja-capa-nome{font-size:17px;font-weight:900;color:#fff;line-height:1.2;margin-bottom:2px;}
 .loja-capa-desc{font-size:11px;color:rgba(255,255,255,.7);line-height:1.4;}
@@ -985,10 +986,8 @@ function storeCardHTML(l) {
   if(_cardStyle === 'B') return storeCardHTMLb(l, ab, temPromo);
   const hex = normalizeHex(l.cor_primaria||'#C0001A');
   const logoContent = l.logo_url
-    ? `<div style="width:84px;height:84px;border-radius:18px;overflow:hidden;flex-shrink:0;box-shadow:0 6px 24px rgba(0,0,0,.45);border:2.5px solid rgba(255,255,255,.2);background:#000;">
-        <img src="${esc(l.logo_url)}" alt="${esc(l.nome)}" style="width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.35);transform-origin:center;" onerror="this.parentElement.innerHTML='<div style=\"width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:36px;\">${l._emoji}</div>'">
-      </div>`
-    : `<div style="width:84px;height:84px;border-radius:18px;overflow:hidden;background:rgba(255,255,255,.15);box-shadow:0 4px 20px rgba(0,0,0,.35);border:2.5px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:36px">${l._emoji}</div>`;
+    ? `<div style="width:84px;height:84px;border-radius:18px;overflow:hidden;flex-shrink:0;box-shadow:0 6px 24px rgba(0,0,0,.45);border:2.5px solid rgba(255,255,255,.2);background:#000"><img src="${esc(l.logo_url)}" style="width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.35);transform-origin:center"></div>`
+    : `<div style="width:84px;height:84px;border-radius:18px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:36px">${l._emoji}</div>`;
   return `<div class="store-card" onclick="abrirLoja('${l.id}')">
     <div class="store-hero" style="background:linear-gradient(160deg,${hex}cc,${darken(hex,35)}ff);">
       <!-- esferas deco -->
@@ -2885,4 +2884,4 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 </body>
-</html>
+</html> 
