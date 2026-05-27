@@ -106,7 +106,7 @@ html,body{height:100%;overflow:hidden;background:#FFFFFF;font-family:var(--font)
 .store-card{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 2px 14px rgba(232,0,28,.08);border:1px solid var(--accent2);cursor:pointer;transition:transform .15s,box-shadow .15s;}
 .store-card:active{transform:scale(.99);}
 .store-hero{height:120px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;}
-.store-hero-logo{width:80px;height:80px;border-radius:18px;object-fit:cover;border:3px solid rgba(255,255,255,.25);box-shadow:0 4px 20px rgba(0,0,0,.4);display:block;}
+.store-hero-logo{width:100%;height:100%;object-fit:cover;display:block;border-radius:0;}
 .store-hero-emoji{width:72px;height:72px;border-radius:18px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:34px;border:3px solid rgba(255,255,255,.2);}
 .store-info{padding:12px 14px 14px;}
 .store-name{font-size:14px;font-weight:800;color:var(--dark);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -985,8 +985,10 @@ function storeCardHTML(l) {
   if(_cardStyle === 'B') return storeCardHTMLb(l, ab, temPromo);
   const hex = normalizeHex(l.cor_primaria||'#C0001A');
   const logoContent = l.logo_url
-    ? `<img class="store-hero-logo" src="${esc(l.logo_url)}" alt="${esc(l.nome)}" onerror="this.style.display='none'">`
-    : `<div class="store-hero-emoji">${l._emoji}</div>`;
+    ? `<div style="width:84px;height:84px;border-radius:18px;overflow:hidden;flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,.4);border:2.5px solid rgba(255,255,255,.25)">
+        <img src="${esc(l.logo_url)}" alt="${esc(l.nome)}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentElement.innerHTML='<div style=\"width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:36px;background:rgba(255,255,255,.15)\">${l._emoji}</div>'">
+      </div>`
+    : `<div style="width:84px;height:84px;border-radius:18px;overflow:hidden;background:rgba(255,255,255,.15);box-shadow:0 4px 20px rgba(0,0,0,.35);border:2.5px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:36px">${l._emoji}</div>`;
   return `<div class="store-card" onclick="abrirLoja('${l.id}')">
     <div class="store-hero" style="background:linear-gradient(160deg,${hex}cc,${darken(hex,35)}ff);">
       <!-- esferas deco -->
@@ -1027,7 +1029,7 @@ function storeCardHTML(l) {
 // Card estilo B: horizontal com imagem à esquerda
 function storeCardHTMLb(l, ab, temPromo) {
   const imgContent = l.logo_url
-    ? `<img src="${l.logo_url}" alt="${l.nome}" onerror="this.style.display='none'">`
+    ? `<img src="${l.logo_url}" alt="${l.nome}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none'">`
     : `<div class="store-card-b-emoji">${l._emoji}</div>`;
   return `<div class="store-card-b" onclick="abrirLoja('${l.id}')">
     <div class="store-card-b-img" style="background:${l._bg}18;">
