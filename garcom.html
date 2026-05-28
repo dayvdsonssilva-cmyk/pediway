@@ -85,6 +85,20 @@
     .hist-sub{text-align:right;font-size:.78rem;color:var(--red);font-weight:700;margin-top:4px}
     .s-novo{color:#f59e0b;font-weight:700}.s-preparo{color:#3b82f6;font-weight:700}.s-pronto{color:#22c55e;font-weight:700}
     #gc-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:10px 20px;border-radius:50px;font-weight:700;font-size:.82rem;z-index:9999;display:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.25);pointer-events:none}
+  
+    /* ── Perfil do Garçom ─────────────────────────────────────────── */
+    #gc-perfil-overlay{position:fixed;inset:0;background:#1a1a1a;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px}
+    .gc-perfil-box{background:#fff;border-radius:24px;padding:36px 28px;width:100%;max-width:360px;text-align:center}
+    .gc-perfil-logo{font-size:2rem;font-weight:900;letter-spacing:-1px;margin-bottom:4px}.gc-perfil-logo span{color:var(--red)}
+    .gc-perfil-title{font-size:1.1rem;font-weight:800;margin:20px 0 6px}
+    .gc-perfil-sub{font-size:.8rem;color:#888;margin-bottom:24px}
+    .gc-perfil-input{width:100%;padding:14px 16px;border:2px solid #e0dbd5;border-radius:14px;font-family:inherit;font-size:1rem;font-weight:600;outline:none;transition:border .2s;text-align:center}
+    .gc-perfil-input:focus{border-color:var(--red)}
+    .gc-perfil-btn{width:100%;margin-top:14px;padding:15px;background:var(--red);color:#fff;border:none;border-radius:14px;font-family:inherit;font-size:.95rem;font-weight:800;cursor:pointer}
+    /* Nome no header */
+    .gc-garcom-badge{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:50px;padding:5px 12px 5px 8px;cursor:pointer}
+    .gc-garcom-avatar{width:24px;height:24px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:900;color:#fff;flex-shrink:0}
+    .gc-garcom-nome{font-size:.72rem;font-weight:700;color:#fff;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   </style>
   <style>
     html, body {
@@ -288,7 +302,61 @@ const slug=_segs.length>=2&&_segs[0]==='comandas'?_segs[1]:_segs[_segs.length-1]
 
 let estab=null,produtos=[],pedMesas={},nomes={},carrinhos={},mesaAtual=null,fechadas=new Set();
 
+
+// ── PERFIL DO GARÇOM ──────────────────────────────────────────────────────────
+let _garcomNome = '';
+
+function getGarcomKey() { return 'pw_garcom_' + (estab?.id || 'local'); }
+
+function carregarGarcom() {
+  const salvo = localStorage.getItem(getGarcomKey());
+  if (salvo) {
+    _garcomNome = salvo;
+    atualizarBadgeGarcom();
+    return true; // já tem nome
+  }
+  return false; // precisa identificar
+}
+
+function atualizarBadgeGarcom() {
+  const hdr = document.getElementById('gc-garcom-nome-hdr');
+  const av  = document.getElementById('gc-avatar-letra');
+  if (hdr) hdr.textContent = _garcomNome;
+  if (av)  av.textContent  = _garcomNome.charAt(0).toUpperCase();
+}
+
+window.confirmarGarcom = function() {
+  const inp = document.getElementById('gc-perfil-nome');
+  const nome = (inp?.value || '').trim();
+  if (!nome) { inp?.focus(); inp?.style && (inp.style.borderColor='var(--red)'); return; }
+  _garcomNome = nome;
+  localStorage.setItem(getGarcomKey(), nome);
+  atualizarBadgeGarcom();
+  document.getElementById('gc-perfil-overlay').style.display = 'none';
+  document.getElementById('gc-app').style.display = 'block';
+};
+
+window.trocarGarcom = function() {
+  if (!confirm('Trocar de garçom?')) return;
+  localStorage.removeItem(getGarcomKey());
+  _garcomNome = '';
+  document.getElementById('gc-app').style.display = 'none';
+  document.getElementById('gc-perfil-overlay').style.display = 'flex';
+  const inp = document.getElementById('gc-perfil-nome');
+  if (inp) { inp.value = ''; inp.focus(); }
+};
+
+// Enter confirma
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && document.getElementById('gc-perfil-overlay')?.style.display !== 'none') {
+    window.confirmarGarcom();
+  }
+});
+
 async function init(){
+  // Mostra tela de perfil antes do app
+  var perfilOv=document.getElementById('gc-perfil-overlay');
+  if(perfilOv)perfilOv.style.display='flex';
   if(!slug){$('gc-loading').innerHTML='<p style="color:#aaa;padding:40px;text-align:center">Link invalido - slug nao encontrado</p>';return;}
 
   // Busca apenas campos necessários — sem CPF/CNPJ/dados sensíveis
@@ -511,7 +579,8 @@ window.gcEnviar=async function(){
     });
     const total=Math.round(itensSeguro.reduce((s,i)=>s+i.preco*i.qtd,0)*100)/100;
     // Pedido de mesa é automaticamente aceito (garçom já está ali)
-const{error}=await db.from('pedidos').insert({estabelecimento_id:estab.id,cliente_nome:nome,cliente_whats:'',endereco:('No local — '+mesaAtual).slice(0,100),itens:itensSeguro,total,status:'preparo',pagamento:'No local'});
+const _endGarcom = 'No local — '+mesaAtual+(_garcomNome?' · Garçom: '+_garcomNome:'');
+const{error}=await db.from('pedidos').insert({estabelecimento_id:estab.id,cliente_nome:nome,cliente_whats:_garcomNome||'',endereco:_endGarcom.slice(0,100),itens:itensSeguro,total,status:'preparo',pagamento:'No local'});
     if(error)throw new Error('Erro ao registrar pedido.');
     carrinhos[mesaAtual]=[];renderCarrinho();
     // Limpa nome para próxima pessoa poder se identificar
