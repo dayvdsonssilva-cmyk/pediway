@@ -2897,11 +2897,11 @@ window.renderHistoricoMesas = async function() {
     const histHtml = finalizados.length && !temAtivo ? `
       <div style="margin-top:10px">
         <button onclick="toggleHistMesa('${mesaId}-hist')" style="width:100%;display:flex;align-items:center;justify-content:between;gap:8px;background:#f5f0eb;border:1.5px dashed #d4c4b0;border-radius:8px;padding:8px 12px;font-family:'Poppins',sans-serif;font-size:.75rem;font-weight:700;color:#888;cursor:pointer">
-          <span style="flex:1;text-align:left">📋 Histórico de pedidos (${prontos.length})</span>
+          <span style="flex:1;text-align:left">📋 Histórico de pedidos (${finalizados.length})</span>
           <span id="${mesaId}-hist-arrow">▼</span>
         </button>
         <div id="${mesaId}-hist" style="display:none;margin-top:8px">
-          ${prontos.map(p => _cardPedidoMesa(p, mesa, fmtR, stCor, stLbl)).join('')}
+          ${finalizados.map(p => _cardPedidoMesa(p, mesa, fmtR, stCor, stLbl)).join('')}
         </div>
       </div>` : '';
 
@@ -5766,4 +5766,4 @@ async function _carregarGruposNoModal(estabId, selecionados) {
 function _coletarGruposSelecionados() {
   const chks = document.querySelectorAll('.grupo-adic-chk:checked');
   return Array.from(chks).map(function(c) { return c.value; });
-}  
+}
