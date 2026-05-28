@@ -321,11 +321,18 @@ let estab=null,produtos=[],pedMesas={},nomes={},carrinhos={},mesaAtual=null,fech
 
 // ── PERFIL DO GARÇOM ─────────────────────────────────────────────────────────
 let _garcomNome = '';
-const _gcKey = () => 'pw_garcom_' + (estab?.id || 'x');
+const _gcKey = () => 'pw_garcom_' + (window._SLUG || slug || 'geral');
 
 function carregarGarcom() {
-  const s = localStorage.getItem(_gcKey());
-  if (s) { _garcomNome = s; atualizarBadge(); return true; }
+  // Tenta chave principal, depois fallback universal
+  const s = localStorage.getItem(_gcKey()) || localStorage.getItem('pw_garcom_last');
+  if (s) {
+    _garcomNome = s;
+    // Re-salva na chave correta caso tenha vindo do fallback
+    try { localStorage.setItem(_gcKey(), s); } catch(e){}
+    atualizarBadge();
+    return true;
+  }
   return false;
 }
 function atualizarBadge() {
@@ -339,14 +346,16 @@ window.confirmarGarcom = function() {
   const nome = (inp?.value || '').trim();
   if (!nome) { if(inp){inp.style.borderColor='var(--red)';inp.focus();} return; }
   _garcomNome = nome;
-  localStorage.setItem(_gcKey(), nome);
+  // Salva com múltiplas chaves para garantir persistência
+  try { localStorage.setItem(_gcKey(), nome); } catch(e){}
+  try { localStorage.setItem('pw_garcom_last', nome); } catch(e){}
   atualizarBadge();
   document.getElementById('gc-perfil-sheet').style.display = 'none';
   document.getElementById('gc-main').style.display = 'block';
 };
 window.trocarGarcom = function() {
-  if (!confirm('Trocar de garçom?')) return;
-  localStorage.removeItem(_gcKey());
+  if (!confirm('Certeza que quer trocar de usuário?')) return;
+  localStorage.removeItem(_gcKey()); localStorage.removeItem('pw_garcom_last');
   _garcomNome = '';
   document.getElementById('gc-main').style.display = 'none';
   const sheet = document.getElementById('gc-perfil-sheet');
