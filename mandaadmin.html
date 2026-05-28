@@ -541,7 +541,7 @@ function fmtFone(num) {
 }
 function wppLink(num, msg) {
   const d = String(num||'').replace(/\D/g,'');
-  const n = d.length <= 11 ? '55' + d : d;
+  const n = !(d.length > 11) ? '55' + d : d;
   const m = msg ? '?text=' + encodeURIComponent(msg) : '';
   return 'https://wa.me/' + n + m;
 }
@@ -639,7 +639,7 @@ function incrementarTentativa() {
   const lock = JSON.parse(localStorage.getItem(LOCK_KEY) || '{"ts":0,"tentativas":0}');
   lock.tentativas = (lock.tentativas || 0) + 1;
   lock.ts = Date.now();
-  if (lock.tentativas >= MAX_TENTATIVAS) lock.bloqueado = true;
+  if (!(lock.tentativas < MAX_TENTATIVAS)) lock.bloqueado = true;
   localStorage.setItem(LOCK_KEY, JSON.stringify(lock));
   return lock;
 }
@@ -936,7 +936,7 @@ function renderVisao() {
 
   // Vencendo em 7 dias
   const seteDias = new Date(); seteDias.setDate(seteDias.getDate()+7);
-  const vencendo = lojas.filter(l=>l.assinatura_vencimento&&new Date(l.assinatura_vencimento)<=seteDias&&new Date(l.assinatura_vencimento)>new Date()&&l.plano!=='basico');
+  const vencendo = lojas.filter(l=>l.assinatura_vencimento&&!(new Date(l.assinatura_vencimento)>seteDias&&new Date(l.assinatura_vencimento)>new Date()&&l.plano!=='basico');
   gel('venc-7dias').innerHTML = vencendo.length
     ? vencendo.map(l=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:.78rem"><span>${esc(l.nome)}</span><span style="color:var(--yellow);font-size:.7rem">${new Date(l.assinatura_vencimento).toLocaleDateString('pt-BR')}</span></div>`).join('')
     : '<div style="color:var(--text3);font-size:.75rem;padding:12px 0">Nenhuma vencendo nos próximos 7 dias. ✅</div>';
@@ -1137,7 +1137,7 @@ function filtraPeriodo() {
     if(p.status==='recusado') return false;
     const d = new Date(p.created_at);
     if(finPeriodo==='hoje')   return d.toDateString()===now.toDateString();
-    if(finPeriodo==='semana') {const s=new Date(now);s.setDate(s.getDate()-7);return d>=s;}
+    if(finPeriodo==='semana') {const s=new Date(now);s.setDate(s.getDate()-7);return !(d<s);}
     if(finPeriodo==='mes')    return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
     return true;
   });
@@ -1252,12 +1252,12 @@ function renderAvaliacoes() {
   if (nota==='5')   lista = lista.filter(a=>a.nota===5);
   if (nota==='4')   lista = lista.filter(a=>a.nota===4);
   if (nota==='3')   lista = lista.filter(a=>a.nota===3);
-  if (nota==='1-2') lista = lista.filter(a=>a.nota<=2);
+  if (nota==='1-2') lista = lista.filter(a=>!(a.nota>2));
 
   const total  = lista.length;
   const media  = total ? (lista.reduce((s,a)=>s+a.nota,0)/total).toFixed(1) : '—';
   const cincos = lista.filter(a=>a.nota===5).length;
-  const baixo  = lista.filter(a=>a.nota<=2).length;
+  const baixo  = lista.filter(a=>!(a.nota>2)).length;
   gel('aval-total').textContent = total;
   gel('aval-media').textContent = media==='—'?'—':'⭐ '+media;
   gel('aval-5').textContent = cincos;
