@@ -4121,7 +4121,7 @@ window.initCfgAccordion = function() {
   if (!document.getElementById('cfg-backdrop')) {
     var bd = document.createElement('div');
     bd.id = 'cfg-backdrop';
-    bd.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2900;backdrop-filter:blur(3px)';
+    bd.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2900;';
     bd.addEventListener('click', window.fecharCfgPopup);
     document.body.appendChild(bd);
   }
