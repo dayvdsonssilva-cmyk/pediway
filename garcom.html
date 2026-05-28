@@ -417,7 +417,7 @@ async function loadPedidos(){
     .in('status',['novo','preparo','pronto'])
     .order('created_at',{ascending:true});
   pedMesas={};
-  (data||[]).forEach(p=>{const parts=(p.endereco||'').split('—');if(parts.length<2)return;const key=parts[1].trim();if(!pedMesas[key])pedMesas[key]=[];pedMesas[key].push(p);});
+  (data||[]).forEach(p=>{const parts=(p.endereco||'').split('—');if(parts.length<2)return;const key=parts[1].trim().split('·')[0].trim();if(!pedMesas[key])pedMesas[key]=[];pedMesas[key].push(p);});
 }
 
 function iniciarRealtime(){
@@ -427,7 +427,7 @@ function iniciarRealtime(){
       if(!p||p.estabelecimento_id!==estab.id)return;
       if(!p.endereco?.startsWith('No local'))return;
       if(!['novo','preparo'].includes(p.status))return;
-      const key=(p.endereco||'').split('—')[1]?.trim();if(!key)return;
+      const key=((p.endereco||'').split('—')[1]||'').trim().split('·')[0].trim();if(!key)return;
       if(!pedMesas[key])pedMesas[key]=[];
       if(!pedMesas[key].find(x=>x.id===p.id)){
         pedMesas[key].push(p);
