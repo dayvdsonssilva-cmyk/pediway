@@ -4066,30 +4066,22 @@ function abrirCfgModal(header) {
 }
 
 // Fecha popup de config (desktop)
-window.fecharCfgPopup = function() {
-  document.querySelectorAll('.cfg-topic-card.cfg-popup-open').forEach(function(card) {
-    card.classList.remove('cfg-popup-open');
-    var body = card.querySelector('.cfg-topic-body');
-    if (body) body.classList.remove('open');
-    var hdr = card.querySelector('.cfg-topic-header');
-    if (hdr) hdr.classList.remove('open');
-  });
-  var backdrop = document.getElementById('cfg-backdrop');
-  if (backdrop) backdrop.style.display = 'none';
-};
+// fecharCfgPopup antiga removida — usa a versão no initCfgAccordion
 
 window.fecharCfgPopup = function() {
   const ov = document.getElementById('cfg-modal-overlay');
   if (!ov) return;
-  // Devolve o body ao card original
   const mb = document.getElementById('cfg-modal-body');
   if (mb && mb._sourceCard) {
-    const card = mb._sourceCard;
-    Array.from(mb.children).forEach(function(el) {
-      if (!el.classList.contains('cfg-popup-actions')) {
-        card.appendChild(el);
-      }
-    });
+    // Devolve filhos ao BODY original (não ao card)
+    const body = mb._sourceCard.querySelector('.cfg-topic-body');
+    if (body) {
+      Array.from(mb.children).forEach(function(el) {
+        if (!el.classList.contains('cfg-popup-actions')) {
+          body.appendChild(el);  // volta para o body correto
+        }
+      });
+    }
     mb._sourceCard = null;
   }
   ov.style.display = 'none';
@@ -4121,6 +4113,10 @@ window.initCfgAccordion = function() {
         if (ms) ms.textContent = header.querySelector('.cfg-topic-sub')?.textContent || '';
         if (mi) mi.textContent = header.querySelector('.cfg-topic-icon')?.textContent || '';
 
+        // Remove actions antigas do body (da sessão anterior)
+        var oldActs = body.querySelector('.cfg-popup-actions');
+        if (oldActs) oldActs.remove();
+
         // Move o body real para dentro do modal (sem clonar — sem IDs duplicados)
         mb.innerHTML = '';
         mb._sourceCard = card;
@@ -4128,7 +4124,7 @@ window.initCfgAccordion = function() {
           mb.appendChild(child);
         });
 
-        // Adiciona botões se não existirem
+        // Adiciona botões (sempre cria novos pois mb foi limpo)
         if (!mb.querySelector('.cfg-popup-actions')) {
           var acts = document.createElement('div');
           acts.className = 'cfg-popup-actions';
