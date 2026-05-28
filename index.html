@@ -346,6 +346,14 @@ h3 { font-size:1.2rem; font-weight:700; color:#1a1a1a; }
   scroll-behavior: auto;       /* sem smooth scroll = sem delay visual */
   will-change: scroll-position;
 }
+/* Desktop: scrollbar sempre visível e estilizada */
+@media(min-width:860px){
+  .tab-content-wrap::-webkit-scrollbar { width:6px; }
+  .tab-content-wrap::-webkit-scrollbar-track { background:#f5f0ea; border-radius:50px; }
+  .tab-content-wrap::-webkit-scrollbar-thumb { background:#d4ccc2; border-radius:50px; }
+  .tab-content-wrap::-webkit-scrollbar-thumb:hover { background:#b0a89e; }
+  .tab-content-wrap { scrollbar-width:thin; scrollbar-color:#d4ccc2 #f5f0ea; }
+}
 /* Tabs: sem reflow, sem transform, sem salto */
 .tab-content {
   display: none;
