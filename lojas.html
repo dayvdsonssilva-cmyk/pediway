@@ -657,6 +657,7 @@ let _carrinhos = {};
 
 // Stories
 let _stories = [], _storyIdx = 0, _storyTimer = null;
+let _fresquinhos = []; // fresquinhos de TODAS as lojas (para filtro)
 
 // Polling pedidos
 let _pollingId = null;
@@ -681,6 +682,7 @@ setInterval(() => {
 
 const CATS = [
   {id:'all',    label:'Todos',      emoji:'🍽️'},
+  {id:'fresquinho', label:'Fresquinho', emoji:'✨'},
   {id:'promo',  label:'Promoção',   emoji:'🔥'},
   {id:'burger', label:'Burger',     emoji:'🍔'},
   {id:'pizza',  label:'Pizza',      emoji:'🍕'},
@@ -860,7 +862,9 @@ function renderHome() {
   const catLabel = CATS.find(cat=>cat.id===_catAtiva)?.label||'Todos';
   $('home-lojas-title').textContent = _catAtiva==='promo'
     ? '🔥 Restaurantes em promoção'
-    : catLabel + ' os restaurantes';
+    : _catAtiva==='fresquinho'
+      ? '✨ Com fresquinhos agora'
+      : catLabel + ' os restaurantes';
   const grid = $('home-grid');
   if(!filtered.length) {
     grid.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">Nenhum restaurante</div><div class="empty-desc">Tente outra cidade ou categoria</div></div>';
@@ -920,6 +924,7 @@ function abrirTelaPromos(pct, itens) {
 
 function filtrarLojas() {
   const lojasComPromo = new Set(_promoItems.map(p=>p.estabelecimento_id));
+  const lojasComFresquinho = new Set((_fresquinhos||[]).filter(f=>new Date(f.expires_at)>new Date()).map(f=>f.estabelecimento_id));
 
   return _lojas.filter(l => {
     const lojaCidade = (l.cidade||'').trim().toLowerCase();
@@ -930,6 +935,10 @@ function filtrarLojas() {
     if(_catAtiva==='promo') {
       // Só aparece se tem produto real com em_promocao=true e desconto_percent>0
       return mc && mb && lojasComPromo.has(l.id);
+    }
+    if(_catAtiva==='fresquinho') {
+      // Só aparece se tem fresquinho ativo (não expirado)
+      return mc && mb && lojasComFresquinho.has(l.id);
     }
     if(_catAtiva==='all') return mc && mb;
 
@@ -1094,6 +1103,14 @@ async function renderBanner() {
       }));
     } catch(e){ _promoItems=[]; }
   }
+
+  // Busca fresquinhos ativos de todas as lojas (para aba Fresquinho)
+  try {
+    const{data:fAll}=await db.from('fresquinhos')
+      .select('id,estabelecimento_id,expires_at')
+      .gt('expires_at',new Date().toISOString());
+    _fresquinhos = fAll||[];
+  } catch(e){ _fresquinhos=[]; }
 
   // ⭐ Filtra promoções pela cidade do usuário
   const userCidade = (_cidade||'').trim().toLowerCase();
@@ -1383,7 +1400,10 @@ function renderStore(fresquinhos=[]) {
   // Fresquinho HTML
   const fresqHTML = temFresq ? `
     <div class="fresquinho-wrap">
-      <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;padding:0 4px;">✨ Fresquinho</div>
+      <div style="display:flex;align-items:center;gap:6px;padding:0 4px;margin-bottom:10px">
+        <span style="width:8px;height:8px;border-radius:50%;background:#E8001C;display:inline-block;animation:pulse 1.5s infinite"></span>
+        <span style="font-size:11px;font-weight:800;color:#1a1a1a;text-transform:uppercase;letter-spacing:.06em">Fresquinho</span>
+      </div>
       <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding:0 4px 4px;">
         ${fresquinhos.map(f => {
           const url = f.midia_url || f.url || '';
@@ -1428,20 +1448,17 @@ function renderStore(fresquinhos=[]) {
       </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="store-tabs">
-      <button class="store-tab active" id="tab-cardapio" onclick="storeTab('cardapio',this)">CARDÁPIO</button>
-      <button class="store-tab" id="tab-quente" onclick="storeTab('quente',this)" style="gap:5px;${!temQuente ? 'display:none;' : ''}">
-        <span class="${temQuente?'fire-on':'fire-off'}">🔥</span>
-        <span style="${temQuente?'color:#E8001C;font-weight:900':''}">QUENTE</span>
-      </button>
-      <!-- PROMOÇÃO tab removido -->
-    </div>
-
-    <!-- Fresquinho -->
+    <!-- Fresquinho (direto, sem tab) -->
     ${fresqHTML}
 
-    <!-- Conteúdo da tab -->
+    <!-- QUENTE tab (só se tiver) -->
+    ${temQuente ? `<div style="padding:10px 14px 0">
+      <button onclick="storeTab('quente',this)" style="display:flex;align-items:center;gap:6px;background:#fff5f5;border:1.5px solid #fca5a5;border-radius:50px;padding:8px 18px;font-family:inherit;font-size:.82rem;font-weight:800;color:#E8001C;cursor:pointer">
+        🔥 Ver promoções quentes
+      </button>
+    </div>` : ''}
+
+    <!-- Produtos direto (sem wrapper de tab) -->
     <div id="tab-content-cardapio" class="tab-content">
       ${filtrosHTML}
       <div id="store-produtos" style="display:flex;flex-direction:column;gap:10px;padding:10px 14px 120px;"></div>
