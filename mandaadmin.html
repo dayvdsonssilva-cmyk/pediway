@@ -815,7 +815,7 @@ gel('btn-salvar-preco').addEventListener('click', () => {
   saveCfg(); toast('Preços salvos e sincronizados!');
 });
 gel('btn-desativar-inad').addEventListener('click', async () => {
-  const inad = lojas.filter(l=>l.assinatura_vencimento&&new Date(l.assinatura_vencimento)<new Date()&&l.plano!=='basico');
+  const inad = lojas.filter(l=>l.assinatura_vencimento&&!(new Date(l.assinatura_vencimento) > new Date())&&l.plano!=='basico');
   if (!inad.length) return toast('Nenhuma loja inadimplente.','#f59e0b');
   if (!confirm(`Desativar ${inad.length} loja(s) inadimplente(s)?`)) return;
   let ok=0;
@@ -899,7 +899,7 @@ function renderVisao() {
   // Linha 2 de stats
   const assinaturas = lojas.filter(l=>l.plano&&l.plano!=='basico').length;
   const trial       = lojas.filter(l=>!l.plano||l.plano==='basico').length;
-  const inad        = lojas.filter(l=>l.assinatura_vencimento&&new Date(l.assinatura_vencimento)<new Date()&&l.plano!=='basico').length;
+  const inad        = lojas.filter(l=>l.assinatura_vencimento&&!(new Date(l.assinatura_vencimento) > new Date())&&l.plano!=='basico').length;
   const sete        = new Date(); sete.setDate(sete.getDate()-7);
   const semPed7d    = lojas.filter(l=>{
     const ultimo = peds.filter(p=>p.estabelecimento_id===l.id);
@@ -936,7 +936,7 @@ function renderVisao() {
 
   // Vencendo em 7 dias
   const seteDias = new Date(); seteDias.setDate(seteDias.getDate()+7);
-  const vencendo = lojas.filter(l=>l.assinatura_vencimento&&!(new Date(l.assinatura_vencimento)>seteDias&&new Date(l.assinatura_vencimento)>new Date()&&l.plano!=='basico');
+  const vencendo = lojas.filter(l=>l.assinatura_vencimento&&!(new Date(l.assinatura_vencimento) > seteDias)&&!(new Date(l.assinatura_vencimento) > new Date())&&l.plano!=='basico');
   gel('venc-7dias').innerHTML = vencendo.length
     ? vencendo.map(l=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:.78rem"><span>${esc(l.nome)}</span><span style="color:var(--yellow);font-size:.7rem">${new Date(l.assinatura_vencimento).toLocaleDateString('pt-BR')}</span></div>`).join('')
     : '<div style="color:var(--text3);font-size:.75rem;padding:12px 0">Nenhuma vencendo nos próximos 7 dias. ✅</div>';
@@ -987,7 +987,7 @@ function filtrarLojas() {
   if (q)              lista = lista.filter(l=>(l.nome||'').toLowerCase().includes(q)||(l.slug||'').includes(q));
   if (sit==='ativa')  lista = lista.filter(l=>l.aberto!==false);
   if (sit==='inativa')lista = lista.filter(l=>l.aberto===false);
-  if (sit==='inadim') lista = lista.filter(l=>l.assinatura_vencimento&&new Date(l.assinatura_vencimento)<new Date()&&l.plano!=='basico');
+  if (sit==='inadim') lista = lista.filter(l=>l.assinatura_vencimento&&!(new Date(l.assinatura_vencimento) > new Date())&&l.plano!=='basico');
   if (sit==='trial')  lista = lista.filter(l=>!l.plano||l.plano==='basico');
   if (plano)          lista = lista.filter(l=>(l.plano||'basico')===plano);
   renderLojas(lista);
@@ -1187,7 +1187,7 @@ function renderAssinaturas() {
   const mrr = p*proPrc + pr*premPrc;
   const pagas  = lojas.filter(l=>l.pagamento_status==='pago').length;
   const pend   = lojas.filter(l=>!l.pagamento_status||l.pagamento_status==='pendente').length;
-  const inad   = lojas.filter(l=>l.assinatura_vencimento&&new Date(l.assinatura_vencimento)<new Date()&&l.plano!=='basico').length;
+  const inad   = lojas.filter(l=>l.assinatura_vencimento&&!(new Date(l.assinatura_vencimento) > new Date())&&l.plano!=='basico').length;
   const canc   = lojas.filter(l=>l.pagamento_status==='cancelado').length;
   gel('pt').textContent=t; gel('pp').textContent=p; gel('pprem').textContent=pr; gel('pmrr').textContent=$R(mrr);
   gel('assin-pagas').textContent=pagas; gel('assin-pend').textContent=pend; gel('assin-venc').textContent=inad; gel('assin-canc').textContent=canc;
