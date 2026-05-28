@@ -1365,6 +1365,7 @@ async function renderPedidos(pedidosExternos) {
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
               <span style="font-size:.92rem;font-weight:800">#${p.id.slice(-4).toUpperCase()}</span>
               <span style="font-size:.82rem;font-weight:600;color:#555;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">${p.cliente_nome||'Cliente'}</span>
+              ${p.cliente_whats && !p.cliente_whats.match(/^\d+$/) ? '<span style="background:#e8f5e9;color:#2e7d32;font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:50px">👤 '+p.cliente_whats+'</span>' : ''}
             </div>
             <div style="font-size:.7rem;color:#aaa;margin-top:2px">${tempoStr} atrás · ${endStr}</div>
           </div>
@@ -2933,6 +2934,7 @@ function _cardPedidoMesa(p, mesa, fmtR, stCor, stLbl) {
   const itens   = Array.isArray(p.itens) ? p.itens : [];
   const dt      = new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   const nome    = (p.cliente_nome && p.cliente_nome !== mesa) ? p.cliente_nome : '';
+  const garcom  = p.cliente_whats && !p.cliente_whats.includes('@') && !p.cliente_whats.match(/^\d+$/) ? p.cliente_whats : '';
   const enviado = getEnviadosCozinha().has(p.id);
 
   // Cor da borda: vermelho = não foi pra cozinha, verde = foi pra cozinha, cinza = pronto/outro
@@ -2952,6 +2954,7 @@ function _cardPedidoMesa(p, mesa, fmtR, stCor, stLbl) {
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px">
       <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
         ${nome ? '<span style="background:#f0e9e0;padding:3px 10px;border-radius:50px;font-size:.78rem;font-weight:700;color:#555">'+(nome)+'</span>' : ''}
+        ${garcom ? '<span style="background:#e8f5e9;padding:3px 10px;border-radius:50px;font-size:.72rem;font-weight:700;color:#2e7d32">👤 '+garcom+'</span>' : ''}
         <span style="font-size:.68rem;color:#aaa">#${p.id.slice(-4).toUpperCase()} · ${dt}</span>
       </div>
       <!-- Status badge bem destacado -->
