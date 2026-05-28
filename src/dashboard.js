@@ -238,7 +238,7 @@ export async function initDashboard() {
   if (estab.logo_url) mostrarLogoPreview(estab.logo_url);
 
   // Cor e capa
-  corAtiva = normalizeHex(estab.cor_primaria || '#C0392B');
+  corAtiva = normalizeHex(estab.cor_primaria || '#C0392B'); // usada só no cardápio
   renderCores(corAtiva);
   aplicarCorDash(corAtiva);
   mostrarCapaPreview(corAtiva);
@@ -347,10 +347,12 @@ function preencherConfig(estab) {
 }
 
 function aplicarCorDash(cor) {
+  // NÃO aplica no dashboard — cor é só para o cardápio do cliente
+  // Dashboard mantém sempre o vermelho padrão (#C0392B)
   const hex = isGradient(cor) ? gradToHex(cor) : cor;
-  const dash = document.querySelector('[data-screen="s-dash"]');
-  if (dash) dash.style.setProperty('--red', hex);
-  document.querySelectorAll('.dash-nav,.tab-content,.config-card').forEach(el => el.style.setProperty('--red', hex));
+  // Só atualiza o preview da capa nas configurações
+  const capaPreview = $('capa-preview');
+  if (capaPreview) capaPreview.style.background = hex;
 }
 
 function renderCores(ativa) {
