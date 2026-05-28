@@ -13,7 +13,7 @@ const CORES = [
   '#C0392B','#E74C3C','#E67E22','#F39C12','#F1C40F',
   '#27AE60','#16A085','#1ABC9C','#2980B9','#3498DB',
   '#8E44AD','#9B59B6','#2C3E50','#34495E','#7F8C8D',
-  '#D35400','#C0392B','#1A252F','#6C3483','#1B4F72', 
+  '#D35400','#C0392B','#1A252F','#6C3483','#1B4F72',
   // Gradientes (salvos como string especial)
   'grad:linear-gradient(135deg,#C0392B,#E74C3C)',
   'grad:linear-gradient(135deg,#E67E22,#F39C12)',
@@ -4078,56 +4078,93 @@ window.fecharCfgPopup = function() {
   if (backdrop) backdrop.style.display = 'none';
 };
 
-window.initCfgAccordion = function() {
-  // Cria backdrop se não existir
-  if (!document.getElementById('cfg-backdrop')) {
-    var bd = document.createElement('div');
-    bd.id = 'cfg-backdrop';
-    bd.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2900;';
-    bd.addEventListener('click', window.fecharCfgPopup);
-    document.body.appendChild(bd);
+window.fecharCfgPopup = function() {
+  const ov = document.getElementById('cfg-modal-overlay');
+  if (!ov) return;
+  // Devolve o body ao card original
+  const mb = document.getElementById('cfg-modal-body');
+  if (mb && mb._sourceCard) {
+    const card = mb._sourceCard;
+    Array.from(mb.children).forEach(function(el) {
+      if (!el.classList.contains('cfg-popup-actions')) {
+        card.appendChild(el);
+      }
+    });
+    mb._sourceCard = null;
   }
+  ov.style.display = 'none';
+};
 
+window.initCfgAccordion = function() {
   document.querySelectorAll('.cfg-topic-header').forEach(function(header) {
     if (header.dataset.accordion) return;
     header.dataset.accordion = '1';
     header.addEventListener('click', function(e) {
-      if (e.target.closest('input,button,label,select,a')) return;
+      if (e.target.closest('input,button,label,select,a,textarea')) return;
       var card = header.closest('.cfg-topic-card');
       var body = card && card.querySelector('.cfg-topic-body');
       if (!body) return;
+
       var isDesktop = window.innerWidth >= 860;
 
-      // Fecha tudo primeiro
-      document.querySelectorAll('.cfg-topic-card.cfg-popup-open,.cfg-topic-body.open').forEach(function(el) {
-        el.classList.remove('cfg-popup-open','open');
-      });
-      document.querySelectorAll('.cfg-topic-header.open').forEach(function(h) { h.classList.remove('open'); });
-      var bd = document.getElementById('cfg-backdrop');
-
-      var wasOpen = card.classList.contains('cfg-popup-open') || body.classList.contains('open');
-      if (wasOpen) { if (bd) bd.style.display='none'; return; }
-
-      body.classList.add('open');
-      header.classList.add('open');
       if (isDesktop) {
-        card.classList.add('cfg-popup-open');
-        if (bd) bd.style.display = 'block';
-        // Adiciona botões de ação no popup desktop se não existirem
-        if (!body.querySelector('.cfg-popup-actions')) {
+        // ── DESKTOP: usa cfg-modal-overlay que está direto no <body> ──
+        var ov = document.getElementById('cfg-modal-overlay');
+        var mb = document.getElementById('cfg-modal-body');
+        var mt = document.getElementById('cfg-modal-title');
+        var ms = document.getElementById('cfg-modal-sub');
+        var mi = document.getElementById('cfg-modal-icon');
+        if (!ov || !mb) return;
+
+        // Atualiza cabeçalho do modal
+        if (mt) mt.textContent = header.querySelector('.cfg-topic-title')?.textContent || '';
+        if (ms) ms.textContent = header.querySelector('.cfg-topic-sub')?.textContent || '';
+        if (mi) mi.textContent = header.querySelector('.cfg-topic-icon')?.textContent || '';
+
+        // Move o body real para dentro do modal (sem clonar — sem IDs duplicados)
+        mb.innerHTML = '';
+        mb._sourceCard = card;
+        Array.from(body.children).forEach(function(child) {
+          mb.appendChild(child);
+        });
+
+        // Adiciona botões se não existirem
+        if (!mb.querySelector('.cfg-popup-actions')) {
           var acts = document.createElement('div');
           acts.className = 'cfg-popup-actions';
-          acts.style.cssText = 'display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid #f0ebe4';
+          acts.style.cssText = 'display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid #f0ebe4;flex-shrink:0';
           acts.innerHTML = '<button onclick="fecharCfgPopup()" style="flex:1;background:none;border:1.5px solid #ddd;border-radius:12px;padding:11px;font-family:inherit;font-size:.85rem;font-weight:700;color:#666;cursor:pointer">Cancelar</button>'
             + '<button onclick="salvarConfig();fecharCfgPopup();" style="flex:2;background:var(--red);color:#fff;border:none;border-radius:12px;padding:11px;font-family:inherit;font-size:.88rem;font-weight:800;cursor:pointer">💾 Salvar e fechar</button>';
-          body.appendChild(acts);
+          mb.appendChild(acts);
         }
+
+        // Dispara change em selects cascata (estado→cidade)
+        setTimeout(function() {
+          mb.querySelectorAll('select').forEach(function(sel) {
+            if (sel.value) sel.dispatchEvent(new Event('change', { bubbles: true }));
+          });
+        }, 60);
+
+        ov.style.display = 'flex';
+
       } else {
-        body.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // ── MOBILE: accordion inline ──
+        var isOpen = body.classList.contains('open');
+        document.querySelectorAll('.cfg-topic-body.open').forEach(function(b) {
+          b.classList.remove('open');
+          var h = b.closest('.cfg-topic-card')?.querySelector('.cfg-topic-header');
+          if (h) h.classList.remove('open');
+        });
+        if (!isOpen) {
+          body.classList.add('open');
+          header.classList.add('open');
+          body.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
       }
     });
   });
 };
+
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FILTRO DE PEDIDOS POR DATA
