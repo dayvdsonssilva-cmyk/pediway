@@ -5766,4 +5766,4 @@ async function _carregarGruposNoModal(estabId, selecionados) {
 function _coletarGruposSelecionados() {
   const chks = document.querySelectorAll('.grupo-adic-chk:checked');
   return Array.from(chks).map(function(c) { return c.value; });
-} 
+}  
