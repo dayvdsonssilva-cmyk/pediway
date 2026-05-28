@@ -13,7 +13,7 @@ const CORES = [
   '#C0392B','#E74C3C','#E67E22','#F39C12','#F1C40F',
   '#27AE60','#16A085','#1ABC9C','#2980B9','#3498DB',
   '#8E44AD','#9B59B6','#2C3E50','#34495E','#7F8C8D',
-  '#D35400','#C0392B','#1A252F','#6C3483','#1B4F72',
+  '#D35400','#C0392B','#1A252F','#6C3483','#1B4F72', 
   // Gradientes (salvos como string especial)
   'grad:linear-gradient(135deg,#C0392B,#E74C3C)',
   'grad:linear-gradient(135deg,#E67E22,#F39C12)',
