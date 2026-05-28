@@ -1386,11 +1386,12 @@ function renderStore(fresquinhos=[]) {
       <div style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;padding:0 4px;">✨ Fresquinho</div>
       <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding:0 4px 4px;">
         ${fresquinhos.map(f => {
+          const url = f.midia_url || f.url || '';
           const rest = new Date(f.expires_at)-new Date();
           const h=Math.floor(rest/3600000), mn=Math.floor((rest%3600000)/60000);
-          return `<div class="story-thumb" onclick="abrirStory('${f.url}','${f.tipo||'foto'}','${f.id}')">
-            ${f.tipo==='video'?`<video src="${f.url}" muted playsinline loop preload="metadata" style="width:100%;height:100%;object-fit:cover;background:#000;"></video>`:
-            `<img src="${f.url}" alt="" style="width:100%;height:100%;object-fit:cover;">`}
+          return `<div class="story-thumb" onclick="abrirStory('${url}','${f.tipo||'foto'}','${f.id}')">
+            ${f.tipo==='video'?`<video src="${url}" muted playsinline loop preload="metadata" style="width:100%;height:100%;object-fit:cover;background:#000;"></video>`:
+            `<img src="${url}" alt="" style="width:100%;height:100%;object-fit:cover;">`}
             <div class="story-timer">⏱ ${h>0?h+'h ':''} ${mn}min</div>
           </div>`;
         }).join('')}
@@ -2610,7 +2611,7 @@ function iniciarRealtime() {
 const STORY_DUR = 5000;
 window.abrirStory = function(url, tipo, id) {
   const fresq = window._storyFresq||[];
-  _stories = fresq.map(f=>({url:f.url,tipo:f.tipo||'foto'}));
+  _stories = fresq.map(f=>({url:f.midia_url||f.url||'',tipo:f.tipo||'foto'}));
   if(!_stories.length) _stories=[{url,tipo}];
   _storyIdx = _stories.findIndex(s=>s.url===url); if(_storyIdx<0) _storyIdx=0;
   $('story-viewer').classList.add('open');
