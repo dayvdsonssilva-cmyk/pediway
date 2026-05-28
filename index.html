@@ -348,15 +348,13 @@ h3 { font-size:1.2rem; font-weight:700; color:#1a1a1a; }
 }
 /* Desktop: scrollbar sempre visível e estilizada */
 @media(min-width:860px){
-  /* Scrollbar sempre visível em todas as abas do painel */
-  .tab-content-wrap::-webkit-scrollbar { width:6px; }
-  .tab-content-wrap::-webkit-scrollbar-track { background:#f0ece7; border-radius:50px; }
-  .tab-content-wrap::-webkit-scrollbar-thumb { background:#ccc5bb; border-radius:50px; min-height:40px; }
-  .tab-content-wrap::-webkit-scrollbar-thumb:hover { background:#aaa099; }
-  .tab-content-wrap { scrollbar-width:thin; scrollbar-color:#ccc5bb #f0ece7; }
-  /* Garante que o layout ocupa 100% da altura disponível */
-  #s-dash { height:100vh; overflow:hidden; }
-  .dash-body { height:calc(100vh - 48px); display:flex; flex-direction:column; }
+  /* Scrollbar SEMPRE visível — track fixo independente do conteúdo */
+  .tab-content-wrap { overflow-y: scroll !important; scrollbar-gutter: stable !important; }
+  .tab-content-wrap::-webkit-scrollbar { width:7px !important; display:block !important; }
+  .tab-content-wrap::-webkit-scrollbar-track { background:#ede8e2; border-radius:50px; display:block !important; }
+  .tab-content-wrap::-webkit-scrollbar-thumb { background:#c8c0b6; border-radius:50px; min-height:60px; }
+  .tab-content-wrap::-webkit-scrollbar-thumb:hover { background:#a8a09a; }
+  .tab-content-wrap { scrollbar-width:thin; scrollbar-color:#c8c0b6 #ede8e2; }
 }
 /* Tabs: sem reflow, sem transform, sem salto */
 .tab-content {
@@ -4547,7 +4545,7 @@ window.goTo = function(screen) {
     <div id="cfg-modal-body" style="overflow-y:auto;flex:1;padding:24px 28px"></div>
     <div style="padding:16px 24px;border-top:1px solid #f0ebe4;background:#fafafa;display:flex;gap:10px;flex-shrink:0">
       <button onclick="fecharCfgModal()" style="flex:1;background:none;border:1.5px solid #ddd;border-radius:12px;padding:12px;font-family:'Poppins',sans-serif;font-size:.88rem;font-weight:700;color:#666;cursor:pointer">Cancelar</button>
-      <button onclick="salvarCfgModal()" style="flex:2;background:var(--red);color:#fff;border:none;border-radius:12px;padding:12px;font-family:'Poppins',sans-serif;font-size:.9rem;font-weight:800;cursor:pointer">💾 Salvar e fechar</button>
+      <button onclick="salvarConfiguracoes();fecharCfgModal();" style="flex:2;background:var(--red);color:#fff;border:none;border-radius:12px;padding:12px;font-family:'Poppins',sans-serif;font-size:.9rem;font-weight:800;cursor:pointer">💾 Salvar e fechar</button>
     </div>
   </div>
 </div>
