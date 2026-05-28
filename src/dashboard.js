@@ -385,10 +385,12 @@ window.atualizarStatusLoja = function(aberto) { atualizarBadgeLoja(aberto); };
 // LOGO
 // ─────────────────────────────────────────────────────────────────────────────
 function mostrarLogoPreview(url) {
-  const img = $('logo-preview-img');
-  const txt = $('logo-placeholder-text');
-  if (img) { img.src = url; img.style.display = 'block'; }
+  var img = $('logo-preview-img') || document.getElementById('logo-preview-img');
+  var txt = $('logo-placeholder-text') || document.getElementById('logo-placeholder-text');
+  var wrap = document.getElementById('logo-upload-wrap');
+  if (img) { img.src = url; img.style.display = 'block'; img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover'; }
   if (txt) txt.style.display = 'none';
+  if (wrap) wrap.style.border = '2px solid var(--red)'; // feedback visual
 }
 
 export function previewLogo(event) {
@@ -691,6 +693,7 @@ export async function salvarConfig() {
   }
 }
 window.salvarConfig = salvarConfig;
+window.salvarConfiguracoes = salvarConfig; // alias para compatibilidade com HTML
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CARDÁPIO
@@ -4104,12 +4107,24 @@ window.initCfgAccordion = function() {
   document.querySelectorAll('.cfg-topic-header').forEach(function(header) {
     if (header.dataset.accordion) return;
     header.dataset.accordion = '1';
-    // Muda seta para indicar "abre modal"
-    const arr = header.querySelector('.cfg-topic-arrow');
-    if (arr) arr.innerHTML = '&#8594;';
     header.addEventListener('click', function(e) {
       if (e.target.closest('input,button,label,select,a')) return;
-      abrirCfgModal(header);
+      var card = header.closest('.cfg-topic-card');
+      var body = card && card.querySelector('.cfg-topic-body');
+      if (!body) return;
+      var isOpen = body.classList.contains('open');
+      // Fecha todos
+      document.querySelectorAll('.cfg-topic-body.open').forEach(function(b) {
+        b.classList.remove('open');
+        var h = b.closest('.cfg-topic-card') && b.closest('.cfg-topic-card').querySelector('.cfg-topic-header');
+        if (h) h.classList.remove('open');
+      });
+      // Abre o clicado se estava fechado
+      if (!isOpen) {
+        body.classList.add('open');
+        header.classList.add('open');
+        body.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     });
   });
 };
