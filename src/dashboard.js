@@ -1868,7 +1868,7 @@ function iniciarRealtime() {
         if (p.endereco && p.endereco.startsWith('No local')) {
           const parts = p.endereco.split('—');
           if (parts.length >= 2) {
-            const key = parts[1].trim();
+            const key = parts[1].trim().split('·')[0].trim();
             if (!_pedidosMesas[key]) _pedidosMesas[key] = [];
             if (!_pedidosMesas[key].find(x => x.id === p.id)) {
               _pedidosMesas[key].push(p);
@@ -2869,7 +2869,7 @@ window.renderHistoricoMesas = async function() {
   const porMesa = {};
   data.forEach(p => {
     const parts = (p.endereco||'').split('—');
-    const mesa  = parts.length >= 2 ? parts[1].trim() : 'Mesa';
+    const mesa  = parts.length >= 2 ? parts[1].trim().split('·')[0].trim() : 'Mesa';
     if (!porMesa[mesa]) porMesa[mesa] = [];
     porMesa[mesa].push(p);
   });
@@ -3129,7 +3129,7 @@ async function imprimirPorSetor(p, loja) {
   var obs = p.observacao||'';
   var parts = (p.endereco||'').split('—');
   var isMesa = (p.endereco||'').startsWith('No local');
-  var mesa = parts.length>=2?parts[1].trim():p.endereco||'';
+  var mesa = parts.length>=2?parts[1].trim().split('·')[0].trim():p.endereco||'';
   var dt = new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 
   var cabecalhoHTML = '<div class="center">'
@@ -3267,7 +3267,7 @@ async function carregarPedidosMesas() {
     const raw   = (p.endereco || '');
     const parts = raw.split('—');
     if (parts.length < 2) return;
-    const mesa  = parts[1].trim();
+    const mesa  = parts[1].trim().split('·')[0].trim();
     if (!_pedidosMesas[mesa]) _pedidosMesas[mesa] = [];
     _pedidosMesas[mesa].push(p);
   });
@@ -3303,7 +3303,7 @@ function renderMesas() {
     listaNovos.innerHTML = novosM.map(p => {
       const itens = Array.isArray(p.itens) ? p.itens.map(i => `${i.qtd}x ${i.nome}`).join(' · ') : '';
       const parts = (p.endereco||'').split('—');
-      const mesa  = parts.length >= 2 ? parts[1].trim() : p.endereco || 'Mesa';
+      const mesa  = parts.length >= 2 ? parts[1].trim().split('·')[0].trim() : p.endereco || 'Mesa';
       const nome  = p.cliente_nome && p.cliente_nome !== mesa ? p.cliente_nome : '';
       const numMesa = mesa.replace('Mesa ','');
       return `<div style="background:#fff;border:2px solid var(--red);border-radius:14px;padding:14px 12px;display:flex;flex-direction:column;gap:8px;min-height:160px">
