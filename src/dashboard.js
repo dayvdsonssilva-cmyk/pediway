@@ -4103,7 +4103,29 @@ function abrirCfgModal(header) {
   }, 80);
 }
 
+// Fecha popup de config (desktop)
+window.fecharCfgPopup = function() {
+  document.querySelectorAll('.cfg-topic-card.cfg-popup-open').forEach(function(card) {
+    card.classList.remove('cfg-popup-open');
+    var body = card.querySelector('.cfg-topic-body');
+    if (body) body.classList.remove('open');
+    var hdr = card.querySelector('.cfg-topic-header');
+    if (hdr) hdr.classList.remove('open');
+  });
+  var backdrop = document.getElementById('cfg-backdrop');
+  if (backdrop) backdrop.style.display = 'none';
+};
+
 window.initCfgAccordion = function() {
+  // Cria backdrop se não existir
+  if (!document.getElementById('cfg-backdrop')) {
+    var bd = document.createElement('div');
+    bd.id = 'cfg-backdrop';
+    bd.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2900;backdrop-filter:blur(3px)';
+    bd.addEventListener('click', window.fecharCfgPopup);
+    document.body.appendChild(bd);
+  }
+
   document.querySelectorAll('.cfg-topic-header').forEach(function(header) {
     if (header.dataset.accordion) return;
     header.dataset.accordion = '1';
@@ -4112,17 +4134,33 @@ window.initCfgAccordion = function() {
       var card = header.closest('.cfg-topic-card');
       var body = card && card.querySelector('.cfg-topic-body');
       if (!body) return;
-      var isOpen = body.classList.contains('open');
-      // Fecha todos
-      document.querySelectorAll('.cfg-topic-body.open').forEach(function(b) {
-        b.classList.remove('open');
-        var h = b.closest('.cfg-topic-card') && b.closest('.cfg-topic-card').querySelector('.cfg-topic-header');
-        if (h) h.classList.remove('open');
+      var isDesktop = window.innerWidth >= 860;
+
+      // Fecha tudo primeiro
+      document.querySelectorAll('.cfg-topic-card.cfg-popup-open,.cfg-topic-body.open').forEach(function(el) {
+        el.classList.remove('cfg-popup-open','open');
       });
-      // Abre o clicado se estava fechado
-      if (!isOpen) {
-        body.classList.add('open');
-        header.classList.add('open');
+      document.querySelectorAll('.cfg-topic-header.open').forEach(function(h) { h.classList.remove('open'); });
+      var bd = document.getElementById('cfg-backdrop');
+
+      var wasOpen = card.classList.contains('cfg-popup-open') || body.classList.contains('open');
+      if (wasOpen) { if (bd) bd.style.display='none'; return; }
+
+      body.classList.add('open');
+      header.classList.add('open');
+      if (isDesktop) {
+        card.classList.add('cfg-popup-open');
+        if (bd) bd.style.display = 'block';
+        // Adiciona botões de ação no popup desktop se não existirem
+        if (!body.querySelector('.cfg-popup-actions')) {
+          var acts = document.createElement('div');
+          acts.className = 'cfg-popup-actions';
+          acts.style.cssText = 'display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid #f0ebe4';
+          acts.innerHTML = '<button onclick="fecharCfgPopup()" style="flex:1;background:none;border:1.5px solid #ddd;border-radius:12px;padding:11px;font-family:inherit;font-size:.85rem;font-weight:700;color:#666;cursor:pointer">Cancelar</button>'
+            + '<button onclick="salvarConfig();fecharCfgPopup();" style="flex:2;background:var(--red);color:#fff;border:none;border-radius:12px;padding:11px;font-family:inherit;font-size:.88rem;font-weight:800;cursor:pointer">💾 Salvar e fechar</button>';
+          body.appendChild(acts);
+        }
+      } else {
         body.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     });
