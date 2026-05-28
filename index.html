@@ -348,11 +348,15 @@ h3 { font-size:1.2rem; font-weight:700; color:#1a1a1a; }
 }
 /* Desktop: scrollbar sempre visível e estilizada */
 @media(min-width:860px){
+  /* Scrollbar sempre visível em todas as abas do painel */
   .tab-content-wrap::-webkit-scrollbar { width:6px; }
-  .tab-content-wrap::-webkit-scrollbar-track { background:#f5f0ea; border-radius:50px; }
-  .tab-content-wrap::-webkit-scrollbar-thumb { background:#d4ccc2; border-radius:50px; }
-  .tab-content-wrap::-webkit-scrollbar-thumb:hover { background:#b0a89e; }
-  .tab-content-wrap { scrollbar-width:thin; scrollbar-color:#d4ccc2 #f5f0ea; }
+  .tab-content-wrap::-webkit-scrollbar-track { background:#f0ece7; border-radius:50px; }
+  .tab-content-wrap::-webkit-scrollbar-thumb { background:#ccc5bb; border-radius:50px; min-height:40px; }
+  .tab-content-wrap::-webkit-scrollbar-thumb:hover { background:#aaa099; }
+  .tab-content-wrap { scrollbar-width:thin; scrollbar-color:#ccc5bb #f0ece7; }
+  /* Garante que o layout ocupa 100% da altura disponível */
+  #s-dash { height:100vh; overflow:hidden; }
+  .dash-body { height:calc(100vh - 48px); display:flex; flex-direction:column; }
 }
 /* Tabs: sem reflow, sem transform, sem salto */
 .tab-content {
