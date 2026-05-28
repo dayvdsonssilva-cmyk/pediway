@@ -1882,6 +1882,7 @@ function iniciarRealtime() {
         // ── Pedido de mesa: atualiza visão geral, financeiro e mesas
         if ((p.endereco||'').startsWith('No local')) {
           await carregarPedidosMesas(); renderMesas();
+          window.renderHistoricoMesas(); // atualiza histórico em tempo real
           await renderPedidos();
           if (document.querySelector('#tab-financeiro.active') ||
               document.querySelector('[data-tab="financeiro"].active')) {
@@ -2855,7 +2856,8 @@ window.renderHistoricoMesas = async function() {
     .ilike('endereco', 'No local%')
     .neq('status', 'recusado')
     .gte('created_at', desde)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(500);
 
   if (!data?.length) {
     lista.innerHTML = '<div style="color:#aaa;font-size:.82rem;text-align:center;padding:32px">Nenhum pedido de mesa hoje</div>';
@@ -2878,18 +2880,21 @@ window.renderHistoricoMesas = async function() {
   lista.innerHTML = Object.entries(porMesa).map(([mesa, peds]) => {
     const num       = mesa.replace('Mesa ','');
     const ativos    = peds.filter(p => ['novo','preparo','pronto'].includes(p.status));
-    const prontos   = peds.filter(p => p.status === 'finalizado'); // histórico: já finalizados
-    const finalizados = prontos;
+    const finalizados = peds.filter(p => p.status === 'finalizado');
+    // Total real: soma todos os pedidos da sessão ativa (ativos + finalizados desta sessão)
+    // Usa pedidos ativos para o total em aberto
     const temAtivo  = ativos.length > 0;
-    // Total = só pedidos ativos (mesa aberta). Histórico tem o total completo separado.
-    const totalMesa = ativos.reduce((s,p) => s+Number(p.total||0), 0);
+    // Total em aberto (mesas ativas) ou total da sessão completa (mesas encerradas)
+    const totalAtivos = ativos.reduce((s,p) => s+Number(p.total||0), 0);
+    const totalFechados = finalizados.reduce((s,p) => s+Number(p.total||0), 0);
+    const totalMesa = temAtivo ? totalAtivos : totalFechados;
     const mesaId    = 'hmesa-' + mesa.replace(/\s/g,'');
 
     // Cards de pedidos ativos
     const ativosHtml = ativos.map(p => _cardPedidoMesa(p, mesa, fmtR, stCor, stLbl)).join('');
 
     // Cards de pedidos histórico (prontos)
-    const histHtml = prontos.length ? `
+    const histHtml = finalizados.length && !temAtivo ? `
       <div style="margin-top:10px">
         <button onclick="toggleHistMesa('${mesaId}-hist')" style="width:100%;display:flex;align-items:center;justify-content:between;gap:8px;background:#f5f0eb;border:1.5px dashed #d4c4b0;border-radius:8px;padding:8px 12px;font-family:'Poppins',sans-serif;font-size:.75rem;font-weight:700;color:#888;cursor:pointer">
           <span style="flex:1;text-align:left">📋 Histórico de pedidos (${prontos.length})</span>
@@ -4025,29 +4030,8 @@ window.toggleCfgTaxaServico = function(ativo) {
 
 // ── Accordion das configurações ───────────────────────────────────────────────
 // Abre modal de configuração ao clicar no card
-// Salva lendo do modal (evita confusão com IDs duplicados no DOM)
-window.salvarCfgModal = function() {
-  const ov = document.getElementById('cfg-modal-overlay');
-  const mb = document.getElementById('cfg-modal-body');
-  if (!mb || !ov || !ov._sourceBody) { salvarConfiguracoes(); fecharCfgModal(); return; }
+// salvarCfgModal removido — usa salvarConfig direto
 
-  // Copia valores do modal para os inputs originais
-  mb.querySelectorAll('input,select,textarea').forEach(function(el) {
-    if (!el.id) return;
-    // Remove prefixo se existir, busca no body original
-    const orig = ov._sourceBody.querySelector('[id="' + el.id + '"]');
-    if (orig) {
-      if (el.type === 'checkbox') orig.checked = el.checked;
-      else orig.value = el.value;
-    }
-  });
-
-  fecharCfgModal();
-  // Aguarda um tick para garantir que o DOM atualizou antes de salvar
-  setTimeout(function() {
-    try { salvarConfiguracoes(); } catch(e) { console.error('salvarCfg:', e); }
-  }, 50);
-};
 
 window.fecharCfgModal = function() {
   const ov = document.getElementById('cfg-modal-overlay');
@@ -4077,35 +4061,8 @@ document.addEventListener('click', function(e) {
 });
 
 function abrirCfgModal(header) {
-  const card  = header.closest('.cfg-topic-card');
-  const body  = card?.querySelector('.cfg-topic-body');
-  const icon  = header.querySelector('.cfg-topic-icon')?.textContent || '';
-  const title = header.querySelector('.cfg-topic-title')?.textContent || '';
-  const sub   = header.querySelector('.cfg-topic-sub')?.textContent || '';
-  if (!body) return;
-
-  const ov  = document.getElementById('cfg-modal-overlay');
-  const mb  = document.getElementById('cfg-modal-body');
-  const mtt = document.getElementById('cfg-modal-title');
-  const mst = document.getElementById('cfg-modal-sub');
-  const mic = document.getElementById('cfg-modal-icon');
-  if (!ov || !mb) return;
-
-  if (mic) mic.textContent = icon;
-  if (mtt) mtt.textContent = title;
-  if (mst) mst.textContent = sub;
-  // Clona o conteúdo SEM mover o DOM original (evita destruir ao fechar)
-  mb.innerHTML = body.innerHTML;
-  mb.style.cssText = 'overflow-y:auto;flex:1;padding:24px 28px;display:flex;flex-direction:column;gap:16px';
-  // Guarda referência ao body original para sincronizar ao salvar
-  ov._sourceBody = body;
-  ov.style.display = 'flex';
-  // Dispara change em selects cascata (estado→cidade) para popular opções
-  setTimeout(function() {
-    mb.querySelectorAll('select').forEach(function(sel) {
-      if (sel.value) sel.dispatchEvent(new Event('change', { bubbles: true }));
-    });
-  }, 80);
+  // Desativado — usa o sistema de popup CSS via initCfgAccordion
+  // Mantido apenas para compatibilidade de chamadas antigas
 }
 
 // Fecha popup de config (desktop)
