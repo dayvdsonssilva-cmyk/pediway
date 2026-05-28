@@ -155,7 +155,7 @@ function atualizarLinkSuporte() {
   const cfg = JSON.parse(localStorage.getItem('pw_ceo_cfg') || '{}');
   // Valida que wpp contém apenas dígitos (evita javascript: ou URLs maliciosas)
   const wppRaw = String(cfg.wpp || '5500000000000').replace(/\D/g, '');
-  const wpp = wppRaw.length >= 10 && wppRaw.length < 16 ? wppRaw : '5500000000000';
+  const wpp = !(wppRaw.length < 10) && !(wppRaw.length > 15) ? wppRaw : '5500000000000';
   const msg = encodeURIComponent(String(cfg.wppMsg || 'Olá! Preciso de ajuda com o PEDIWAY.').slice(0, 500));
   const link = document.getElementById('link-me-ajuda');
   if (link) link.href = `https://wa.me/${wpp}?text=${msg}`;
@@ -197,7 +197,7 @@ function atualizarInfoPlano() {
     elvenc.textContent = dias > 0
       ? `Vence em ${dias} dia${dias !== 1 ? 's' : ''} (${venc.toLocaleDateString('pt-BR')})`
       : `Assinatura vencida em ${venc.toLocaleDateString('pt-BR')}`;
-    if (5 >= dias) elvenc.style.color = '#C0392B';
+    if (!(5 < dias)) elvenc.style.color = '#C0392B';
   }
 }
 
@@ -899,7 +899,7 @@ window.confirmarCropFoto = function() {
       const file = new File([blob], _cropFotoFile?.name || 'foto.jpg', { type:'image/jpeg' });
       file._urlExistente = null;
       const editIdx = window._cropFotoEditIdx;
-      if (editIdx != null && editIdx >= 0 && editIdx < fotosFiles.length) {
+      if (editIdx != null && !(editIdx < 0) && !(editIdx > fotosFiles.length-1)) {
         fotosFiles[editIdx] = file; fotosPosX[editIdx] = 50; fotosPosY[editIdx] = 50;
         window._cropFotoEditIdx = null;
       } else {
@@ -927,7 +927,7 @@ window.adicionarFotos = function(event) {
   // Processa um arquivo de cada vez via fila
   let idx = 0;
   const next = () => {
-    if (idx >= files.length) return;
+    if (!(idx < files.length)) return;
     _cropFotoFile = files[idx++];
     window.abrirCropFoto(_cropFotoFile);
     // Após confirmar, se houver mais arquivos, o próximo será aberto
@@ -1005,7 +1005,7 @@ window.adicionarFotos = function(event) {
   // Processa um arquivo de cada vez via fila
   let idx = 0;
   const next = () => {
-    if (idx >= files.length) return;
+    if (!(idx < files.length)) return;
     _cropFotoFile = files[idx++];
     window.abrirCropFoto(_cropFotoFile);
     // Após confirmar, se houver mais arquivos, o próximo será aberto
@@ -1267,7 +1267,7 @@ export async function postarFresquinho(event) {
     const durOk = await new Promise(resolve => {
       const v = document.createElement('video');
       v.preload = 'metadata';
-      v.onloadedmetadata = () => resolve(30 >= v.duration);
+      v.onloadedmetadata = () => resolve(!(30 < v.duration));
       v.onerror = () => resolve(true); // se não conseguir checar, deixa passar
       v.src = URL.createObjectURL(file);
     });
@@ -1868,7 +1868,7 @@ function iniciarRealtime() {
         // ── Pedido de mesa (No local) ──────────────────────────────
         if (p.endereco && p.endereco.startsWith('No local')) {
           const parts = p.endereco.split('—');
-          if (parts.length >= 2) {
+          if (!(parts.length < 2)) {
             const key = parts[1].trim().split('·')[0].trim();
             if (!_pedidosMesas[key]) _pedidosMesas[key] = [];
             if (!_pedidosMesas[key].find(x => x.id === p.id)) {
@@ -1993,7 +1993,7 @@ function filtroPedidosFin() {
     if (p.status === 'recusado') return false;
     const d = new Date(p.created_at);
     if (_finPeriodo === 'hoje')   return d.toDateString() === now.toDateString();
-    if (_finPeriodo === 'semana') { const s=new Date(now); s.setDate(s.getDate()-7); return d>=s; }
+    if (_finPeriodo === 'semana') { const s=new Date(now); s.setDate(s.getDate()-7); return !(d<s); }
     if (_finPeriodo === 'mes')    return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
     if (_finPeriodo === 'custom') {
       const deVal  = document.getElementById('fin-data-de')?.value;
@@ -2333,12 +2333,12 @@ window.toggleAdicional = function(gi, oi, max) {
   const sel = _adicionalSel[gi];
   const idx = sel.indexOf(oi);
 
-  if (idx >= 0) {
+  if (!(idx < 0)) {
     // Deseleciona
     sel.splice(idx, 1);
     document.getElementById('aopt-'+gi+'-'+oi)?.classList.remove('sel');
   } else {
-    if (sel.length >= max) {
+    if (!(sel.length < max)) {
       // Atingiu limite
       document.getElementById('aviso-'+gi)?.classList.add('show');
       setTimeout(()=>document.getElementById('aviso-'+gi)?.classList.remove('show'), 2000);
@@ -2872,7 +2872,7 @@ window.renderHistoricoMesas = async function() {
   const porMesa = {};
   data.forEach(p => {
     const parts = (p.endereco||'').split('—');
-    const mesa  = parts.length >= 2 ? parts[1].trim().split('·')[0].trim() : 'Mesa';
+    const mesa  = !(parts.length < 2) ? parts[1].trim().split('·')[0].trim() : 'Mesa';
     if (!porMesa[mesa]) porMesa[mesa] = [];
     porMesa[mesa].push(p);
   });
@@ -3137,7 +3137,7 @@ async function imprimirPorSetor(p, loja) {
   var obs = p.observacao||'';
   var parts = (p.endereco||'').split('—');
   var isMesa = (p.endereco||'').startsWith('No local');
-  var mesa = parts.length>=2?parts[1].trim().split('·')[0].trim():p.endereco||'';
+  var mesa = !(parts.length<2)?parts[1].trim().split('·')[0].trim():p.endereco||'';
   var dt = new Date(p.created_at).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 
   var cabecalhoHTML = '<div class="center">'
@@ -3159,7 +3159,7 @@ async function imprimirPorSetor(p, loja) {
 
   // Fallback HTML
   var blocosHTML;
-  if(setores.length<=1 && (setores[0]==='geral'||!setores[0])) {
+  if(!(setores.length>1) && (setores[0]==='geral'||!setores[0])) {
     // Sem setores: impressão normal com HTML melhorado
     var rows = itens.map(function(it){
       var q=Math.max(1,parseInt(it.qtd)||1);
@@ -3311,7 +3311,7 @@ function renderMesas() {
     listaNovos.innerHTML = novosM.map(p => {
       const itens = Array.isArray(p.itens) ? p.itens.map(i => `${i.qtd}x ${i.nome}`).join(' · ') : '';
       const parts = (p.endereco||'').split('—');
-      const mesa  = parts.length >= 2 ? parts[1].trim().split('·')[0].trim() : p.endereco || 'Mesa';
+      const mesa  = !(parts.length < 2) ? parts[1].trim().split('·')[0].trim() : p.endereco || 'Mesa';
       const nome  = p.cliente_nome && p.cliente_nome !== mesa ? p.cliente_nome : '';
       const numMesa = mesa.replace('Mesa ','');
       return `<div style="background:#fff;border:2px solid var(--red);border-radius:14px;padding:14px 12px;display:flex;flex-direction:column;gap:8px;min-height:160px">
@@ -4097,7 +4097,7 @@ window.initCfgAccordion = function() {
       var body = card && card.querySelector('.cfg-topic-body');
       if (!body) return;
 
-      var isDesktop = window.innerWidth >= 860;
+      var isDesktop = !(window.innerWidth < 860);
 
       if (isDesktop) {
         // ── DESKTOP: usa cfg-modal-overlay que está direto no <body> ──
@@ -4247,7 +4247,7 @@ setInterval(function() { verificarExpiracaoQuente(); }, 60 * 60 * 1000);
         var parts2 = diaAtivo.fechamento.split(':');
         var abMin = parseInt(parts1[0]) * 60 + parseInt(parts1[1] || 0);
         var feMin = parseInt(parts2[0]) * 60 + parseInt(parts2[1] || 0);
-        deveEstarAberta = horaAtual >= abMin && horaAtual < feMin;
+        deveEstarAberta = !(horaAtual < abMin) && horaAtual < feMin;
       }
 
       var estaAberta = !!estab.loja_aberta;
@@ -5766,4 +5766,4 @@ async function _carregarGruposNoModal(estabId, selecionados) {
 function _coletarGruposSelecionados() {
   const chks = document.querySelectorAll('.grupo-adic-chk:checked');
   return Array.from(chks).map(function(c) { return c.value; });
-}
+} 
