@@ -342,9 +342,9 @@ h3 { font-size:1.2rem; font-weight:700; color:#1a1a1a; }
   overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
-  overflow-anchor: none;       /* sem scroll anchoring automático */
-  scroll-behavior: auto;       /* sem smooth scroll = sem delay visual */
-  will-change: scroll-position;
+  overflow-anchor: none;
+  scroll-behavior: auto;
+  /* REMOVIDO: will-change:scroll-position quebra position:fixed dos popups */
 }
 /* Desktop: scrollbar sempre visível e estilizada */
 @media(min-width:860px){
