@@ -320,7 +320,7 @@ let estab=null,produtos=[],pedMesas={},nomes={},carrinhos={},mesaAtual=null,fech
 
 
 // ── PERFIL DO GARÇOM ─────────────────────────────────────────────────────────
-let _garcomNome = '';
+var _garcomNome = ''; // var para ser acessível em todo o escopo
 const _gcKey = () => 'pw_garcom_' + (window._SLUG || slug || 'geral');
 
 function carregarGarcom() {
@@ -336,10 +336,10 @@ function carregarGarcom() {
   return false;
 }
 function atualizarBadge() {
-  const n = document.getElementById('gc-av-nome');
-  const a = document.getElementById('gc-av-letra');
+  var n = $('gc-av-nome') || document.getElementById('gc-av-nome');
+  var a = $('gc-av-letra') || document.getElementById('gc-av-letra');
   if (n) n.textContent = _garcomNome;
-  if (a) a.textContent = _garcomNome.charAt(0).toUpperCase() || '?';
+  if (a) a.textContent = (_garcomNome||'?').charAt(0).toUpperCase();
 }
 window.confirmarGarcom = function() {
   const inp = document.getElementById('gc-perfil-inp');
@@ -350,8 +350,10 @@ window.confirmarGarcom = function() {
   try { localStorage.setItem(_gcKey(), nome); } catch(e){}
   try { localStorage.setItem('pw_garcom_last', nome); } catch(e){}
   atualizarBadge();
-  document.getElementById('gc-perfil-sheet').style.display = 'none';
-  document.getElementById('gc-main').style.display = 'block';
+  $('gc-perfil-sheet').style.display = 'none';
+  $('gc-main').style.display = 'block';
+  if(typeof renderMesas==='function') renderMesas();
+  renderMesas();
 };
 window.trocarGarcom = function() {
   if (!confirm('Certeza que quer trocar de usuário?')) return;
@@ -389,7 +391,13 @@ async function init(){
   const{data:prods}=await db.from('produtos').select('id,nome,preco,emoji,categoria,disponivel').eq('estabelecimento_id',est.id).eq('disponivel',true).order('categoria');
   produtos=prods||[];
   await loadPedidos();iniciarRealtime();
-  $('gc-loading').style.display='none';$('gc-main').style.display='block';renderMesas();
+  $('gc-loading').style.display='none';
+  if (carregarGarcom()) {
+    $('gc-main').style.display='block'; renderMesas();
+  } else {
+    $('gc-perfil-sheet').style.display='flex';
+    setTimeout(()=>{ const i=$('gc-perfil-inp'); if(i)i.focus(); },200);
+  }
   // Polling de sincronização do estab a cada 30s (pega mudanças de mesas, etc.)
   setInterval(async()=>{
     try{
