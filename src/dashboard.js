@@ -1127,6 +1127,7 @@ export async function salvarItem() {
       categoria:    $('item-cat')?.value.trim().toUpperCase(),
       preco, preco_original: promocao ? preco_orig : null,
       foto_url, fotos_urls, emoji: emojiSel, disponivel: true, promocao,
+      setor: $('item-setor')?.value || 'geral',
       grupos_adicionais_ids: _coletarGruposSelecionados(),
     });
     if (error) throw new Error(error.message);
@@ -1145,6 +1146,7 @@ export async function editarItem(id) {
     const set = (sel, val) => { const el=$(sel); if(el && val!=null) el.value=val; };
     set('item-nome', p.nome); set('item-desc', p.descricao||'');
     set('item-cat', p.categoria||'');
+    set('item-setor', p.setor||'geral');
     // Se tem desconto %, o campo mostra o preço ORIGINAL (o que o dono digitou)
     set('item-preco', p.em_promocao && p.preco_original ? p.preco_original : p.preco);
     set('item-preco-orig', p.preco_original||'');
@@ -1213,6 +1215,7 @@ export async function editarItem(id) {
             preco:        precoFinalU,
             preco_original: precoOrigU,
             foto_url, fotos_urls, emoji: emojiSel, promocao,
+            setor: $('item-setor')?.value || 'geral',
             grupos_adicionais_ids: _coletarGruposSelecionados(),
             em_promocao: promocao && desconto_pct_u > 0,
             desconto_percent: promocao ? desconto_pct_u : 0,
