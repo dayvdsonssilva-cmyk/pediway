@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#0a0a0a">
   <title>KDS · PEDIWAY</title>
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="PEDIWAY KDS"/>
+  <script src="/pediway-notif.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -135,7 +141,7 @@ let _renderPending=false; // evita múltiplos renders simultâneos
 
 // BIP
 let _ctx=null;
-function beep(){try{if(!_ctx)_ctx=new(window.AudioContext||window.webkitAudioContext)();const o=_ctx.createOscillator(),g=_ctx.createGain();o.connect(g);g.connect(_ctx.destination);o.type='square';o.frequency.setValueAtTime(1200,_ctx.currentTime);o.frequency.exponentialRampToValueAtTime(800,_ctx.currentTime+.12);g.gain.setValueAtTime(.75,_ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,_ctx.currentTime+.35);o.start(_ctx.currentTime);o.stop(_ctx.currentTime+.35);}catch(e){}}
+function beep(){if(window.PediwayNotif){window.PediwayNotif.bip('novo');}else{try{const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='square';o.frequency.setValueAtTime(1200,c.currentTime);g.gain.setValueAtTime(.75,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.35);o.start(c.currentTime);o.stop(c.currentTime+.35);}catch(e){}}}
 
 // TOAST
 let _tt;function toast(m,d=2200){const e=$('toast');e.textContent=m;e.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>e.classList.remove('show'),d);}
@@ -374,7 +380,11 @@ function conectar(){
         enriquecer(novo);
         if(!PEDIDOS.find(p=>String(p.id)===String(novo.id)))PEDIDOS.unshift(novo);
         renderFull();renderTabs();
-        if(deveExibir(novo,SETOR_ATIVO)){beep();toast('🔔 Novo pedido #'+(novo.id||'').slice(-4).toUpperCase());}
+        if(deveExibir(novo,SETOR_ATIVO)){
+          beep();
+          toast('🔔 Novo pedido #'+(novo.id||'').slice(-4).toUpperCase());
+          window.PediwayNotif?.novoPedido(novo);
+        }
       }else if(eventType==='UPDATE'){
         enriquecer(novo);
         const i=PEDIDOS.findIndex(p=>String(p.id)===String(novo.id));
