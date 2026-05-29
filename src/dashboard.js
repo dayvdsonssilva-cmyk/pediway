@@ -3399,41 +3399,6 @@ window.salvarNomeComanda = function(val) {
 };
 
 // ── Troca de tab dentro do modal ──────────────────────────────────────────────
-// ── Sub-tabs mobile da comanda (Cardápio / Carrinho) ──────────────────────────
-window.switchCmdSubTab = function(sub) {
-  var isMobile = window.innerWidth <= 700;
-  var left  = document.getElementById('cmd-col-cardapio');
-  var right = document.getElementById('cmd-col-carrinho');
-  var stC   = document.getElementById('cmdst-cardapio');
-  var stR   = document.getElementById('cmdst-carrinho');
-  if (!left || !right) return;
-  if (!isMobile) {
-    left.style.display  = 'flex';
-    right.style.display = 'flex';
-    return;
-  }
-  if (sub === 'cardapio') {
-    left.style.display  = 'flex';
-    right.style.display = 'none';
-    if (stC) stC.classList.add('ativo');
-    if (stR) stR.classList.remove('ativo');
-  } else {
-    left.style.display  = 'none';
-    right.style.display = 'flex';
-    if (stR) stR.classList.add('ativo');
-    if (stC) stC.classList.remove('ativo');
-  }
-};
-
-// Atualiza badge do carrinho no mobile
-function _atualizarBadgeCarrinho(mesaKey) {
-  var badge = document.getElementById('cmd-carr-badge');
-  if (!badge) return;
-  var itens = (_carrinhoComanda[mesaKey]||[]).reduce(function(s,x){return s+x.qtd;},0);
-  badge.textContent = itens;
-  badge.style.display = itens > 0 ? 'inline' : 'none';
-}
-
 window.switchComandaTab = function(tab) {
   // Normaliza aliases
   if (tab === 'pedidos' || tab === 'novo') tab = 'pedido';
@@ -3463,7 +3428,6 @@ function rmItemComanda(mesaKey, id) {
 window.rmItemComanda = rmItemComanda;
 
 function renderCarrinhoComanda(mesaKey) {
-  _atualizarBadgeCarrinho(mesaKey);
   const carr = _carrinhoComanda[mesaKey] || [];
   const total = carr.reduce((s,i)=>s+i.preco*i.qtd, 0);
   const fmtR  = v=>'R$ '+Number(v).toFixed(2).replace('.',',');
@@ -3566,7 +3530,6 @@ async function abrirComanda(num) {
 
   // Sempre abre na tab "Novo pedido"
   window.switchComandaTab('pedido');
-  window.switchCmdSubTab('cardapio'); // sempre começa no cardápio
 
   if (modal) modal.classList.add('open');
 }
