@@ -4387,6 +4387,79 @@ async function atualizarResumoCaixa() {
 }
 window.atualizarResumoCaixa = atualizarResumoCaixa;
 
+// ── Gera HTML visual do recibo de fechamento (igual para fechar e reimprimir) ─
+function _gerarHtmlReciboCaixa(h, estab) {
+  var fmt = function(v){ return 'R$ ' + Number(v||0).toFixed(2).replace('.',','); };
+  var nome  = (estab && estab.nome  ? estab.nome  : 'Estabelecimento').toUpperCase();
+  var end_  = estab && estab.endereco ? estab.endereco : '';
+  var tel   = estab && (estab.telefone_contato || estab.whatsapp) ? (estab.telefone_contato || estab.whatsapp) : '';
+  var cnpj  = estab && estab.cpf_cnpj ? 'CNPJ: ' + estab.cpf_cnpj : '';
+  var dif   = Number(h.diferenca || 0);
+  var temDif = h.fisico > 0 && dif !== 0;
+  var difHtml = '';
+  if (h.fisico > 0) {
+    var difCor = dif < 0 ? '#dc2626' : dif > 0 ? '#16a34a' : '#16a34a';
+    var difTxt = dif === 0 ? '✔ Caixa fechado certinho!' : (dif < 0 ? '▼ Faltou ' : '▲ Sobrou ') + fmt(Math.abs(dif));
+    difHtml = '<div style="margin:6px 0;padding:6px 8px;border-radius:6px;background:' + (dif < 0 ? '#fef2f2' : '#f0fdf4') + ';border:1.5px solid ' + (dif < 0 ? '#fca5a5' : '#86efac') + ';text-align:center;font-size:12px;font-weight:900;color:' + difCor + '">' + difTxt + '</div>';
+  }
+  var mesaHtml = h.totalMesa > 0 ? '<div class="row"><span class="lbl">Mesa/Local</span><span class="val">' + fmt(h.totalMesa) + '</span></div>' : '';
+  var obsHtml  = h.obs ? '<div style="font-size:9px;color:#555;margin-top:4px">Obs: ' + h.obs + '</div>' : '';
+
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Fechamento de Caixa</title>'
+    + '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">'
+    + '<style>'
+    + '*{margin:0;padding:0;box-sizing:border-box}'
+    + 'body{font-family:Poppins,Arial,sans-serif;font-size:12px;background:#fff;color:#000;width:300px;max-width:300px;margin:0 auto;padding:12px 10px}'
+    + '.center{text-align:center}'
+    + '.logo{font-size:18px;font-weight:900;letter-spacing:.06em}.logo-red{color:#C0392B}'
+    + '.emp{font-size:13px;font-weight:700;margin-top:2px}'
+    + '.info{font-size:10px;color:#333;line-height:1.7;margin-top:2px}'
+    + '.sep-thick{border:none;border-top:3px solid #000;margin:8px 0}'
+    + '.sep-dash{border:none;border-top:1px dashed #888;margin:7px 0}'
+    + '.sec{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#555;border-bottom:1px solid #ccc;padding-bottom:2px;margin:7px 0 4px}'
+    + '.row{display:flex;justify-content:space-between;font-size:11px;padding:1px 0;gap:6px}'
+    + '.row .lbl{color:#555}.row .val{font-weight:700;text-align:right}'
+    + '.total-bloco{border-top:2px solid #000;border-bottom:2px solid #000;padding:5px 0;margin:5px 0;display:flex;justify-content:space-between;align-items:center}'
+    + '.total-lbl{font-size:14px;font-weight:900}'
+    + '.total-val{font-size:16px;font-weight:900;color:#16a34a}'
+    + '.rodape{font-size:9px;text-align:center;color:#888;margin-top:8px;letter-spacing:.04em}'
+    + '@media print{body{padding:4px}@page{margin:0;size:80mm auto}}'
+    + '</style></head><body>'
+    + '<div class="center">'
+    + '<div class="logo">PEDI<span class="logo-red">WAY</span></div>'
+    + '<div class="emp">' + nome + '</div>'
+    + '<div class="info">' + (end_ ? end_ + '<br>' : '') + (tel ? 'Tel: ' + tel + '<br>' : '') + cnpj + '</div>'
+    + '</div>'
+    + '<hr class="sep-thick">'
+    + '<div class="center" style="font-size:13px;font-weight:900;letter-spacing:.05em">FECHAMENTO DE CAIXA</div>'
+    + '<hr class="sep-dash">'
+    + '<div class="sec">Período</div>'
+    + '<div class="row"><span class="lbl">Operador</span><span class="val">' + (h.operador || 'Operador') + '</span></div>'
+    + '<div class="row"><span class="lbl">Abertura</span><span class="val">' + new Date(h.aberturaEm || '').toLocaleString('pt-BR') + '</span></div>'
+    + '<div class="row"><span class="lbl">Fechamento</span><span class="val">' + new Date(h.fechadoEm || '').toLocaleString('pt-BR') + '</span></div>'
+    + '<hr class="sep-dash">'
+    + '<div class="sec">Fundo de Caixa</div>'
+    + '<div class="row"><span class="lbl">Valor inicial</span><span class="val">' + fmt(h.valorAbertura) + '</span></div>'
+    + '<hr class="sep-dash">'
+    + '<div class="sec">Recebimentos</div>'
+    + '<div class="row"><span class="lbl">PIX</span><span class="val">' + fmt(h.totalPix) + '</span></div>'
+    + '<div class="row"><span class="lbl">Cartão Crédito</span><span class="val">' + fmt(h.totalCredito || 0) + '</span></div>'
+    + '<div class="row"><span class="lbl">Cartão Débito</span><span class="val">' + fmt(h.totalDebito || 0) + '</span></div>'
+    + '<div class="row"><span class="lbl">Dinheiro</span><span class="val">' + fmt(h.totalDinheiro) + '</span></div>'
+    + mesaHtml
+    + '<div class="row" style="margin-top:3px"><span class="lbl">Nº de pedidos</span><span class="val">' + (h.numPedidos || 0) + '</span></div>'
+    + '<hr class="sep-dash">'
+    + '<div class="sec">Totais</div>'
+    + '<div class="row"><span class="lbl">Subtotal vendas</span><span class="val">' + fmt(h.totalVendas) + '</span></div>'
+    + '<div class="row"><span class="lbl">Fundo inicial</span><span class="val">+ ' + fmt(h.valorAbertura) + '</span></div>'
+    + (h.fisico > 0 ? '<div class="row"><span class="lbl">Físico contado</span><span class="val">' + fmt(h.fisico) + '</span></div>' : '')
+    + difHtml
+    + obsHtml
+    + '<div class="total-bloco"><span class="total-lbl">TOTAL EM CAIXA</span><span class="total-val">' + fmt(h.totalGeral) + '</span></div>'
+    + '<div class="center rodape">Gerado em: ' + new Date(h.fechadoEm || '').toLocaleString('pt-BR') + '<br>PEDIWAY · Plataforma de delivery independente</div>'
+    + '</body></html>';
+}
+
 // Config da plataforma (carregada do Supabase via mandaadmin)
 var _platformConfig = { wpp: '', wppMsg: '', precoPro: '49', precoPrem: '99' };
 
@@ -4611,58 +4684,7 @@ window.fecharCaixa = async function() {
     numPedidos: numPedidos, obs: obs,
   };
   var corpo = _gerarReciboCaixa(hRecibo, estab);
-  var estabNome = (estab && estab.nome ? estab.nome : 'Estabelecimento').toUpperCase();
-  var estabEnd  = estab && estab.endereco ? estab.endereco : '';
-  var estabTel  = estab && (estab.telefone_contato || estab.whatsapp) ? (estab.telefone_contato || estab.whatsapp) : '';
-  var estabCnpj = estab && estab.cpf_cnpj ? estab.cpf_cnpj : '';
-  var htmlComp = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Fechamento de Caixa</title>'
-    + '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700;900&display=swap" rel="stylesheet">'
-    + '<style>'
-    + '*{margin:0;padding:0;box-sizing:border-box}'
-    + 'body{font-family:Poppins,Arial,sans-serif;font-size:12px;background:#fff;color:#000;width:300px;max-width:300px;margin:0 auto;padding:12px 10px}'
-    + '.center{text-align:center}'
-    + '.logo{font-size:18px;font-weight:900;letter-spacing:.06em}.logo-red{color:#C0392B}'
-    + '.emp{font-size:13px;font-weight:700;margin-top:2px}'
-    + '.info{font-size:10px;color:#333;line-height:1.7;margin-top:2px}'
-    + '.sep-thick{border:none;border-top:3px solid #000;margin:8px 0}'
-    + '.sep-dash{border:none;border-top:1px dashed #888;margin:7px 0}'
-    + '.sec{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#555;border-bottom:1px solid #ccc;padding-bottom:2px;margin:7px 0 4px}'
-    + '.row{display:flex;justify-content:space-between;font-size:11px;padding:1px 0;gap:6px}'
-    + '.row .lbl{color:#555}.row .val{font-weight:700;text-align:right}'
-    + '.total-bloco{border-top:2px solid #000;border-bottom:2px solid #000;padding:5px 0;margin:5px 0;display:flex;justify-content:space-between;align-items:center}'
-    + '.total-lbl{font-size:14px;font-weight:900}'
-    + '.total-val{font-size:16px;font-weight:900;color:#16a34a}'
-    + '.rodape{font-size:9px;text-align:center;color:#888;margin-top:8px;letter-spacing:.04em}'
-    + '@media print{body{padding:4px}@page{margin:0;size:80mm auto}}'
-    + '</style></head><body>'
-    + '<div class="center">'
-    + '<div class="logo">PEDI<span class="logo-red">WAY</span></div>'
-    + '<div class="emp">' + estabNome + '</div>'
-    + '<div class="info">'
-    + (estabEnd  ? estabEnd  + '<br>' : '')
-    + (estabTel  ? 'Tel: ' + estabTel + '<br>' : '')
-    + (estabCnpj ? 'CNPJ: ' + estabCnpj : '')
-    + '</div>'
-    + '</div>'
-    + '<hr class="sep-thick">'
-    + '<div class="center" style="font-size:13px;font-weight:900;letter-spacing:.05em">FECHAMENTO DE CAIXA</div>'
-    + '<hr class="sep-dash">'
-    + '<div class="sec">Período</div>'
-    + '<div class="row"><span class="lbl">Operador</span><span class="val">' + (_caixaAbertura && _caixaAbertura.operador ? _caixaAbertura.operador : 'Operador') + '</span></div>'
-    + '<div class="row"><span class="lbl">Abertura</span><span class="val">' + new Date(_caixaAbertura && _caixaAbertura.hora ? _caixaAbertura.hora : agora).toLocaleString('pt-BR') + '</span></div>'
-    + '<div class="row"><span class="lbl">Fechamento</span><span class="val">' + agora.toLocaleString('pt-BR') + '</span></div>'
-    + '<hr class="sep-dash">'
-    + '<div class="sec">Fundo de Caixa</div>'
-    + '<div class="row"><span class="lbl">Valor inicial</span><span class="val">' + fmt(abertura && abertura.valorAbertura ? abertura.valorAbertura : 0) + '</span></div>'
-    + '<hr class="sep-dash">'
-    + '<div class="sec">Recebimentos</div>'
-    + '<div class="row"><span class="lbl">PIX</span><span class="val">' + fmt(totalPix) + '</span></div>'
-    + '<div class="row"><span class="lbl">Cartão</span><span class="val">' + fmt(totalCartao) + '</span></div>'
-    + '<div class="row"><span class="lbl">Dinheiro</span><span class="val">' + fmt(totalDinheiro) + '</span></div>'
-    + '<div class="row" style="margin-top:3px"><span class="lbl">Nº de pedidos</span><span class="val">' + numPedidos + '</span></div>'
-    + '<div class="total-bloco"><span class="total-lbl">TOTAL EM CAIXA</span><span class="total-val">' + fmt(totalGeral) + '</span></div>'
-    + '<div class="center rodape">Gerado em: ' + agora.toLocaleString('pt-BR') + '<br>PEDIWAY · Plataforma de delivery independente</div>'
-    + '</body></html>';
+  var htmlComp = _gerarHtmlReciboCaixa(hRecibo, estab);
   var w = window.open('', '_blank', 'width=440,height=700');
   if (w) { w.document.write(htmlComp); w.document.close(); setTimeout(function(){w.print();},600); }
 };
@@ -4808,14 +4830,14 @@ function _gerarReciboCaixa(h, estab) {
 // Reimprime comprovante de fechamento de um caixa histórico
 window.reimprimirCaixa = function(idx) {
   try {
-    var estab = getEstab();
-    var hist  = JSON.parse(localStorage.getItem('pw_caixa_hist_' + (estab&&estab.id)) || '[]');
+    var estab    = getEstab();
+    var hist     = JSON.parse(localStorage.getItem('pw_caixa_hist_' + (estab&&estab.id)) || '[]');
     var h = hist[idx]; if (!h) return;
-    var corpo = _gerarReciboCaixa(h, estab);
-    var w = window.open('', '_blank', 'width=360,height=600');
+    var htmlComp = _gerarHtmlReciboCaixa(h, estab);
+    var w = window.open('', '_blank', 'width=440,height=700');
     if (!w) return;
-    w.document.write('<pre style="font-family:monospace;font-size:13px;padding:16px;white-space:pre-wrap">' + corpo + '</pre>');
-    w.document.close(); w.focus(); setTimeout(function(){ w.print(); }, 300);
+    w.document.write(htmlComp);
+    w.document.close(); w.focus(); setTimeout(function(){ w.print(); }, 600);
   } catch(e) { console.error('reimprimirCaixa:', e); }
 };
 
