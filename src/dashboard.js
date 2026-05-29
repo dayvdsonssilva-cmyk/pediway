@@ -4444,7 +4444,7 @@ window.fecharCaixa = async function() {
   var totalCartao   = totalCredito + totalDebito;
   var totalVendas   = totalPix + totalCartao + totalDinheiro + totalMesa;
   var totalGeral    = totalVendas + Number(abertura.valorAbertura||0);
-  var diferenca     = fisico - totalGeral;
+  var diferenca     = fisico > 0 ? (fisico - totalGeral) : 0;
   try { localStorage.removeItem('pw_caixa_' + estab?.id); } catch(e) {}
   pararAutoRefreshCaixa();
   _caixaAberto = false; _caixaAbertura = null; _caixaId = null;
@@ -4460,7 +4460,7 @@ window.fecharCaixa = async function() {
   try {
     var hist = JSON.parse(localStorage.getItem('pw_caixa_hist_' + estab?.id) || '[]');
     var fisicoVal = parseFloat((document.getElementById('caixa-fisico')?.value||'0').replace(',','.')) || 0;
-    var difVal    = fisicoVal - totalGeral;
+    var difVal    = fisicoVal > 0 ? (fisicoVal - totalGeral) : 0;
     hist.unshift({
       fechadoEm:      agora.toISOString(),
       operador:       abertura?.operador || 'Operador',
