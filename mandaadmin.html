@@ -168,9 +168,7 @@
     <div class="l-sub">Painel CEO · Acesso Restrito</div>
     <div class="l-label">Código de acesso</div>
     <input class="l-input" id="pin" type="password" placeholder="Código de acesso" maxlength="50" autocomplete="off">
-    <div class="l-label" style="margin-top:10px">Token secreto admin</div>
-    <input class="l-input" id="inp-token" type="password" placeholder="Cole a service_role key (eyJ...)" autocomplete="off">
-    <div style="font-size:.68rem;opacity:.6;margin-bottom:8px">Cole a service_role key do Supabase (Project Settings → API)</div>
+
     <button class="l-btn" id="btn-entrar">Entrar</button>
     <div class="l-err" id="lerr"></div>
     <div class="l-attempts" id="l-attempts"></div>
@@ -510,6 +508,10 @@
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
+// ── SERVICE KEY — cole aqui sua service_role key do Supabase ─────────────────
+// Onde achar: Supabase → Project Settings → API → service_role key
+const SRK_HARDCODED = 'COLE_SUA_SERVICE_ROLE_KEY_AQUI';
+
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const SURL      = 'https://nmttkjmfazcipefeakkx.supabase.co';
 const SKEY_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tdHRram1mYXpjaXBlZmVha2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTM3NjQsImV4cCI6MjA5MDI4OTc2NH0.MMTX_6iQJk7Uv3HPSk0m32_BihvqsWhHJ_qiRkw0WYo';
@@ -519,8 +521,11 @@ const db = createClient(SURL, SKEY_ANON); // anon: leitura pública
 const _SRK = 'pw_srk';
 
 function getServiceKey() {
-  const k = sessionStorage.getItem(_SRK) || '';
-  if (!k) throw new Error('Service key não configurada. Faça login novamente.');
+  // Usa key hardcoded no arquivo (só você tem acesso ao link do admin)
+  const k = SRK_HARDCODED || sessionStorage.getItem(_SRK) || '';
+  if (!k || k === 'COLE_SUA_SERVICE_ROLE_KEY_AQUI') {
+    throw new Error('Configure a SRK_HARDCODED no início do arquivo mandaadmin.html');
+  }
   return k;
 }
 
@@ -755,7 +760,6 @@ function doLogin() {
 }
 
 gel('btn-entrar').addEventListener('click', () => {
-  setServiceKey(gel('inp-token')?.value?.trim() || '');
   doLogin();
 });
 gel('pin').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
@@ -1107,14 +1111,19 @@ function detLoja(id) {
 async function toggleLoja(id, estaAtiva) {
   const novoEstado = !estaAtiva;
   const nomeLoja   = lojas.find(l=>l.id===id)?.nome||'';
-  if (estaAtiva && !confirm(`Desativar "${nomeLoja}"? Ela ficará inacessível para clientes.`)) return;
+  const acao = novoEstado ? 'Ativar' : 'Desativar';
+  if (!confirm(`${acao} a loja "${nomeLoja}"?`)) return;
+  toast(`${acao}ndo "${nomeLoja}"...`, '#f59e0b');
   try {
     const togResult = await adminUpdate('estabelecimentos', { aberto: novoEstado }, '?id=eq.' + id);
-    if (!togResult?.length) throw new Error('Loja não encontrada.');
+    if (!Array.isArray(togResult) || togResult.length === 0) throw new Error('Loja não encontrada ou sem permissão (verifique a SRK_HARDCODED).');
     toast(novoEstado ? '✅ "'+nomeLoja+'" ativada!' : '🚫 "'+nomeLoja+'" desativada!');
     gel('ov-loja').classList.remove('on');
     await load();
-  } catch(e) { toast('❌ Erro: ' + e.message, '#ef4444'); }
+  } catch(e) {
+    toast('❌ ' + e.message, '#ef4444');
+    console.error('[toggleLoja]', e);
+  }
 }
 
 async function delLoja(id, nome) {
