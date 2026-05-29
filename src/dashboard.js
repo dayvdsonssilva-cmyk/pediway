@@ -5123,10 +5123,20 @@ window.togglePediAI = function() {
 async function _paiBoasVindas() {
   _paiCtxSent = true;
   const estab = getEstab();
+  const nome = estab?.nome ? ' da **' + estab.nome + '**' : '';
   _paiAddMsg('ai',
-    'Ol\u00e1! Sou a **PEDI-AI** \u2726, sua assistente do PEDIWAY!\n\nPosso ajustar sua loja agora mesmo \u2014 nome, taxa de entrega, pre\u00e7os, abrir/fechar, e muito mais.\n\nO que quer que eu fa\u00e7a?'
+    'Olá! Sou a **PEDI-AI** ✦, sua consultora exclusiva' + nome + '!\n\n' +
+    'Posso analisar seus produtos, sugerir preços, ajustar a loja, dar dicas de negócio e muito mais — tudo com base nos dados reais da sua loja.\n\n' +
+    'O que você quer fazer?'
   );
-  _paiChips(['💰 Ajustar taxa de entrega','🏪 Mudar nome da loja','🔓 Abrir/fechar loja','📊 Analisar preços','⚙️ Configurar minha loja']);
+  _paiChips([
+    '📊 Analisar meu cardápio completo',
+    '💰 Sugerir melhorias de preço',
+    '🔓 Abrir/fechar loja',
+    '🚀 Dicas para vender mais',
+    '⚙️ Ajustar configurações da loja',
+    '🧾 Analisar nota fiscal'
+  ]);
 }
 
 // ── Mensagens ────────────────────────────────────────────────────────────────
@@ -5197,6 +5207,75 @@ window.enviarPediAI = function() {
   inp.value = '';
   _paiEnviar(t);
 };
+
+// Renderiza análise de cardápio
+function _paiRenderAnalise(analise) {
+  const msgs = document.getElementById('pai-messages');
+  if (!msgs || !analise) return;
+  const fmt = v => 'R$ ' + Number(v||0).toFixed(2).replace('.',',');
+  let html = '<div style="background:#f8f8f8;border:1.5px solid #eee;border-radius:12px;padding:12px;margin-top:6px;font-size:.78rem">';
+
+  if (analise.resumo) {
+    html += '<div style="font-weight:800;color:#222;margin-bottom:8px">📊 Análise do cardápio</div>';
+    html += '<div style="color:#555;line-height:1.6;margin-bottom:10px">' + analise.resumo + '</div>';
+  }
+  if (analise.destaques?.length) {
+    html += '<div style="font-weight:700;color:#16a34a;margin-bottom:4px">✅ Pontos positivos</div>';
+    analise.destaques.forEach(d => { html += '<div style="color:#333;padding:2px 0 2px 10px;border-left:3px solid #16a34a;margin-bottom:4px">' + d + '</div>'; });
+  }
+  if (analise.melhorias?.length) {
+    html += '<div style="font-weight:700;color:#d97706;margin-bottom:4px;margin-top:8px">⚡ Oportunidades</div>';
+    analise.melhorias.forEach(m => { html += '<div style="color:#333;padding:2px 0 2px 10px;border-left:3px solid #f59e0b;margin-bottom:4px">' + m + '</div>'; });
+  }
+  if (analise.produtos?.length) {
+    html += '<div style="font-weight:700;color:#111;margin-top:10px;margin-bottom:6px">💰 Sugestões de preço</div>';
+    html += '<div style="display:flex;flex-direction:column;gap:4px">';
+    analise.produtos.forEach(p => {
+      const sobe = p.preco_sugerido > p.preco_atual;
+      const cor = sobe ? '#16a34a' : '#dc2626';
+      html += '<div style="background:#fff;border-radius:8px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center;gap:8px">'
+        + '<div style="flex:1;min-width:0"><div style="font-weight:700;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + p.nome + '</div>'
+        + (p.motivo ? '<div style="color:#888;font-size:.7rem">' + p.motivo + '</div>' : '')
+        + '</div>'
+        + '<div style="text-align:right;flex-shrink:0">'
+        + '<div style="color:#aaa;text-decoration:line-through;font-size:.7rem">' + fmt(p.preco_atual) + '</div>'
+        + '<div style="color:' + cor + ';font-weight:800">' + fmt(p.preco_sugerido) + '</div>'
+        + '</div></div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+  const wrap = document.createElement('div');
+  wrap.innerHTML = html;
+  msgs.appendChild(wrap);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// Renderiza análise de nota fiscal
+function _paiRenderFiscal(itens) {
+  const msgs = document.getElementById('pai-messages');
+  if (!msgs || !itens?.length) return;
+  const fmt = v => 'R$ ' + Number(v||0).toFixed(2).replace('.',',');
+  let html = '<div style="background:#f8f8f8;border:1.5px solid #eee;border-radius:12px;padding:12px;margin-top:6px;font-size:.78rem">';
+  html += '<div style="font-weight:800;color:#222;margin-bottom:8px">🧾 Análise da nota fiscal</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:4px">';
+  itens.forEach(it => {
+    html += '<div style="background:#fff;border-radius:8px;padding:8px 10px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center">'
+      + '<span style="font-weight:700;color:#222">' + it.ingrediente + '</span>'
+      + '<span style="color:#888;font-size:.7rem">' + fmt(it.custo_unitario) + '/' + (it.unidade||'un') + '</span>'
+      + '</div>'
+      + '<div style="display:flex;justify-content:space-between;margin-top:3px">'
+      + '<span style="color:#555">Venda sugerida:</span>'
+      + '<span style="color:#16a34a;font-weight:800">' + fmt(it.preco_venda_sugerido) + '</span>'
+      + '</div></div>';
+  });
+  html += '</div></div>';
+  const wrap = document.createElement('div');
+  wrap.innerHTML = html;
+  msgs.appendChild(wrap);
+  msgs.scrollTop = msgs.scrollHeight;
+}
 
 // Analisa nota fiscal/fatura enviada como imagem
 window.paiEnviarNota = function(input) {
@@ -5280,6 +5359,13 @@ async function _paiEnviar(texto) {
     // Busca produtos para contexto
     const { data: prods } = await getSupa().from('produtos').select('id,nome,preco,categoria,disponivel,setor').eq('estabelecimento_id', estab.id).limit(30);
 
+    // Estatísticas rápidas dos produtos
+    const prodsAtivos   = (prods||[]).filter(p => p.disponivel);
+    const prodsInativos = (prods||[]).filter(p => !p.disponivel);
+    const semDescricao  = (prods||[]).filter(p => !p.descricao);
+    const precoMedio    = prodsAtivos.length ? (prodsAtivos.reduce((s,p)=>s+Number(p.preco||0),0)/prodsAtivos.length).toFixed(2) : 0;
+    const categorias    = [...new Set((prods||[]).map(p=>p.categoria).filter(Boolean))];
+
     const raw = await (await fetch('/api/pedi-ai', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -5287,12 +5373,33 @@ async function _paiEnviar(texto) {
         messages: _paiHistory,
         context: {
           estab: {
-            id: estab.id, nome: estab.nome, cidade: estab.cidade,
-            taxa_entrega: estab.taxa_entrega, pedido_minimo: estab.pedido_minimo,
-            whatsapp: estab.whatsapp, loja_aberta: estab.loja_aberta,
-            tipo_estabelecimento: estab.tipo_estabelecimento
+            id: estab.id,
+            nome: estab.nome,
+            cidade: estab.cidade,
+            estado: estab.estado,
+            endereco: estab.endereco,
+            taxa_entrega: estab.taxa_entrega,
+            pedido_minimo: estab.pedido_minimo,
+            whatsapp: estab.whatsapp,
+            instagram: estab.instagram,
+            loja_aberta: estab.loja_aberta,
+            tipo_estabelecimento: estab.tipo_estabelecimento || estab.tipo_estab,
+            descricao: estab.descricao
           },
-          produtos: (prods||[]).slice(0,20)
+          produtos: (prods||[]).map(p => ({
+            id: p.id, nome: p.nome, preco: p.preco,
+            categoria: p.categoria, disponivel: p.disponivel,
+            descricao: p.descricao || null, setor: p.setor,
+            tem_foto: !!(p.foto_url || (p.fotos_urls && p.fotos_urls.length))
+          })),
+          resumo: {
+            total_produtos: (prods||[]).length,
+            ativos: prodsAtivos.length,
+            inativos: prodsInativos.length,
+            sem_descricao: semDescricao.length,
+            preco_medio: Number(precoMedio),
+            categorias: categorias
+          }
         }
       })
     })).text();
@@ -5306,14 +5413,22 @@ async function _paiEnviar(texto) {
     const actions = json.actions || [];
 
     if (json.pergunta && actions.length) {
-      // Pede confirmação antes de executar
       _paiAddMsg('ai', resposta + '\n\n' + json.pergunta, actions);
     } else if (actions.length) {
-      // Executa direto
       _paiAddMsg('ai', resposta);
       await _paiExecutarActions(actions);
     } else {
       _paiAddMsg('ai', resposta);
+    }
+
+    // Renderiza análise de cardápio se vier
+    if (json.analise) {
+      _paiRenderAnalise(json.analise);
+    }
+
+    // Renderiza análise fiscal se vier
+    if (json.analise_fiscal?.length) {
+      _paiRenderFiscal(json.analise_fiscal);
     }
 
   } catch(e) {
