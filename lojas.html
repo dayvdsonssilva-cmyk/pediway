@@ -1367,7 +1367,7 @@ async function abrirLoja(id) {
   // Carrega dados em paralelo
   const [prodRes, frRes] = await Promise.all([
     db.from('produtos').select('id,nome,preco,preco_original,desconto_percent,em_promocao,promocao,emoji,foto_url,categoria,disponivel,grupo_adicional_id,estabelecimento_id').eq('estabelecimento_id', loja.id).eq('disponivel', true).order('created_at',{ascending:false}),
-    db.from('fresquinhos').select('id,titulo,descricao,midia_url,url,tipo,expires_at,estabelecimento_id').eq('estabelecimento_id', loja.id).gt('expires_at', new Date().toISOString()).order('created_at',{ascending:false})
+    db.from('fresquinhos').select('id,url,tipo,expires_at,estabelecimento_id').eq('estabelecimento_id', loja.id).gt('expires_at', new Date().toISOString()).order('created_at',{ascending:false})
   ]);
 
   _produtos = prodRes.data||[];
@@ -1406,7 +1406,7 @@ function renderStore(fresquinhos=[]) {
       </div>
       <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding:0 4px 4px;">
         ${fresquinhos.map(f => {
-          const url = f.midia_url || f.url || '';
+          const url = f.url || '';
           const rest = new Date(f.expires_at)-new Date();
           const h=Math.floor(rest/3600000), mn=Math.floor((rest%3600000)/60000);
           return `<div class="story-thumb" onclick="abrirStory('${url}','${f.tipo||'foto'}','${f.id}')">
@@ -2628,7 +2628,7 @@ function iniciarRealtime() {
 const STORY_DUR = 5000;
 window.abrirStory = function(url, tipo, id) {
   const fresq = window._storyFresq||[];
-  _stories = fresq.map(f=>({url:f.midia_url||f.url||'',tipo:f.tipo||'foto'}));
+  _stories = fresq.map(f=>({url:f.url||'',tipo:f.tipo||'foto'}));
   if(!_stories.length) _stories=[{url,tipo}];
   _storyIdx = _stories.findIndex(s=>s.url===url); if(_storyIdx<0) _storyIdx=0;
   $('story-viewer').classList.add('open');
