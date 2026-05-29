@@ -1377,7 +1377,7 @@ async function abrirLoja(id) {
   const gIds = [...new Set(_produtos.filter(p=>p.grupo_adicional_id).map(p=>p.grupo_adicional_id))];
   if(gIds.length) {
     try {
-      const {data:grupos} = await db.from('grupos_adicionais').select('id,nome,opcoes,minimo,maximo,obrigatorio').in('id', gIds);
+      const {data:grupos} = await db.from('grupos_adicionais').select('id,nome,opcoes,min,max').in('id', gIds);
       const gMap = {}; (grupos||[]).forEach(g=>{ gMap[g.id]=g; });
       _produtos.forEach(p => { if(p.grupo_adicional_id) p.grupo_adicionais = gMap[p.grupo_adicional_id]||null; });
     } catch(e){}
@@ -1720,7 +1720,7 @@ function renderAdicionaisModal(p) {
   const g = p.grupo_adicionais;
   if(!g || !g.opcoes) { el.innerHTML=''; return; }
   const opcoes = Array.isArray(g.opcoes)?g.opcoes:JSON.parse(g.opcoes||'[]');
-  const min = parseInt(g.minimo||g.min||0), max = parseInt(g.maximo||g.max||opcoes.length);
+  const min = parseInt(g.min||0), max = parseInt(g.max||opcoes.length);
   el.innerHTML = `<div class="adicional-grupo">
     <div class="adicional-titulo">${g.grupo||g.nome||'Adicionais'}</div>
     <div class="adicional-sub">${min>0?'Obrigatório: ':'Opcional: '}escolha até ${max}</div>
