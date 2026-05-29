@@ -1520,7 +1520,6 @@ window.marcarPronto = async function(id) {
   // Push equipe + WhatsApp cliente
   const { data: _pedPronto } = await getSupa().from('pedidos').select('*').eq('id', id).maybeSingle();
   const _estabPronto = typeof getEstab === 'function' ? getEstab() : null;
-  window.PediwayNotif?.pedidoPronto(_pedPronto);
   // Push notification para o cliente — retirada
   const _isDelPronto = (_pedPronto?.endereco||'').length > 20;
   enviarPushCliente(_pedPronto?.id || id, 'pronto', _isDelPronto);
@@ -1924,7 +1923,6 @@ function iniciarRealtime() {
           lista.insertAdjacentHTML('afterbegin', cardNovoHTML(p));
           atualizarBadgePedidos();
           notifLoop(p.id);
-          window.PediwayNotif?.novoPedido(p);
         }
       }
     )
@@ -1941,9 +1939,6 @@ function iniciarRealtime() {
           if (_allPronto && !(_ant.setores_status && Object.values(_ant.setores_status||{}).every(function(v){return v==='pronto';}))) {
             const _numP = '#' + String(_novo.id||'').slice(-4).toUpperCase();
             showToast('🍽️ Pedido ' + _numP + ' PRONTO na cozinha!', 4000);
-            try{var _snd=new Audio('/notificacao.mp3');_snd.volume=0.7;_snd.play().catch(function(){});}catch(e){}
-            window.PediwayNotif?.pedidoPronto(_novo);
-            const _estabP = typeof getEstab === 'function' ? getEstab() : null;
             // Push para cliente quando KDS marca tudo pronto
             const _isDelKDS = (_novo?.endereco||'').length > 20;
             enviarPushCliente(_novo?.id, 'pronto', _isDelKDS);
