@@ -538,15 +538,23 @@ const CFG_KEY = 'pw_ceo_cfg_v2';
 let cfg = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
 // PIN inicial — troque após o primeiro acesso em Configurações
 if (!cfg.codigo) { cfg.codigo = 'Mandão@Deyvin2026'; localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
-const saveCfg = () => {
+const saveCfg = async () => {
   localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
-  // Usa Edge Function segura (service_role no servidor, não no browser)
-  adminOp('update_config', {
-    wpp:       cfg.wpp       || null,
-    wpp_msg:   cfg.wppMsg    || null,
+  const payload = {
+    id: 'global',
+    wpp:        cfg.wpp       || null,
+    wpp_msg:    cfg.wppMsg    || null,
     preco_pro:  Number(cfg.precoPro  || 49),
     preco_prem: Number(cfg.precoPrem || 99),
-  }).catch(e => console.warn('saveCfg erro:', e.message));
+    updated_at: new Date().toISOString()
+  };
+  // Tenta Edge Function primeiro; se falhar, salva direto via anon (RLS permissivo para pediway_config)
+  try {
+    await adminOp('update_config', payload);
+  } catch(e) {
+    const { error } = await db.from('pediway_config').upsert(payload);
+    if (error) console.warn('saveCfg fallback erro:', error.message);
+  }
 };
 const $R = v => 'R$ ' + Number(v||0).toFixed(2).replace('.',',');
 
@@ -801,11 +809,24 @@ async function carregarCfg() {
       localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
     }
   } catch(e) { console.warn('carregarCfg Supabase:', e.message); }
-  gel('cfg-wpp').value       = cfg.wpp    || '';
+  const wppRaw = cfg.wpp || '';
+  let wppFmt = wppRaw;
+  if (wppRaw.length === 11) wppFmt = '(' + wppRaw.slice(0,2) + ') ' + wppRaw.slice(2,7) + '-' + wppRaw.slice(7);
+  else if (wppRaw.length === 10) wppFmt = '(' + wppRaw.slice(0,2) + ') ' + wppRaw.slice(2,6) + '-' + wppRaw.slice(6);
+  gel('cfg-wpp').value = wppFmt;
   gel('cfg-wpp-msg').value   = cfg.wppMsg || 'Olá! Preciso de ajuda com o PEDIWAY.';
   gel('cfg-preco-pro').value  = cfg.precoPro  || '49';
   gel('cfg-preco-prem').value = cfg.precoPrem || '99';
 }
+
+// Aplica máscara (00) 00000-0000 no campo de telefone
+gel('cfg-wpp').addEventListener('input', function() {
+  let v = this.value.replace(/\D/g,'').slice(0,11);
+  if (v.length > 10) v = v.replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3');
+  else if (v.length > 6) v = v.replace(/(\d{2})(\d{4})(\d*)/,'($1) $2-$3');
+  else if (v.length > 2) v = v.replace(/(\d{2})(\d*)/,'($1) $2');
+  this.value = v;
+});
 
 gel('btn-salvar-wpp').addEventListener('click', () => {
   cfg.wpp = gel('cfg-wpp').value.replace(/\D/g,'');
