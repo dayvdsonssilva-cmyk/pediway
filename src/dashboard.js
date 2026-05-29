@@ -4372,6 +4372,44 @@ async function atualizarResumoCaixa() {
 }
 window.atualizarResumoCaixa = atualizarResumoCaixa;
 
+// Calcula e exibe diferença físico vs esperado em tempo real (chamada pelo oninput)
+window.calcularDiferenca = function() {
+  var el = function(id){ return document.getElementById(id); };
+  var wrap = el('caixa-diferenca-wrap');
+  if (!wrap) return;
+
+  var fisicoVal = parseFloat((el('caixa-fisico')?.value||'0').replace(',','.')) || 0;
+  // Lê o total esperado que já está na tela
+  var esperadoTxt = (el('caixa-res-esperado')?.textContent || el('caixa-total-geral')?.textContent || 'R$ 0,00');
+  var esperado = parseFloat(esperadoTxt.replace('R$','').replace(/\./g,'').replace(',','.').trim()) || 0;
+
+  if (!fisicoVal) {
+    wrap.style.display = 'none';
+    return;
+  }
+
+  var diff = fisicoVal - esperado;
+  var fmt  = function(v){ return 'R$ ' + Number(v).toFixed(2).replace('.',','); };
+
+  wrap.style.display = 'block';
+  if (diff < 0) {
+    wrap.style.background = 'rgba(220,38,38,.08)';
+    wrap.style.border      = '1.5px solid rgba(220,38,38,.25)';
+    wrap.style.color       = '#dc2626';
+    wrap.innerHTML = '<span style="font-size:1.1rem">▼</span> Faltou <strong>' + fmt(Math.abs(diff)) + '</strong>';
+  } else if (diff > 0) {
+    wrap.style.background = 'rgba(22,163,74,.08)';
+    wrap.style.border      = '1.5px solid rgba(22,163,74,.25)';
+    wrap.style.color       = '#16a34a';
+    wrap.innerHTML = '<span style="font-size:1.1rem">▲</span> Sobrou <strong>' + fmt(diff) + '</strong>';
+  } else {
+    wrap.style.background = 'rgba(0,0,0,.04)';
+    wrap.style.border      = '1.5px solid #e5e5e5';
+    wrap.style.color       = '#555';
+    wrap.innerHTML = '✓ Caixa fechado certinho!';
+  }
+};
+
 function aplicarUICaixaAberto(operador, hora) {
   var el = function(id){return document.getElementById(id);};
   var agora = new Date(hora);
