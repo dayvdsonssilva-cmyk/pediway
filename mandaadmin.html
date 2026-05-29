@@ -168,6 +168,9 @@
     <div class="l-sub">Painel CEO · Acesso Restrito</div>
     <div class="l-label">Código de acesso</div>
     <input class="l-input" id="pin" type="password" placeholder="Código de acesso" maxlength="50" autocomplete="off">
+    <div class="l-label" style="margin-top:10px">Token secreto admin</div>
+    <input class="l-input" id="inp-token" type="password" placeholder="ADMIN_SECRET_TOKEN" autocomplete="off">
+    <div style="font-size:.68rem;opacity:.6;margin-bottom:8px">Configure em: Supabase → Edge Functions → Secrets</div>
     <button class="l-btn" id="btn-entrar">Entrar</button>
     <div class="l-err" id="lerr"></div>
     <div class="l-attempts" id="l-attempts"></div>
@@ -508,11 +511,28 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
-const SURL = 'https://nmttkjmfazcipefeakkx.supabase.co';
-// ⚠️ USE A SERVICE_ROLE KEY AQUI (Supabase → Project Settings → API → service_role)
-// A anon key não consegue atualizar dados de outras lojas por causa do RLS
-const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tdHRram1mYXpjaXBlZmVha2t4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDcxMzc2NCwiZXhwIjoyMDkwMjg5NzY0fQ.s_d-eKhQdXK1nzYoy8Wbxw0nQ-dHoe3fUdGOCbmsfeI';
-const db   = createClient(SURL, SKEY);
+const SURL      = 'https://nmttkjmfazcipefeakkx.supabase.co';
+const SKEY_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tdHRram1mYXpjaXBlZmVha2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTM3NjQsImV4cCI6MjA5MDI4OTc2NH0.MMTX_6iQJk7Uv3HPSk0m32_BihvqsWhHJ_qiRkw0WYo';
+const db        = createClient(SURL, SKEY_ANON); // anon: só leitura — escrita via Edge Function
+
+// URL da Edge Function segura (operações administrativas)
+const ADMIN_FN_URL = SURL + '/functions/v1/admin-ops';
+
+// Token secreto do admin — digitado no login, nunca fica salvo no código
+let _adminToken = '';
+
+// Chama a Edge Function com o token do admin
+async function adminOp(op, payload) {
+  if (!_adminToken) throw new Error('Token admin não definido.');
+  const res = await fetch(ADMIN_FN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-token': _adminToken },
+    body: JSON.stringify({ op, payload })
+  });
+  const json = await res.json();
+  if (!res.ok || json.error) throw new Error(json.error || 'Erro na operação.');
+  return json;
+}
 
 const CFG_KEY = 'pw_ceo_cfg_v2';
 let cfg = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
@@ -701,7 +721,10 @@ function doLogin() {
   }
 }
 
-gel('btn-entrar').addEventListener('click', doLogin);
+gel('btn-entrar').addEventListener('click', () => {
+  _adminToken = gel('inp-token')?.value?.trim() || '';
+  doLogin();
+});
 gel('pin').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
 gel('btn-sair').addEventListener('click', () => {
@@ -1246,24 +1269,22 @@ gel('salvar-plano').addEventListener('click', async() => {
   const btn = gel('salvar-plano');
   btn.disabled = true; btn.textContent = 'Salvando...';
 
-  const { data, error } = await db
-    .from('estabelecimentos')
-    .update({ plano, assinatura_vencimento: venc || null, pagamento_status: st, aberto: ativo, obs_admin: obs })
-    .eq('id', id)
-    .select('id');
-
-  btn.disabled = false; btn.textContent = '💾 Salvar';
-
-  if (error) {
-    console.error('Erro ao salvar plano:', error);
-    return toast('Erro: ' + error.message + ' — Verifique se está usando a service_role key.', '#ef4444');
+  try {
+    await adminOp('update_plano', {
+      id, plano,
+      assinatura_vencimento: venc || null,
+      pagamento_status: st,
+      aberto: ativo,
+      obs_admin: obs
+    });
+    toast('✅ Plano salvo!');
+    gel('ov-plano').classList.remove('on');
+    await load();
+  } catch(e) {
+    toast('Erro: ' + e.message, '#ef4444');
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 Salvar';
   }
-  if (!data || data.length === 0) {
-    return toast('⚠️ Nenhuma linha atualizada. Troque a SKEY pela service_role key no código.', '#f59e0b');
-  }
-  toast('✅ Plano salvo!');
-  gel('ov-plano').classList.remove('on');
-  await load();
 });
 
 // ── AVALIAÇÕES ────────────────────────────────────────────────────────────────
