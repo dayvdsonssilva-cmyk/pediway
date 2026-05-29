@@ -4379,9 +4379,23 @@ window.calcularDiferenca = function() {
   if (!wrap) return;
 
   var fisicoVal = parseFloat((el('caixa-fisico')?.value||'0').replace(',','.')) || 0;
-  // Lê o total esperado que já está na tela
-  var esperadoTxt = (el('caixa-res-esperado')?.textContent || el('caixa-total-geral')?.textContent || 'R$ 0,00');
-  var esperado = parseFloat(esperadoTxt.replace('R$','').replace(/\./g,'').replace(',','.').trim()) || 0;
+
+  // Usa o total calculado internamente (mais confiável que ler o texto da tela)
+  var esperado = 0;
+  var geralEl = el('caixa-total-geral');
+  if (geralEl) {
+    esperado = parseFloat(geralEl.textContent.replace('R$','').replace(/\./g,'').replace(',','.').trim()) || 0;
+  }
+  // Fallback: lê vendas + fundo da tela
+  if (!esperado) {
+    var vendasEl = el('caixa-total-vendas');
+    var fundoEl  = el('caixa-fundo-display');
+    var vendas = vendasEl ? parseFloat(vendasEl.textContent.replace('R$','').replace(/\./g,'').replace(',','.').trim()) || 0 : 0;
+    var fundo  = fundoEl  ? parseFloat(fundoEl.textContent.replace('R$','').replace(/\./g,'').replace(',','.').trim()) || 0 : 0;
+    esperado = vendas + fundo;
+  }
+
+  var fmt = function(v){ return 'R$ ' + Number(Math.abs(v)).toFixed(2).replace('.',','); };
 
   if (!fisicoVal) {
     wrap.style.display = 'none';
@@ -4389,23 +4403,27 @@ window.calcularDiferenca = function() {
   }
 
   var diff = fisicoVal - esperado;
-  var fmt  = function(v){ return 'R$ ' + Number(v).toFixed(2).replace('.',','); };
+  wrap.style.display      = 'block';
+  wrap.style.borderRadius = '10px';
+  wrap.style.padding      = '10px 16px';
+  wrap.style.textAlign    = 'center';
+  wrap.style.fontWeight   = '800';
+  wrap.style.fontSize     = '.88rem';
 
-  wrap.style.display = 'block';
   if (diff < 0) {
-    wrap.style.background = 'rgba(220,38,38,.08)';
-    wrap.style.border      = '1.5px solid rgba(220,38,38,.25)';
-    wrap.style.color       = '#dc2626';
-    wrap.innerHTML = '<span style="font-size:1.1rem">▼</span> Faltou <strong>' + fmt(Math.abs(diff)) + '</strong>';
+    wrap.style.background = 'rgba(220,38,38,.09)';
+    wrap.style.border     = '1.5px solid rgba(220,38,38,.3)';
+    wrap.style.color      = '#dc2626';
+    wrap.innerHTML = '<span style="font-size:1.1rem;vertical-align:middle">▼</span> Faltou <strong>' + fmt(diff) + '</strong>';
   } else if (diff > 0) {
-    wrap.style.background = 'rgba(22,163,74,.08)';
-    wrap.style.border      = '1.5px solid rgba(22,163,74,.25)';
-    wrap.style.color       = '#16a34a';
-    wrap.innerHTML = '<span style="font-size:1.1rem">▲</span> Sobrou <strong>' + fmt(diff) + '</strong>';
+    wrap.style.background = 'rgba(22,163,74,.09)';
+    wrap.style.border     = '1.5px solid rgba(22,163,74,.3)';
+    wrap.style.color      = '#16a34a';
+    wrap.innerHTML = '<span style="font-size:1.1rem;vertical-align:middle">▲</span> Sobrou <strong>' + fmt(diff) + '</strong>';
   } else {
     wrap.style.background = 'rgba(0,0,0,.04)';
-    wrap.style.border      = '1.5px solid #e5e5e5';
-    wrap.style.color       = '#555';
+    wrap.style.border     = '1.5px solid #e0e0e0';
+    wrap.style.color      = '#16a34a';
     wrap.innerHTML = '✓ Caixa fechado certinho!';
   }
 };
