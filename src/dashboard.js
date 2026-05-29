@@ -4713,15 +4713,21 @@ function renderHistoricoCaixa() {
       var ab  = new Date(h.aberturaEm).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
       var fe  = new Date(h.fechadoEm).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
       var dif = Number(h.diferenca || 0);
-      var difCor = dif < 0 ? '#dc2626' : dif > 0 ? '#16a34a' : '#555';
-      var difTxt = dif === 0 ? '' : (dif<0?'\u25bc Quebra ':'\u25b2 Sobra ')+fmt2(Math.abs(dif));
-      var bord   = dif < 0 ? '#fecaca' : '#f0ebe4';
-      var bg     = dif < 0 ? '#fff8f8' : '#fff';
+      var temDif  = dif !== 0 && h.fisico > 0;
+      var difCor  = dif < 0 ? '#dc2626' : '#16a34a';
+      var difBg   = dif < 0 ? 'rgba(220,38,38,.1)' : 'rgba(22,163,74,.1)';
+      var difIcon = dif < 0 ? '▼' : '▲';
+      var difLbl  = dif < 0 ? 'Faltou' : 'Sobrou';
+      var bord    = temDif && dif < 0 ? '#fecaca' : '#f0ebe4';
+      var bg      = temDif && dif < 0 ? '#fff8f8' : '#fff';
       return '<div style="border:1.5px solid '+bord+';border-radius:12px;padding:14px;margin-bottom:8px;background:'+bg+'">'
         + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">'
         + '<div><div style="font-size:.8rem;font-weight:800">' + dt + '</div>'
         + '<div style="font-size:.72rem;color:#888;margin-top:2px">Operador: <b>' + (h.operador||'—') + '</b>'+(h.obs?' · '+h.obs:'')+'</div></div>'
-        + (difTxt ? '<div style="font-size:.72rem;font-weight:900;color:'+difCor+';padding:3px 9px;background:'+difCor+'20;border-radius:50px">' + difTxt + '</div>' : '')
+        + (temDif ? '<div style="display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:50px;background:'+difBg+';border:1.5px solid '+difCor+'33">'
+            + '<span style="font-size:1rem;color:'+difCor+'">'+difIcon+'</span>'
+            + '<span style="font-size:.75rem;font-weight:900;color:'+difCor+'">'+difLbl+' '+fmt2(Math.abs(dif))+'</span>'
+          + '</div>' : '')
         + '</div>'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:.75rem">'
         + '<span style="color:#888">Turno:</span><span style="font-weight:700;text-align:right">' + ab + ' – ' + fe + '</span>'
