@@ -540,15 +540,13 @@ let cfg = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
 if (!cfg.codigo) { cfg.codigo = 'Mandão@Deyvin2026'; localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); }
 const saveCfg = () => {
   localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
-  // Sincroniza para Supabase (persiste mesmo limpando cache)
-  db.from('pediway_config').upsert({
-    id: 'global',
-    wpp: cfg.wpp || null,
-    wpp_msg: cfg.wppMsg || null,
-    preco_pro: Number(cfg.precoPro || 49),
+  // Usa Edge Function segura (service_role no servidor, não no browser)
+  adminOp('update_config', {
+    wpp:       cfg.wpp       || null,
+    wpp_msg:   cfg.wppMsg    || null,
+    preco_pro:  Number(cfg.precoPro  || 49),
     preco_prem: Number(cfg.precoPrem || 99),
-    updated_at: new Date().toISOString()
-  }).then(function(r){ if(r.error) console.warn('Config sync:', r.error.message); });
+  }).catch(e => console.warn('saveCfg erro:', e.message));
 };
 const $R = v => 'R$ ' + Number(v||0).toFixed(2).replace('.',',');
 
@@ -1274,8 +1272,7 @@ gel('salvar-plano').addEventListener('click', async() => {
       id, plano,
       assinatura_vencimento: venc || null,
       pagamento_status: st,
-      aberto: ativo,
-      obs_admin: obs
+      aberto: ativo
     });
     toast('✅ Plano salvo!');
     gel('ov-plano').classList.remove('on');
