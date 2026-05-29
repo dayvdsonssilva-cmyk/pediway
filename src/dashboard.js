@@ -166,17 +166,16 @@ function atualizarLinkSuporte() {
 window.irCheckout = function(plano) {
   const estab = getEstab();
   if (!estab) return showToast('Faça login primeiro.', 'error');
-  const cfg  = JSON.parse(localStorage.getItem('pw_ceo_cfg') || '{}');
-  const pro  = cfg.precoPro  || '49';
-  const prem = cfg.precoPrem || '99';
+  // Usa preços do Supabase (definidos no mandaadmin) — nunca do cache local
+  const pro  = _platformConfig.precoPro  || '49';
+  const prem = _platformConfig.precoPrem || '99';
   window.open(`/checkout?plano=${plano}&estab=${estab.id}&precoPro=${pro}&precoPrem=${prem}`, '_blank');
 };
 
-// Atualiza preços no dashboard conforme config do CEO
+// Atualiza preços no dashboard — usa _platformConfig (Supabase via mandaadmin)
 function atualizarPrecosDash() {
-  const cfg = JSON.parse(localStorage.getItem('pw_ceo_cfg') || '{}');
-  const pro  = cfg.precoPro  || '49';
-  const prem = cfg.precoPrem || '99';
+  const pro  = _platformConfig.precoPro  || '49';
+  const prem = _platformConfig.precoPrem || '99';
   const elPro  = document.getElementById('dash-preco-pro');
   const elPrem = document.getElementById('dash-preco-prem') || document.getElementById('dash-preco-premium');
   if (elPro)  elPro.textContent  = pro;
@@ -4388,21 +4387,40 @@ async function atualizarResumoCaixa() {
 }
 window.atualizarResumoCaixa = atualizarResumoCaixa;
 
+// Config da plataforma (carregada do Supabase via mandaadmin)
+var _platformConfig = { wpp: '', wppMsg: '', precoPro: '49', precoPrem: '99' };
+
 // Busca config da plataforma no Supabase (número de suporte definido no mandaadmin)
 async function carregarConfigPlataforma() {
   try {
     var { data } = await getSupa()
       .from('pediway_config')
-      .select('wpp, wpp_msg')
+      .select('wpp, wpp_msg, preco_pro, preco_prem')
       .eq('id', 'global')
       .maybeSingle();
     if (!data) return;
+
+    // Armazena na variável global
+    _platformConfig.precoPro  = String(data.preco_pro  || 49);
+    _platformConfig.precoPrem = String(data.preco_prem || 99);
+    _platformConfig.wppMsg    = data.wpp_msg || 'Olá! Preciso de ajuda com o PEDIWAY.';
+
+    // Atualiza link ME AJUDA
     var wpp = (data.wpp || '').replace(/\D/g, '');
-    if (!wpp) return;
-    var n   = wpp.length > 11 ? wpp : '55' + wpp;
-    var msg = encodeURIComponent(data.wpp_msg || 'Olá! Preciso de ajuda com o PEDIWAY.');
-    var link = document.getElementById('link-me-ajuda');
-    if (link) link.href = 'https://wa.me/' + n + '?text=' + msg;
+    if (wpp) {
+      _platformConfig.wpp = wpp;
+      var n   = wpp.length > 11 ? wpp : '55' + wpp;
+      var msg = encodeURIComponent(_platformConfig.wppMsg);
+      var link = document.getElementById('link-me-ajuda');
+      if (link) link.href = 'https://wa.me/' + n + '?text=' + msg;
+    }
+
+    // Atualiza preços exibidos no painel de planos
+    var elPro  = document.getElementById('dash-preco-pro');
+    var elPrem = document.getElementById('dash-preco-prem') || document.getElementById('dash-preco-premium');
+    if (elPro)  elPro.textContent  = _platformConfig.precoPro;
+    if (elPrem) elPrem.textContent = _platformConfig.precoPrem;
+
   } catch(e) { console.warn('Config plataforma:', e); }
 }
 
