@@ -1238,15 +1238,12 @@ h3 { font-size:1.2rem; font-weight:700; color:#1a1a1a; }
 .ctab.ativo { color:var(--red);border-bottom-color:var(--red);font-weight:700; }
 
 .comanda-panel { flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0; }
-.cmd-subtabs { display:none;border-bottom:1.5px solid #f0e9e0;flex-shrink:0; }
-.cmd-subtab { flex:1;padding:10px;border:none;background:none;font-family:'Poppins',sans-serif;font-size:.8rem;font-weight:600;color:#aaa;cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1.5px;transition:all .15s; }
-.cmd-subtab.ativo { color:var(--red);border-bottom-color:var(--red);font-weight:700; }
 .cmd-col-left  { flex:1;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid #f0ebe4; }
 .cmd-col-right { width:420px;min-width:360px;display:flex;flex-direction:column;overflow:hidden;background:#faf8f5; }
 @media(max-width:700px){
-  .cmd-subtabs { display:flex!important; }
-  .cmd-col-right { width:100%!important;min-width:0!important; }
-  .cmd-col-left  { border-right:none!important; }
+  #cmd-cols { flex-direction:column!important; }
+  .cmd-col-left  { flex:1;min-height:0;border-right:none!important;border-bottom:1px solid #f0ebe4; }
+  .cmd-col-right { width:100%!important;min-width:0!important;flex:0 0 auto;max-height:220px; }
 }
 
 #btn-enviar-comanda:disabled { opacity:.4;cursor:not-allowed; }
@@ -3235,11 +3232,6 @@ canvas, [data-touch="free"] { touch-action: none !important; }
 
     <!-- Painel Novo Pedido -->
     <div id="cpanel-pedido" class="comanda-panel">
-      <!-- Sub-tabs mobile: Cardápio | Carrinho -->
-      <div class="cmd-subtabs">
-        <button class="cmd-subtab ativo" id="cmdst-cardapio" onclick="switchCmdSubTab('cardapio')">📋 Cardápio</button>
-        <button class="cmd-subtab" id="cmdst-carrinho" onclick="switchCmdSubTab('carrinho')">🛒 Carrinho <span id="cmd-carr-badge" style="display:none;background:var(--red);color:#fff;border-radius:50px;font-size:.65rem;padding:1px 6px;margin-left:3px;font-weight:800">0</span></button>
-      </div>
       <div style="display:flex;height:100%;overflow:hidden" id="cmd-cols">
 
         <!-- Coluna esquerda: cardápio -->
@@ -3259,7 +3251,7 @@ canvas, [data-touch="free"] { touch-action: none !important; }
         </div>
 
         <!-- Coluna direita: pedido atual + ações -->
-        <div class="cmd-col-right" id="cmd-col-carrinho" style="display:none">
+        <div class="cmd-col-right" id="cmd-col-carrinho">
           <!-- Itens selecionados -->
           <div style="flex:1;overflow-y:auto;padding:10px 14px;min-height:0">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
