@@ -680,6 +680,33 @@ setInterval(() => {
   if (_screen === 'home') renderHome();
 }, 60 * 1000);
 
+// Re-busca promoções do banco exatamente à meia-noite
+// (o dashboard já zerou em_promocao no Supabase — aqui só atualiza a memória)
+async function recarregarPromosLojas() {
+  try {
+    const { data } = await db.from('produtos')
+      .select('id,nome,preco,preco_original,desconto_percent,estabelecimento_id')
+      .eq('em_promocao', true).gt('desconto_percent', 0).eq('disponivel', true);
+    _promoItems = (data||[]).map(p => ({
+      ...p,
+      desconto: parseInt(p.desconto_percent||0)
+    }));
+    if (_screen === 'home') renderHome();
+  } catch(e) { _promoItems = []; }
+}
+
+function agendarResetMeiaNoiteLojas() {
+  const agora = new Date();
+  const meiaNoite = new Date(agora);
+  meiaNoite.setHours(24, 0, 0, 200); // próxima meia-noite + 200ms
+  const msAte = meiaNoite - agora;
+  setTimeout(async () => {
+    await recarregarPromosLojas();
+    setInterval(recarregarPromosLojas, 24 * 60 * 60 * 1000);
+  }, msAte);
+}
+agendarResetMeiaNoiteLojas();
+
 const CATS = [
   {id:'all',    label:'Todos',      emoji:'🍽️'},
   {id:'promo',  label:'Promoção',   emoji:'🔥'},
