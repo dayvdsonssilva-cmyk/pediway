@@ -1367,7 +1367,7 @@ async function abrirLoja(id) {
   // Carrega dados em paralelo
   const [prodRes, frRes] = await Promise.all([
     db.from('produtos').select('id,nome,preco,preco_original,desconto_percent,em_promocao,promocao,emoji,foto_url,categoria,disponivel,grupo_adicional_id,estabelecimento_id').eq('estabelecimento_id', loja.id).eq('disponivel', true).order('created_at',{ascending:false}),
-    db.from('fresquinhos').select('id,titulo,descricao,midia_url,tipo,expires_at,estabelecimento_id').eq('estabelecimento_id', loja.id).gt('expires_at', new Date().toISOString()).order('created_at',{ascending:false})
+    db.from('fresquinhos').select('id,titulo,descricao,midia_url,url,tipo,expires_at,estabelecimento_id').eq('estabelecimento_id', loja.id).gt('expires_at', new Date().toISOString()).order('created_at',{ascending:false})
   ]);
 
   _produtos = prodRes.data||[];
