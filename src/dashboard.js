@@ -257,6 +257,7 @@ export async function initDashboard() {
     await restaurarCaixa();
     await verificarExpiracaoQuente();
     await renderFresquinho();
+    carregarConfigPlataforma(); // número de suporte do mandaadmin
     await renderPedidos();
     await carregarFinanceiro();
     iniciarRealtime();
@@ -4387,6 +4388,24 @@ async function atualizarResumoCaixa() {
 }
 window.atualizarResumoCaixa = atualizarResumoCaixa;
 
+// Busca config da plataforma no Supabase (número de suporte definido no mandaadmin)
+async function carregarConfigPlataforma() {
+  try {
+    var { data } = await getSupa()
+      .from('pediway_config')
+      .select('wpp, wpp_msg')
+      .eq('id', 'global')
+      .maybeSingle();
+    if (!data) return;
+    var wpp = (data.wpp || '').replace(/\D/g, '');
+    if (!wpp) return;
+    var n   = wpp.length > 11 ? wpp : '55' + wpp;
+    var msg = encodeURIComponent(data.wpp_msg || 'Olá! Preciso de ajuda com o PEDIWAY.');
+    var link = document.getElementById('link-me-ajuda');
+    if (link) link.href = 'https://wa.me/' + n + '?text=' + msg;
+  } catch(e) { console.warn('Config plataforma:', e); }
+}
+
 // Calcula e exibe diferença físico vs esperado em tempo real (chamada pelo oninput)
 window.calcularDiferenca = function() {
   var el = function(id){ return document.getElementById(id); };
@@ -4561,50 +4580,19 @@ window.fecharCaixa = async function() {
   } catch(e) {}
 
   showToast('🔒 Caixa fechado!');
-  // Comprovante completo de fechamento
-  var nl  = '\n';
-  var sep = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-  var cnpj = estab.cpf_cnpj ? 'CNPJ: ' + estab.cpf_cnpj : '';
-  var tel  = estab.telefone_contato || estab.whatsapp || '';
-  var end_ = estab.endereco || '';
-  var inst = estab.instagram ? '@' + estab.instagram.replace('@','') : '';
-  var corpo = [
-    '██████████████████████████████████',
-    '     FECHAMENTO DE CAIXA',
-    '██████████████████████████████████',
-    (estab.nome || 'Estabelecimento').toUpperCase(),
-    end_,
-    tel  ? 'Tel: ' + tel : '',
-    cnpj,
-    inst ? 'Instagram: ' + inst : '',
-    sep,
-    'Operador:   ' + (abertura?.operador || 'Operador'),
-    'Abertura:   ' + new Date(abertura?.hora || agora).toLocaleString('pt-BR'),
-    'Fechamento: ' + agora.toLocaleString('pt-BR'),
-    sep,
-    'FUNDO DE CAIXA INICIAL:   ' + fmt(_caixaAbertura?.valorAbertura || 0),
-    sep,
-    '  RECEBIMENTOS DO PERÍODO',
-    sep,
-    '  PIX:               ' + fmt(totalPix),
-    '  CARTÃO CRÉDITO:    ' + fmt(totalCredito),
-    '  CARTÃO DÉBITO:     ' + fmt(totalDebito),
-    '  DINHEIRO:          ' + fmt(totalDinheiro),
-    '  MESA/LOCAL:        ' + fmt(totalMesa),
-    sep,
-    '  SUBTOTAL VENDAS:   ' + fmt(totalVendas),
-    '  FUNDO INICIAL:   + ' + fmt(abertura.valorAbertura || 0),
-    sep,
-    '  TOTAL ESPERADO:    ' + fmt(totalGeral),
-    '  FÍSICO CONTADO:    ' + fmt(fisico),
-    '  DIFERENÇA:         ' + fmt(diferenca) + (diferenca < 0 ? ' (falta)' : diferenca > 0 ? ' (sobra)' : ''),
-    sep,
-    '  Nº DE PEDIDOS: ' + numPedidos,
-    sep,
-    'Gerado em: ' + agora.toLocaleString('pt-BR'),
-    sep,
-    '     Obrigado pela preferência!',
-  ].filter(function(l){return l !== '';}).join(nl);
+  // Usa a função compartilhada de recibo (igual ao Reimprimir)
+  var hRecibo = {
+    operador:      abertura ? abertura.operador : 'Operador',
+    aberturaEm:    abertura ? abertura.hora : agora.toISOString(),
+    fechadoEm:     agora.toISOString(),
+    valorAbertura: Number(abertura ? abertura.valorAbertura : 0),
+    totalPix: totalPix, totalCredito: totalCredito, totalDebito: totalDebito,
+    totalDinheiro: totalDinheiro, totalMesa: totalMesa,
+    totalVendas: totalVendas, totalGeral: totalGeral,
+    fisico: fisico, diferenca: diferenca,
+    numPedidos: numPedidos, obs: obs,
+  };
+  var corpo = _gerarReciboCaixa(hRecibo, estab);
   var estabNome = (estab && estab.nome ? estab.nome : 'Estabelecimento').toUpperCase();
   var estabEnd  = estab && estab.endereco ? estab.endereco : '';
   var estabTel  = estab && (estab.telefone_contato || estab.whatsapp) ? (estab.telefone_contato || estab.whatsapp) : '';
@@ -4733,40 +4721,84 @@ window.imprimirComprovanteCliente = async function(id) {
 // ═══════════════════════════════════════════════════════════════════════════
 // HISTÓRICO DE CAIXAS
 // ═══════════════════════════════════════════════════════════════════════════
+// ── Gera o corpo do recibo de fechamento (usado no fechamento e na reimpressão) ─
+function _gerarReciboCaixa(h, estab) {
+  var fmt = function(v){ return 'R$ ' + Number(v||0).toFixed(2).replace('.',','); };
+  var nl  = '\n';
+  var sep = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+  var blk = '████████████████████████████████';
+  var nome = (estab && estab.nome || 'Estabelecimento').toUpperCase();
+  var end_ = estab && estab.endereco ? estab.endereco : '';
+  var tel  = estab && (estab.telefone_contato || estab.whatsapp) ? (estab.telefone_contato || estab.whatsapp) : '';
+  var cnpj = estab && estab.cpf_cnpj ? 'CNPJ: ' + estab.cpf_cnpj : '';
+  var inst = estab && estab.instagram ? '@' + estab.instagram.replace('@','') : '';
+
+  var dif     = Number(h.diferenca || 0);
+  var temDif  = h.fisico > 0 && dif !== 0;
+  var difLinha = '';
+  if (temDif) {
+    var sinal = dif < 0 ? '▼ FALTOU: ' : '▲ SOBROU: ';
+    difLinha = [
+      blk,
+      '  ' + sinal + fmt(Math.abs(dif)),
+      blk,
+    ].join(nl);
+  } else if (h.fisico > 0) {
+    difLinha = '  ✔ CAIXA FECHADO CERTINHO!';
+  }
+
+  var linhas = [
+    blk,
+    '     FECHAMENTO DE CAIXA',
+    blk,
+    nome,
+    end_, tel, cnpj, inst,
+    sep,
+    'Operador:   ' + (h.operador || '—'),
+    'Abertura:   ' + new Date(h.aberturaEm||'').toLocaleString('pt-BR'),
+    'Fechamento: ' + new Date(h.fechadoEm||'').toLocaleString('pt-BR'),
+    sep,
+    'FUNDO DE CAIXA INICIAL:  ' + fmt(h.valorAbertura||0),
+    sep,
+    '  RECEBIMENTOS DO PERÍODO',
+    sep,
+    '  PIX:            ' + fmt(h.totalPix||0),
+    '  CARTÃO CRÉDITO: ' + fmt(h.totalCredito||0),
+    '  CARTÃO DÉBITO:  ' + fmt(h.totalDebito||0),
+    '  DINHEIRO:       ' + fmt(h.totalDinheiro||0),
+    h.totalMesa > 0 ? '  MESA/LOCAL:     ' + fmt(h.totalMesa||0) : '',
+    sep,
+    '  SUBTOTAL VEND:  ' + fmt(h.totalVendas||0),
+    '  FUNDO INICIAL:+ ' + fmt(h.valorAbertura||0),
+    sep,
+    '  TOTAL ESPERADO: ' + fmt(h.totalGeral||0),
+    h.fisico > 0 ? '  FÍSICO CONTADO: ' + fmt(h.fisico) : '',
+    sep,
+    difLinha,
+    sep,
+    '  Nº DE PEDIDOS:  ' + (h.numPedidos||0),
+    h.obs ? '  OBS: ' + h.obs : '',
+    sep,
+    'Gerado: ' + new Date(h.fechadoEm||'').toLocaleString('pt-BR'),
+    sep,
+    '     ** PEDIWAY **',
+    '',
+  ];
+  return linhas.filter(function(l){ return l !== undefined && l !== null; }).join(nl);
+}
+
 // Reimprime comprovante de fechamento de um caixa histórico
 window.reimprimirCaixa = function(idx) {
   try {
     var estab = getEstab();
-    var hist = JSON.parse(localStorage.getItem('pw_caixa_hist_' + (estab&&estab.id)) || '[]');
+    var hist  = JSON.parse(localStorage.getItem('pw_caixa_hist_' + (estab&&estab.id)) || '[]');
     var h = hist[idx]; if (!h) return;
-    var fmt = function(v) { return 'R$ ' + Number(v||0).toFixed(2).replace('.',','); };
-    var nl = '\n', sep = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-    var corpo = [
-      '    COMPROVANTE DE FECHAMENTO',
-      sep,
-      (estab&&estab.nome||'').toUpperCase(),
-      sep,
-      'Operador:   ' + (h.operador||'—'),
-      'Abertura:   ' + new Date(h.aberturaEm||'').toLocaleString('pt-BR'),
-      'Fechamento: ' + new Date(h.fechadoEm||'').toLocaleString('pt-BR'),
-      sep,
-      '  PIX:            ' + fmt(h.totalPix),
-      '  CRÉDITO:        ' + fmt(h.totalCredito||0),
-      '  DÉBITO:         ' + fmt(h.totalDebito||0),
-      '  DINHEIRO:       ' + fmt(h.totalDinheiro),
-      '  MESA/LOCAL:     ' + fmt(h.totalMesa||0),
-      sep,
-      '  TOTAL VENDAS:   ' + fmt(h.totalVendas||(h.totalGeral - h.valorAbertura)),
-      '  FUNDO INICIAL:  ' + fmt(h.valorAbertura||0),
-      '  TOTAL CAIXA:    ' + fmt(h.totalGeral),
-      sep,
-      '  PEDIDOS: ' + (h.numPedidos||0),
-    ].join(nl);
-    var w = window.open('', '_blank', 'width=340,height=500');
+    var corpo = _gerarReciboCaixa(h, estab);
+    var w = window.open('', '_blank', 'width=360,height=600');
     if (!w) return;
     w.document.write('<pre style="font-family:monospace;font-size:13px;padding:16px;white-space:pre-wrap">' + corpo + '</pre>');
-    w.document.close(); w.focus(); setTimeout(function(){w.print();}, 300);
-  } catch(e) {}
+    w.document.close(); w.focus(); setTimeout(function(){ w.print(); }, 300);
+  } catch(e) { console.error('reimprimirCaixa:', e); }
 };
 
 function renderHistoricoCaixa() {
