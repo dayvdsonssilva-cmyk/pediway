@@ -2821,7 +2821,9 @@ window.abrirKDS = function() {
   const estab = getEstab();
   if (!estab) return;
   const slug = estab.slug || estab.id;
-  window.open('https://pediway.com.br/kds/' + slug, '_blank');
+  // Passa ?loja= para auto-conectar sem precisar da tela de configuração manual
+  // Evita que alguém adivinhe o slug de outro restaurante na tela de setup
+  window.open('https://pediway.com.br/kds/geral?loja=' + slug, '_blank');
 };
 
 window.copiarLinkGarcom = function() {
