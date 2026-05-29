@@ -169,7 +169,7 @@
     <div class="l-label">Código de acesso</div>
     <input class="l-input" id="pin" type="password" placeholder="Código de acesso" maxlength="50" autocomplete="off">
     <div class="l-label" style="margin-top:10px">Token secreto admin</div>
-    <input class="l-input" id="inp-token" type="password" placeholder="ADMIN_SECRET_TOKEN" autocomplete="off">
+    <input class="l-input" id="inp-token" type="password" placeholder="Cole a service_role key (eyJ...)" autocomplete="off">
     <div style="font-size:.68rem;opacity:.6;margin-bottom:8px">Cole a service_role key do Supabase (Project Settings → API)</div>
     <button class="l-btn" id="btn-entrar">Entrar</button>
     <div class="l-err" id="lerr"></div>
@@ -516,13 +516,25 @@ const SKEY_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIs
 const db = createClient(SURL, SKEY_ANON); // anon: leitura pública
 
 // Cliente admin criado em runtime com a service_role key digitada no login
-// Nunca fica salvo no código — só na memória da sessão
 let dbAdmin = null;
+const _SRK = 'pw_srk'; // chave no sessionStorage
 
-// Todas as operações de escrita usam dbAdmin (service_role bypassa RLS)
 function getDbAdmin() {
-  if (!dbAdmin) throw new Error('Service key não configurada. Faça login novamente.');
-  return dbAdmin;
+  if (dbAdmin) return dbAdmin;
+  // Tenta recriar do sessionStorage (persiste entre recargas da sessão)
+  const srk = sessionStorage.getItem(_SRK);
+  if (srk && srk.startsWith('eyJ')) {
+    dbAdmin = createClient(SURL, srk);
+    return dbAdmin;
+  }
+  throw new Error('Service key não configurada. Faça login novamente.');
+}
+
+function setServiceKey(key) {
+  if (key && key.startsWith('eyJ')) {
+    sessionStorage.setItem(_SRK, key);
+    dbAdmin = createClient(SURL, key);
+  }
 }
 
 const CFG_KEY = 'pw_ceo_cfg_v2';
@@ -717,16 +729,15 @@ function doLogin() {
 
 gel('btn-entrar').addEventListener('click', () => {
   const token = gel('inp-token')?.value?.trim() || '';
-  // Se o token parece uma JWT (service_role key), cria o cliente admin direto
-  if (token.startsWith('eyJ')) {
-    dbAdmin = createClient(SURL, token);
-  }
+  setServiceKey(token);
   doLogin();
 });
 gel('pin').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
 gel('btn-sair').addEventListener('click', () => {
   sessionStorage.removeItem(SESS_KEY);
+  sessionStorage.removeItem(_SRK);
+  dbAdmin = null;
   gel('hdr').style.display = 'none';
   gel('main').style.display = 'none';
   gel('login').style.display = 'flex';
