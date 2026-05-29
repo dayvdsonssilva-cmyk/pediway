@@ -1,6 +1,21 @@
 // src/dashboard.js
 import { getSupa } from './supabase.js';
 import { showToast } from './utils.js';
+// ── PUSH NOTIFICATION PARA CLIENTE ───────────────────────────────────────────
+async function enviarPushCliente(pedidoId, status, isDelivery) {
+  if (!pedidoId || !status) return;
+  try {
+    await fetch('/api/push-send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pedidoId: String(pedidoId), status, isDelivery: !!isDelivery })
+    });
+  } catch(e) {
+    console.warn('[Push] Erro ao notificar cliente:', e.message);
+  }
+}
+
+
 
 
 
@@ -49,13 +64,7 @@ function tocarSomNovoPedido(idP){
   if(_somLoop)return;
   function bip(){
     if(!_novosPedidosPendentes.size){pararSomPedidos();return;}
-    try{var a=new Audio('/notificacao.mp3');a.volume=0.8;a.play().catch(function(){
-      try{var ctx=new AudioContext(),o=ctx.createOscillator(),g=ctx.createGain();
-        o.connect(g);g.connect(ctx.destination);o.frequency.value=880;
-        g.gain.setValueAtTime(0.4,ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);
-        o.start(ctx.currentTime);o.stop(ctx.currentTime+0.4);}catch(e){}});
-    }catch(e){}
+    try{var a=new Audio('/notificacao.mp3');a.volume=0.8;a.play().catch(function(){});}catch(e){}
   }
   bip();_somLoop=setInterval(bip,5000);
 }
@@ -1457,10 +1466,9 @@ window.aceitarPedido = async function(id) {
   const { error } = await getSupa().from('pedidos').update({ status:'preparo' }).eq('id', id);
   if (error) return showToast('Erro ao aceitar.','error');
   removerCardNovo(id);
-  // WhatsApp para o cliente
-  const { data: _pedAce } = await getSupa().from('pedidos').select('*').eq('id', id).maybeSingle();
-  const _estabAce = typeof getEstab === 'function' ? getEstab() : null;
-  window.PediwayNotif?.notificarCliente(_pedAce, 'preparo', _estabAce?.nome);
+  // Push para cliente (não-bloqueante)
+  const _isDelAce = (ped?.endereco||'').length > 20;
+  enviarPushCliente(id, 'preparo', _isDelAce);
 
   if (isMesa) {
     // Pedido de mesa → imprime ticket de cozinha direto
@@ -1486,7 +1494,8 @@ window.recusarPedido = async function(id) {
   // WhatsApp para o cliente
   const { data: _pedRec } = await getSupa().from('pedidos').select('*').eq('id', id).maybeSingle();
   const _estabRec = typeof getEstab === 'function' ? getEstab() : null;
-  window.PediwayNotif?.notificarCliente(_pedRec, 'recusado', _estabRec?.nome);
+  // Push notification para o cliente
+  enviarPushCliente(_pedRec?.id || id, 'recusado', false);
   await carregarPedidosMesas(); renderMesas();
   await renderPedidos();
 };
@@ -1499,7 +1508,8 @@ window.marcarSaiuEntrega = async function(id) {
     // WhatsApp para o cliente
     const { data: _pedDel } = await getSupa().from('pedidos').select('*').eq('id', id).maybeSingle();
     const _estabDel = typeof getEstab === 'function' ? getEstab() : null;
-    window.PediwayNotif?.notificarCliente(_pedDel, 'pronto', _estabDel?.nome);
+    // Push notification para o cliente — delivery
+    enviarPushCliente(_pedDel?.id || id, 'pronto', true);
     await renderPedidos();
   } catch(e) { showToast('Erro: ' + e.message); }
 };
@@ -1511,7 +1521,9 @@ window.marcarPronto = async function(id) {
   const { data: _pedPronto } = await getSupa().from('pedidos').select('*').eq('id', id).maybeSingle();
   const _estabPronto = typeof getEstab === 'function' ? getEstab() : null;
   window.PediwayNotif?.pedidoPronto(_pedPronto);
-  window.PediwayNotif?.notificarCliente(_pedPronto, 'pronto', _estabPronto?.nome);
+  // Push notification para o cliente — retirada
+  const _isDelPronto = (_pedPronto?.endereco||'').length > 20;
+  enviarPushCliente(_pedPronto?.id || id, 'pronto', _isDelPronto);
   await renderPedidos();
 };
 
@@ -1929,10 +1941,12 @@ function iniciarRealtime() {
           if (_allPronto && !(_ant.setores_status && Object.values(_ant.setores_status||{}).every(function(v){return v==='pronto';}))) {
             const _numP = '#' + String(_novo.id||'').slice(-4).toUpperCase();
             showToast('🍽️ Pedido ' + _numP + ' PRONTO na cozinha!', 4000);
-            try{const _ctx=new AudioContext();[880,1100,1320].forEach(function(f,idx){const o=_ctx.createOscillator(),g=_ctx.createGain();o.connect(g);g.connect(_ctx.destination);o.frequency.value=f;o.start(_ctx.currentTime+idx*.12);o.stop(_ctx.currentTime+idx*.12+.1);g.gain.setValueAtTime(.25,_ctx.currentTime+idx*.12);});}catch(e){}
+            try{var _snd=new Audio('/notificacao.mp3');_snd.volume=0.7;_snd.play().catch(function(){});}catch(e){}
             window.PediwayNotif?.pedidoPronto(_novo);
             const _estabP = typeof getEstab === 'function' ? getEstab() : null;
-            window.PediwayNotif?.notificarCliente(_novo, 'pronto', _estabP?.nome);
+            // Push para cliente quando KDS marca tudo pronto
+            const _isDelKDS = (_novo?.endereco||'').length > 20;
+            enviarPushCliente(_novo?.id, 'pronto', _isDelKDS);
           }
         }
         const p = payload.new;
