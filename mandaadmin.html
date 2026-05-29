@@ -170,7 +170,7 @@
     <input class="l-input" id="pin" type="password" placeholder="Código de acesso" maxlength="50" autocomplete="off">
     <div class="l-label" style="margin-top:10px">Token secreto admin</div>
     <input class="l-input" id="inp-token" type="password" placeholder="ADMIN_SECRET_TOKEN" autocomplete="off">
-    <div style="font-size:.68rem;opacity:.6;margin-bottom:8px">Configure em: Supabase → Edge Functions → Secrets</div>
+    <div style="font-size:.68rem;opacity:.6;margin-bottom:8px">Cole a service_role key do Supabase (Project Settings → API)</div>
     <button class="l-btn" id="btn-entrar">Entrar</button>
     <div class="l-err" id="lerr"></div>
     <div class="l-attempts" id="l-attempts"></div>
@@ -513,25 +513,16 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const SURL      = 'https://nmttkjmfazcipefeakkx.supabase.co';
 const SKEY_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tdHRram1mYXpjaXBlZmVha2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTM3NjQsImV4cCI6MjA5MDI4OTc2NH0.MMTX_6iQJk7Uv3HPSk0m32_BihvqsWhHJ_qiRkw0WYo';
-const db        = createClient(SURL, SKEY_ANON); // anon: só leitura — escrita via Edge Function
+const db = createClient(SURL, SKEY_ANON); // anon: leitura pública
 
-// URL da Edge Function segura (operações administrativas)
-const ADMIN_FN_URL = SURL + '/functions/v1/admin-ops';
+// Cliente admin criado em runtime com a service_role key digitada no login
+// Nunca fica salvo no código — só na memória da sessão
+let dbAdmin = null;
 
-// Token secreto do admin — digitado no login, nunca fica salvo no código
-let _adminToken = '';
-
-// Chama a Edge Function com o token do admin
-async function adminOp(op, payload) {
-  if (!_adminToken) throw new Error('Token admin não definido.');
-  const res = await fetch(ADMIN_FN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-admin-token': _adminToken },
-    body: JSON.stringify({ op, payload })
-  });
-  const json = await res.json();
-  if (!res.ok || json.error) throw new Error(json.error || 'Erro na operação.');
-  return json;
+// Todas as operações de escrita usam dbAdmin (service_role bypassa RLS)
+function getDbAdmin() {
+  if (!dbAdmin) throw new Error('Service key não configurada. Faça login novamente.');
+  return dbAdmin;
 }
 
 const CFG_KEY = 'pw_ceo_cfg_v2';
@@ -548,13 +539,10 @@ const saveCfg = async () => {
     preco_prem: Number(cfg.precoPrem || 99),
     updated_at: new Date().toISOString()
   };
-  // Tenta Edge Function primeiro; se falhar, salva direto via anon (RLS permissivo para pediway_config)
   try {
-    await adminOp('update_config', payload);
-  } catch(e) {
-    const { error } = await db.from('pediway_config').upsert(payload);
-    if (error) console.warn('saveCfg fallback erro:', error.message);
-  }
+    const { error } = await getDbAdmin().from('pediway_config').upsert(payload);
+    if (error) throw error;
+  } catch(e) { console.warn('saveCfg erro:', e.message); toast('Erro ao salvar: ' + e.message, '#ef4444'); }
 };
 const $R = v => 'R$ ' + Number(v||0).toFixed(2).replace('.',',');
 
@@ -728,7 +716,11 @@ function doLogin() {
 }
 
 gel('btn-entrar').addEventListener('click', () => {
-  _adminToken = gel('inp-token')?.value?.trim() || '';
+  const token = gel('inp-token')?.value?.trim() || '';
+  // Se o token parece uma JWT (service_role key), cria o cliente admin direto
+  if (token.startsWith('eyJ')) {
+    dbAdmin = createClient(SURL, token);
+  }
   doLogin();
 });
 gel('pin').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
@@ -867,7 +859,7 @@ gel('btn-desativar-inad').addEventListener('click', async () => {
   if (!inad.length) return toast('Nenhuma loja inadimplente.','#f59e0b');
   if (!confirm(`Desativar ${inad.length} loja(s) inadimplente(s)?`)) return;
   let ok=0;
-  for (const l of inad) { try { await adminOp('toggle_loja', { id: l.id, aberto: false }); ok++; } catch(e) { console.warn('Erro ao desativar', l.nome, e.message); } }
+  for (const l of inad) { try { const {error}=await getDbAdmin().from('estabelecimentos').update({aberto:false,pagamento_status:'vencido'}).eq('id',l.id); if(!error) ok++; } catch(e) { console.warn('Erro ao desativar', l.nome, e.message); } }
   toast(`${ok} loja(s) desativada(s).`);
   await load();
 });
@@ -1081,7 +1073,8 @@ async function toggleLoja(id, estaAtiva) {
   const nomeLoja   = lojas.find(l=>l.id===id)?.nome||'';
   if (estaAtiva && !confirm(`Desativar "${nomeLoja}"? Ela ficará inacessível para clientes.`)) return;
   try {
-    await adminOp('toggle_loja', { id, aberto: novoEstado });
+    const { error } = await getDbAdmin().from('estabelecimentos').update({ aberto: novoEstado }).eq('id', id);
+    if (error) throw error;
     toast(novoEstado ? '✅ "'+nomeLoja+'" ativada!' : '🚫 "'+nomeLoja+'" desativada!');
     gel('ov-loja').classList.remove('on');
     await load();
@@ -1294,12 +1287,10 @@ gel('salvar-plano').addEventListener('click', async() => {
   btn.disabled = true; btn.textContent = 'Salvando...';
 
   try {
-    await adminOp('update_plano', {
-      id, plano,
-      assinatura_vencimento: venc || null,
-      pagamento_status: st,
-      aberto: ativo
-    });
+    const { error: errPlano } = await getDbAdmin().from('estabelecimentos')
+      .update({ plano, assinatura_vencimento: venc || null, pagamento_status: st, aberto: ativo })
+      .eq('id', id);
+    if (errPlano) throw errPlano;
     toast('✅ Plano salvo!');
     gel('ov-plano').classList.remove('on');
     await load();
@@ -1423,7 +1414,7 @@ async function carregarCancelamentos() {
       }).join('');
 }
 window.marcarLido = async function(id) {
-  const {error}=await db.from('cancelamentos_plano').update({lido:true}).eq('id',id);
+  const {error}=await getDbAdmin().from('cancelamentos_plano').update({lido:true}).eq('id',id);
   if(error) return toast('❌ '+error.message,'#ef4444');
   toast('✅ Marcado como lido!'); carregarCancelamentos();
 };
