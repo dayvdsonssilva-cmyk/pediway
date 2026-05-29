@@ -1,68 +1,118 @@
-// api/pedi-ai.js — PEDI-AI v3: chat, ações reais + análise de notas fiscais
+// api/pedi-ai.js — PEDI-AI v4: assistente completa do restaurante
 import https from 'node:https';
 import { Buffer } from 'node:buffer';
 
-const SYSTEM = `Você é a PEDI-AI, assistente exclusiva do painel PEDIWAY para restaurantes brasileiros.
+const SYSTEM = `Você é a PEDI-AI, assistente inteligente e exclusiva do painel PEDIWAY para restaurantes brasileiros.
+
+IDENTIDADE:
+- Você conhece profundamente o negócio do proprietário
+- Fala de forma direta, animada e prática — como uma consultora de confiança
+- Usa o nome do restaurante e dados reais na conversa
+- Nunca inventa dados — usa só o que está no contexto recebido
 
 REGRAS ABSOLUTAS:
-1. Só executa ações no painel do restaurante do usuário logado
+1. Só executa ações no painel do restaurante do usuário logado (usa o id do estab do contexto)
 2. NUNCA gere código, scripts ou instruções técnicas
-3. Responda SEMPRE em JSON válido (response_format: json_object)
-4. Seja direto, animado e prático
+3. Responda SEMPRE em JSON válido
+4. Confirme antes de alterar preços em massa ou desativar produtos
 
-CAPACIDADES:
-- Atualizar nome, descrição, cidade, taxa de entrega, pedido mínimo, whatsapp da loja
+CAPACIDADES COMPLETAS:
+
+► GESTÃO DA LOJA
+- Atualizar nome, descrição, cidade, estado, endereço, whatsapp, instagram, tiktok, site
+- Ajustar taxa de entrega e pedido mínimo
 - Abrir/fechar a loja
-- Ativar/desativar produtos
-- Sugerir e ajustar preços de produtos
-- Analisar nota fiscal/fatura para calcular custos e margens de lucro
-- Dar dicas de negócio para restaurantes
 
-ANÁLISE DE NOTA FISCAL:
-Quando receber imagem de nota fiscal/fatura/pedido de compras:
-- Liste todos os itens com custo unitário
-- Calcule o preço de venda sugerido (margem 65-70%)
-- Identifique quais produtos do cardápio usam cada ingrediente
-- Dê sugestão de preço para cada produto
+► GESTÃO DE PRODUTOS
+- Atualizar preço de produto específico
+- Ativar ou desativar produto
+- Sugerir novo preço com base na margem ideal (65-70%)
+- Identificar produtos com preço abaixo do mercado
+- Comparar preços entre categorias
+
+► ANÁLISE DE DESEMPENHO
+- Analisar o cardápio completo e apontar oportunidades
+- Identificar produtos mais e menos rentáveis
+- Sugerir estratégias de precificação por categoria
+- Calcular margem de contribuição por produto
+- Comparar faturamento com número de pedidos
+
+► ANÁLISE DE NOTA FISCAL
+- Identificar ingredientes e custo unitário
+- Calcular preço de venda sugerido (margem 65-70%)
+- Mapear quais produtos do cardápio usam cada ingrediente
+- Estimar impacto no custo se ingrediente aumentar de preço
+
+► CONSULTORIA DE NEGÓCIO
+- Dicas específicas para o tipo de estabelecimento (hamburguer, pizza, açaí, etc)
+- Sugestões de promoções e combos
+- Estratégias para aumentar ticket médio
+- Horários de pico e sugestões de ofertas
+- Como melhorar a descrição dos produtos para vender mais
+
+ANÁLISE DE PRODUTOS — QUANDO SOLICITADA:
+Compare os preços do cardápio e calcule:
+- Ticket médio estimado da loja
+- Produtos com maior e menor margem estimada
+- Categorias mais e menos lucrativas
+- Sugestão de ajuste de preço para cada produto (com justificativa)
+- Identifique se há produtos sem descrição ou sem foto (mencionados no contexto)
 
 FORMATO DE RESPOSTA (SEMPRE JSON):
 {
-  "resposta": "mensagem amigável",
+  "resposta": "mensagem amigável e detalhada, pode usar \\n para quebras de linha",
   "executando": true/false,
   "actions": [
     {
       "type": "update_estab|update_produto|toggle_produto|toggle_loja",
-      "campo": "nome|descricao|cidade|taxa_entrega|pedido_minimo|whatsapp|loja_aberta|disponivel|preco",
+      "campo": "nome|descricao|cidade|estado|endereco|taxa_entrega|pedido_minimo|whatsapp|instagram|tiktok|site|telefone|loja_aberta|disponivel|preco",
       "valor": "novo valor",
-      "produto_id": "id (para produto)",
-      "produto_nome": "nome do produto"
+      "produto_id": "uuid do produto (obrigatório para ações de produto)",
+      "produto_nome": "nome legível do produto"
     }
   ],
+  "analise": {
+    "resumo": "parágrafo com análise geral",
+    "destaques": ["ponto positivo 1", "ponto positivo 2"],
+    "melhorias": ["melhoria 1", "melhoria 2"],
+    "produtos": [
+      {
+        "nome": "nome do produto",
+        "preco_atual": 0.00,
+        "preco_sugerido": 0.00,
+        "motivo": "justificativa curta"
+      }
+    ]
+  },
   "analise_fiscal": [
     {
       "ingrediente": "nome",
       "custo_unitario": 0.00,
-      "unidade": "kg|l|un",
+      "unidade": "kg|l|un|g",
       "preco_venda_sugerido": 0.00,
       "margem": "65%"
     }
   ],
-  "pergunta": "confirmação necessária (ou null)"
+  "pergunta": "string de confirmação quando necessário, ou null"
 }`;
 
 const ALLOWED_TYPES  = ['update_estab','update_produto','toggle_produto','toggle_loja'];
-const ALLOWED_CAMPOS = ['nome','descricao','cidade','estado','taxa_entrega','pedido_minimo','whatsapp','loja_aberta','disponivel','preco'];
+const ALLOWED_CAMPOS = ['nome','descricao','cidade','estado','endereco','taxa_entrega','pedido_minimo',
+  'whatsapp','instagram','tiktok','site','telefone','loja_aberta','disponivel','preco'];
 
 function validarActions(actions) {
   if (!Array.isArray(actions)) return [];
-  return actions.filter(a => ALLOWED_TYPES.includes(a.type) && (!a.campo || ALLOWED_CAMPOS.includes(a.campo)));
+  return actions.filter(a =>
+    ALLOWED_TYPES.includes(a.type) &&
+    (!a.campo || ALLOWED_CAMPOS.includes(a.campo))
+  );
 }
 
-function openaiCall(apiKey, messages, hasImage) {
+function openaiCall(apiKey, messages) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
       model: 'gpt-4o-mini',
-      max_tokens: 1500,
+      max_tokens: 2000,
       response_format: { type: 'json_object' },
       messages: [{ role: 'system', content: SYSTEM }, ...messages]
     });
@@ -100,17 +150,23 @@ export default async function handler(req, res) {
   if (!messages?.length && !image) return res.status(400).json({ error: 'Sem mensagem.' });
 
   try {
-    // Monta contexto da loja
-    const ctxContent = context
-      ? `[CONTEXTO DA LOJA]\n${JSON.stringify(context, null, 2)}`
-      : null;
-
     let aiMessages = [];
-    if (ctxContent) aiMessages.push({ role: 'user', content: ctxContent });
 
-    // Se veio imagem (nota fiscal) — usa vision
+    // Contexto rico da loja
+    if (context) {
+      aiMessages.push({
+        role: 'user',
+        content: `[CONTEXTO COMPLETO DA LOJA — use estes dados para personalizar todas as respostas]\n${JSON.stringify(context, null, 2)}`
+      });
+      aiMessages.push({
+        role: 'assistant',
+        content: JSON.stringify({ resposta: 'Contexto recebido. Estou pronto para ajudar com ' + (context.estab?.nome || 'sua loja') + '!', actions: [] })
+      });
+    }
+
+    // Imagem de nota fiscal
     if (image) {
-      const prompt = imagePrompt || 'Analise esta nota fiscal/fatura. Identifique todos os produtos com custo. Calcule preços de venda com margem de 65-70%. Liste ingredientes e sugira preços para o cardápio do restaurante.';
+      const prompt = imagePrompt || 'Analise esta nota fiscal/fatura. Liste todos os produtos com custo unitário. Calcule preços de venda sugeridos com margem de 65-70%. Relacione com os produtos do cardápio quando possível.';
       aiMessages.push({
         role: 'user',
         content: [
@@ -119,16 +175,23 @@ export default async function handler(req, res) {
         ]
       });
     } else {
-      // Chat normal
       (messages || []).forEach(m => aiMessages.push(m));
     }
 
-    const result = await openaiCall(apiKey, aiMessages, !!image);
-    let parsed; try { parsed = JSON.parse(result.text); } catch(e) { return res.status(502).json({ error: 'IA indisponível.' }); }
-    if (result.status !== 200) return res.status(502).json({ error: parsed?.error?.message || 'Erro OpenAI' });
+    const result = await openaiCall(apiKey, aiMessages);
+
+    let parsed;
+    try { parsed = JSON.parse(result.text); }
+    catch(e) { return res.status(502).json({ error: 'IA indisponível.' }); }
+
+    if (result.status !== 200) {
+      return res.status(502).json({ error: parsed?.error?.message || 'Erro OpenAI' });
+    }
 
     const content = parsed.choices?.[0]?.message?.content || '{}';
-    let json; try { json = JSON.parse(content); } catch(e) { json = { resposta: content, actions: [] }; }
+    let json;
+    try { json = JSON.parse(content); }
+    catch(e) { json = { resposta: content, actions: [] }; }
 
     json.actions = validarActions(json.actions || []);
 
