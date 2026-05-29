@@ -2981,9 +2981,9 @@ canvas, [data-touch="free"] { touch-action: none !important; }
         <!-- ══════════════════════════════════════
              CARD · ME AJUDA PEDIWAY
         ══════════════════════════════════════ -->
-        <a id="link-me-ajuda" href="javascript:void(0)" target="_blank" class="cfg-topic-card"
+        <div id="link-me-ajuda" onclick="if(window._pediwaySupportUrl)window.open(window._pediwaySupportUrl,'_blank');else alert('Número de suporte não configurado ainda.')" class="cfg-topic-card"
            style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-color:#bbf7d0;
-                  text-decoration:none;display:block;transition:all .2s ease"
+                  cursor:pointer;display:block;transition:all .2s ease;color:inherit"
            onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 24px rgba(37,211,102,0.18)'"
            onmouseout="this.style.transform='';this.style.boxShadow=''">
           <div class="cfg-topic-header">
@@ -2996,7 +2996,7 @@ canvas, [data-touch="free"] { touch-action: none !important; }
             </div>
             <div style="color:#25d366;font-size:1.1rem;flex-shrink:0">→</div>
           </div>
-        </a>
+        </div>
 
       </div><!-- /.cfg-topics-wrap -->
 
