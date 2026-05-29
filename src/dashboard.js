@@ -4126,6 +4126,17 @@ window.initCfgAccordion = function() {
         // Dispara change em selects cascata (estado→cidade)
         setTimeout(function() {
           mb.querySelectorAll('select').forEach(function(sel) {
+            // cfg-estado: usa carregarCidadesDash direto passando a cidade já salva
+            // para não perder a seleção ao reabrir o modal
+            if (sel.id === 'cfg-estado') {
+              if (sel.value) {
+                var cidadeAtual = mb.querySelector('#cfg-cidade')?.value || null;
+                if (typeof window.carregarCidadesDash === 'function') {
+                  window.carregarCidadesDash(sel.value, cidadeAtual);
+                }
+              }
+              return;
+            }
             if (sel.value) sel.dispatchEvent(new Event('change', { bubbles: true }));
           });
         }, 60);
