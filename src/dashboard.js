@@ -1457,6 +1457,10 @@ window.aceitarPedido = async function(id) {
   const { error } = await getSupa().from('pedidos').update({ status:'preparo' }).eq('id', id);
   if (error) return showToast('Erro ao aceitar.','error');
   removerCardNovo(id);
+  // WhatsApp para o cliente
+  const { data: _pedAce } = await getSupa().from('pedidos').select('*').eq('id', id).maybeSingle();
+  const _estabAce = typeof getEstab === 'function' ? getEstab() : null;
+  window.PediwayNotif?.notificarCliente(_pedAce, 'preparo', _estabAce?.nome);
 
   if (isMesa) {
     // Pedido de mesa → imprime ticket de cozinha direto
@@ -1479,6 +1483,10 @@ window.recusarPedido = async function(id) {
   pararNotif();
   await getSupa().from('pedidos').update({ status:'recusado' }).eq('id', id);
   removerCardNovo(id); showToast('Pedido recusado.');
+  // WhatsApp para o cliente
+  const { data: _pedRec } = await getSupa().from('pedidos').select('*').eq('id', id).maybeSingle();
+  const _estabRec = typeof getEstab === 'function' ? getEstab() : null;
+  window.PediwayNotif?.notificarCliente(_pedRec, 'recusado', _estabRec?.nome);
   await carregarPedidosMesas(); renderMesas();
   await renderPedidos();
 };
@@ -1488,6 +1496,10 @@ window.marcarSaiuEntrega = async function(id) {
     var { error } = await getSupa().from('pedidos').update({ status: 'saiu_entrega' }).eq('id', id);
     if (error) throw error;
     showToast('🚚 Pedido saiu para entrega!');
+    // WhatsApp para o cliente
+    const { data: _pedDel } = await getSupa().from('pedidos').select('*').eq('id', id).maybeSingle();
+    const _estabDel = typeof getEstab === 'function' ? getEstab() : null;
+    window.PediwayNotif?.notificarCliente(_pedDel, 'pronto', _estabDel?.nome);
     await renderPedidos();
   } catch(e) { showToast('Erro: ' + e.message); }
 };
@@ -1495,6 +1507,11 @@ window.marcarSaiuEntrega = async function(id) {
 window.marcarPronto = async function(id) {
   await getSupa().from('pedidos').update({ status:'pronto' }).eq('id', id);
   fecharModalPedido(); showToast('Pedido pronto!');
+  // Push equipe + WhatsApp cliente
+  const { data: _pedPronto } = await getSupa().from('pedidos').select('*').eq('id', id).maybeSingle();
+  const _estabPronto = typeof getEstab === 'function' ? getEstab() : null;
+  window.PediwayNotif?.pedidoPronto(_pedPronto);
+  window.PediwayNotif?.notificarCliente(_pedPronto, 'pronto', _estabPronto?.nome);
   await renderPedidos();
 };
 
@@ -1895,6 +1912,7 @@ function iniciarRealtime() {
           lista.insertAdjacentHTML('afterbegin', cardNovoHTML(p));
           atualizarBadgePedidos();
           notifLoop(p.id);
+          window.PediwayNotif?.novoPedido(p);
         }
       }
     )
@@ -1912,6 +1930,9 @@ function iniciarRealtime() {
             const _numP = '#' + String(_novo.id||'').slice(-4).toUpperCase();
             showToast('🍽️ Pedido ' + _numP + ' PRONTO na cozinha!', 4000);
             try{const _ctx=new AudioContext();[880,1100,1320].forEach(function(f,idx){const o=_ctx.createOscillator(),g=_ctx.createGain();o.connect(g);g.connect(_ctx.destination);o.frequency.value=f;o.start(_ctx.currentTime+idx*.12);o.stop(_ctx.currentTime+idx*.12+.1);g.gain.setValueAtTime(.25,_ctx.currentTime+idx*.12);});}catch(e){}
+            window.PediwayNotif?.pedidoPronto(_novo);
+            const _estabP = typeof getEstab === 'function' ? getEstab() : null;
+            window.PediwayNotif?.notificarCliente(_novo, 'pronto', _estabP?.nome);
           }
         }
         const p = payload.new;
