@@ -682,7 +682,6 @@ setInterval(() => {
 
 const CATS = [
   {id:'all',    label:'Todos',      emoji:'🍽️'},
-  {id:'fresquinho', label:'Fresquinho', emoji:'✨'},
   {id:'promo',  label:'Promoção',   emoji:'🔥'},
   {id:'burger', label:'Burger',     emoji:'🍔'},
   {id:'pizza',  label:'Pizza',      emoji:'🍕'},
@@ -858,13 +857,18 @@ function renderHome() {
   ).join('');
 
   // Lojas
-  const filtered = filtrarLojas();
+  const filtered = filtrarLojas().sort((a, b) => {
+    const aPromo = _promoItems.some(p => p.estabelecimento_id === a.id) ? 1 : 0;
+    const bPromo = _promoItems.some(p => p.estabelecimento_id === b.id) ? 1 : 0;
+    if (bPromo !== aPromo) return bPromo - aPromo; // promoção primeiro
+    const aAberto = a._aberto ? 1 : 0;
+    const bAberto = b._aberto ? 1 : 0;
+    return bAberto - aAberto; // abertos antes dos fechados
+  });
   const catLabel = CATS.find(cat=>cat.id===_catAtiva)?.label||'Todos';
   $('home-lojas-title').textContent = _catAtiva==='promo'
     ? '🔥 Restaurantes em promoção'
-    : _catAtiva==='fresquinho'
-      ? '✨ Com fresquinhos agora'
-      : catLabel + ' os restaurantes';
+    : catLabel + ' os restaurantes';
   const grid = $('home-grid');
   if(!filtered.length) {
     grid.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">Nenhum restaurante</div><div class="empty-desc">Tente outra cidade ou categoria</div></div>';
