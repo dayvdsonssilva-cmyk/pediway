@@ -303,6 +303,7 @@ input,select,textarea{font-size:16px !important;touch-action:manipulation;}
 *{-webkit-text-size-adjust:100%;}
 @keyframes floatBurger{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
 </style>
+  <script src="/pediway-push-cliente.js"></script>
 </head>
 <body>
 
@@ -2276,6 +2277,9 @@ window.finalizarPedido = async function(lid) {
     showScreen('orders');
     renderOrders();
     toast('Pedido enviado! Aguardando confirmação ✅');
+
+    // Notificação push — avisa o cliente quando pedido mudar de status
+    window.PediwayPushCliente?.aposConfirmarPedido(pedId);
 
   } catch(e) {
     toast('Erro: '+(e.message||'Tente novamente'));
