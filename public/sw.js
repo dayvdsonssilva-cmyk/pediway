@@ -1,42 +1,28 @@
-// PEDIWAY — Service Worker v2.1
-const SW_VERSION   = 'pediway-v2.1.0';
-const CACHE_STATIC = SW_VERSION + '-static';
+// PEDIWAY — Service Worker v2.2 (leve e rápido)
+const SW_VERSION   = 'pediway-v2.2.0';
 const CACHE_FONTS  = SW_VERSION + '-fonts';
 
-const STATIC_ASSETS = [
-  '/lojas.html',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/notificacao.mp3',
-];
+// Não pré-cacheia nada no install — evita lentidão inicial
+// Cache acontece naturalmente ao usar o site
 
-const NO_CACHE_PATTERNS = [
+const NO_CACHE = [
   /supabase\.co/,
   /googleapis\.com\/api/,
   /ibge\.gov\.br/,
   /evolution/,
-  /api\.openai/,
+  /openai/,
+  /mercadopago/,
 ];
 
-const BYPASS_ROUTES = ['/baixar', '/admin', '/checkout'];
-
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE_STATIC)
-      .then(c => Promise.allSettled(
-        STATIC_ASSETS.map(url => c.add(url).catch(() => {}))
-      ))
-      .then(() => self.skipWaiting())
-  );
+  e.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
       .then(keys => Promise.all(
-        keys.filter(k => k !== CACHE_STATIC && k !== CACHE_FONTS)
-            .map(k => caches.delete(k))
+        keys.filter(k => k !== CACHE_FONTS).map(k => caches.delete(k))
       ))
       .then(() => self.clients.claim())
   );
@@ -48,10 +34,9 @@ self.addEventListener('fetch', e => {
 
   if (request.method !== 'GET') return;
   if (url.protocol === 'chrome-extension:' || url.protocol === 'data:') return;
-  if (BYPASS_ROUTES.some(r => url.pathname.startsWith(r))) return;
-  if (NO_CACHE_PATTERNS.some(p => p.test(url.href))) return;
+  if (NO_CACHE.some(p => p.test(url.href))) return;
 
-  // Fontes Google → Cache First
+  // Fontes Google → Cache First (só fontes, são estáveis)
   if (url.hostname === 'fonts.gstatic.com' || url.hostname === 'fonts.googleapis.com') {
     e.respondWith(
       caches.open(CACHE_FONTS).then(cache =>
@@ -67,41 +52,8 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // HTML → Network First
-  if (request.headers.get('accept')?.includes('text/html')) {
-    e.respondWith(
-      fetch(request)
-        .then(res => {
-          if (res && res.ok) {
-            const clone = res.clone();
-            caches.open(CACHE_STATIC).then(c => c.put(request, clone));
-          }
-          return res;
-        })
-        .catch(() => caches.match(request).then(r => r || caches.match('/offline.html')))
-    );
-    return;
-  }
-
-  // Outros assets → Cache First
-  e.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) {
-        // Atualiza em background sem bloquear
-        fetch(request).then(res => {
-          if (res && res.ok) caches.open(CACHE_STATIC).then(c => c.put(request, res));
-        }).catch(() => {});
-        return cached;
-      }
-      return fetch(request).then(res => {
-        if (res && res.ok) {
-          const clone = res.clone();
-          caches.open(CACHE_STATIC).then(c => c.put(request, clone));
-        }
-        return res;
-      }).catch(() => caches.match('/offline.html'));
-    })
-  );
+  // Todo o resto → Network only (sem cache — garante sempre versão atual)
+  // O SW existe apenas para habilitar Push Notifications
 });
 
 // ── PUSH ─────────────────────────────────────────────────────────────────────
@@ -110,13 +62,14 @@ self.addEventListener('push', e => {
   let data = {};
   try { data = e.data.json(); } catch { return; }
 
-  const isPedidoNovo = data.tag === 'novo-pedido' || data.tipo === 'novo';
-  const url = (typeof data.url === 'string' && data.url.startsWith('/')) ? data.url : '/lojas.html';
+  const isPedidoNovo = data.tag === 'novo-pedido';
+  const url = (typeof data.url === 'string' && data.url.startsWith('/'))
+    ? data.url : '/lojas.html';
 
   e.waitUntil(
     self.registration.showNotification(
       String(data.title || '🔔 PEDIWAY').slice(0, 100), {
-        body:               String(data.body || 'Você tem uma atualização!').slice(0, 200),
+        body:               String(data.body || '').slice(0, 200),
         icon:               '/icons/icon-192.png',
         badge:              '/icons/icon-192.png',
         tag:                String(data.tag || 'pediway').slice(0, 50),
@@ -135,7 +88,7 @@ self.addEventListener('push', e => {
 
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  if (e.action === 'fechar' || e.action === 'ok') return;
+  if (e.action === 'fechar') return;
   const target = e.notification.data?.url || '/lojas.html';
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => {
