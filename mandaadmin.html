@@ -433,6 +433,42 @@
     </div>
 
     <div class="scard">
+      <div class="stitle">📱 Notificações WhatsApp para clientes</div>
+      <div class="srow">
+        <div><div class="slabel">URL da Evolution API</div><div class="sdesc">Ex: https://evolution.seudominio.com.br</div></div>
+        <div style="display:flex;gap:8px;align-items:center;flex:1;max-width:380px">
+          <input class="sinput" id="cfg-evo-url" placeholder="https://evolution.seudominio.com.br" style="max-width:none">
+        </div>
+      </div>
+      <div class="srow">
+        <div><div class="slabel">API Key</div><div class="sdesc">Chave de autenticação da Evolution API</div></div>
+        <div style="display:flex;gap:8px;align-items:center;flex:1;max-width:380px">
+          <input class="sinput" id="cfg-evo-key" type="password" placeholder="sua-api-key-aqui" style="max-width:none">
+        </div>
+      </div>
+      <div class="srow">
+        <div><div class="slabel">Nome da instância</div><div class="sdesc">Nome da instância WhatsApp conectada</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="sinput" id="cfg-evo-inst" placeholder="minha-instancia" style="max-width:200px">
+          <button class="ssave" id="btn-salvar-evo">Salvar</button>
+          <button class="btn ok" id="btn-testar-evo">🧪 Testar</button>
+        </div>
+      </div>
+      <div class="srow">
+        <div><div class="slabel">Mensagem — Pedido aceito</div><div class="sdesc">Use {nome}, {id}, {loja}</div></div>
+        <div style="flex:1;max-width:420px"><input class="sinput" id="cfg-msg-preparo" style="max-width:none" placeholder="🍳 Olá, {nome}! Seu pedido #{id} foi aceito!"></div>
+      </div>
+      <div class="srow">
+        <div><div class="slabel">Mensagem — Pronto retirada</div><div class="sdesc">Quando cliente vem buscar</div></div>
+        <div style="flex:1;max-width:420px"><input class="sinput" id="cfg-msg-pronto-ret" style="max-width:none" placeholder="✅ {nome}, seu pedido #{id} está PRONTO!"></div>
+      </div>
+      <div class="srow">
+        <div><div class="slabel">Mensagem — Saiu entrega</div><div class="sdesc">Para pedidos delivery</div></div>
+        <div style="flex:1;max-width:420px"><input class="sinput" id="cfg-msg-pronto-del" style="max-width:none" placeholder="🛵 {nome}, seu pedido #{id} saiu para entrega!"></div>
+      </div>
+    </div>
+
+    <div class="scard">
       <div class="stitle">⚠️ Ações em massa</div>
       <div class="srow">
         <div><div class="slabel">Lojas inadimplentes</div><div class="sdesc">Desativa todas as lojas com assinatura vencida</div></div>
@@ -510,7 +546,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 // ── SERVICE KEY — cole aqui sua service_role key do Supabase ─────────────────
 // Onde achar: Supabase → Project Settings → API → service_role key
-const SRK_HARDCODED = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tdHRram1mYXpjaXBlZmVha2t4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDcxMzc2NCwiZXhwIjoyMDkwMjg5NzY0fQ.s_d-eKhQdXK1nzYoy8Wbxw0nQ-dHoe3fUdGOCbmsfeI';
+const SRK_HARDCODED = 'COLE_SUA_SERVICE_ROLE_KEY_AQUI';
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const SURL      = 'https://nmttkjmfazcipefeakkx.supabase.co';
@@ -850,6 +886,7 @@ async function carregarCfg() {
   gel('cfg-wpp-msg').value   = cfg.wppMsg || 'Olá! Preciso de ajuda com o PEDIWAY.';
   gel('cfg-preco-pro').value  = cfg.precoPro  || '49';
   gel('cfg-preco-prem').value = cfg.precoPrem || '99';
+  carregarCfgEvo();
 }
 
 // Aplica máscara (00) 00000-0000 — armazena só dígitos locais (sem código 55)
@@ -903,6 +940,56 @@ gel('btn-desativar-inad').addEventListener('click', async () => {
   toast(`${ok} loja(s) desativada(s).`);
   await load();
 });
+// ── EVOLUTION API CONFIG ─────────────────────────────────────────────────────
+function carregarCfgEvo() {
+  const saved = JSON.parse(localStorage.getItem('pw_notif_cfg') || '{}');
+  const evoUrl  = saved.evolutionUrl  || cfg.evolutionUrl  || '';
+  const evoKey  = saved.evolutionKey  || cfg.evolutionKey  || '';
+  const evoInst = saved.evolutionInst || cfg.evolutionInst || '';
+  gel('cfg-evo-url').value  = evoUrl;
+  gel('cfg-evo-key').value  = evoKey;
+  gel('cfg-evo-inst').value = evoInst;
+  if (saved.msgs) {
+    gel('cfg-msg-preparo').value     = saved.msgs.preparo     || '';
+    gel('cfg-msg-pronto-ret').value  = saved.msgs.pronto_ret  || '';
+    gel('cfg-msg-pronto-del').value  = saved.msgs.pronto_del  || '';
+  }
+}
+gel('btn-salvar-evo').addEventListener('click', () => {
+  const evoUrl  = gel('cfg-evo-url').value.trim().replace(/\/$/,'');
+  const evoKey  = gel('cfg-evo-key').value.trim();
+  const evoInst = gel('cfg-evo-inst').value.trim();
+  const msgs = {
+    preparo:    gel('cfg-msg-preparo').value.trim()    || '🍳 Olá, {nome}! Seu pedido #{id} na *{loja}* foi aceito e está sendo preparado!',
+    pronto_ret: gel('cfg-msg-pronto-ret').value.trim() || '✅ *{nome}*, seu pedido #{id} na *{loja}* está PRONTO para retirada!',
+    pronto_del: gel('cfg-msg-pronto-del').value.trim() || '🛵 *{nome}*, seu pedido #{id} na *{loja}* saiu para entrega!',
+    recusado:   '😔 *{nome}*, seu pedido #{id} na *{loja}* foi cancelado. Entre em contato conosco.',
+  };
+  const notifCfg = { evolutionUrl: evoUrl, evolutionKey: evoKey, evolutionInst: evoInst, msgs };
+  localStorage.setItem('pw_notif_cfg', JSON.stringify(notifCfg));
+  // Salva também no Supabase para sincronizar com o dashboard
+  try { adminUpsert('pediway_config', { id: 'global', evolution_url: evoUrl, evolution_inst: evoInst, updated_at: new Date().toISOString() }); } catch(e) {}
+  toast('✅ Configuração WhatsApp salva!');
+});
+gel('btn-testar-evo').addEventListener('click', async () => {
+  const url  = gel('cfg-evo-url').value.trim().replace(/\/$/,'');
+  const key  = gel('cfg-evo-key').value.trim();
+  const inst = gel('cfg-evo-inst').value.trim();
+  const num  = prompt('Número para teste (com DDD, sem +55):');
+  if (!num) return;
+  let fone = num.replace(/\D/g,'');
+  if (!fone.startsWith('55')) fone = '55' + fone;
+  try {
+    const r = await fetch(`${url}/message/sendText/${inst}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': key },
+      body: JSON.stringify({ number: fone, text: '✅ PEDIWAY — Teste de notificação funcionando! 🎉' })
+    });
+    if (r.ok) toast('✅ Mensagem de teste enviada!');
+    else { const e = await r.json(); toast('❌ Erro: ' + (e.message || r.status), '#ef4444'); }
+  } catch(e) { toast('❌ Erro de conexão: ' + e.message, '#ef4444'); }
+});
+
 gel('btn-exportar').addEventListener('click', () => {
   const rows = [['Nome','Slug','Plano','Status pgto','Vencimento','Ativa','Pedidos']];
   lojas.forEach(l => {
