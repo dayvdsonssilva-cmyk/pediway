@@ -66,51 +66,16 @@ function notifLocal(title, body, tag = 'pedido', url = '/dashboard') {
 }
 
 // ── SOM — compatível com iOS (requer gesto do usuário) ───────────────────────
-let _audioCtx = null;
-let _audioUnlocked = false;
 
-function unlockAudio() {
-  if (_audioUnlocked) return;
+
+
+function tocarBip(tipo) {
+  // Usa apenas o mp3 — sem AudioContext para evitar eco
   try {
-    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    // Toca silêncio para desbloquear iOS
-    const buf = _audioCtx.createBuffer(1, 1, 22050);
-    const src = _audioCtx.createBufferSource();
-    src.buffer = buf;
-    src.connect(_audioCtx.destination);
-    src.start(0);
-    _audioUnlocked = true;
+    const a = new Audio('/notificacao.mp3');
+    a.volume = tipo === 'pronto' ? 0.6 : 0.8;
+    a.play().catch(function(){});
   } catch(e) {}
-}
-
-// Garante desbloqueio no primeiro toque
-['touchstart', 'touchend', 'mousedown', 'keydown'].forEach(ev =>
-  document.addEventListener(ev, unlockAudio, { once: true, passive: true })
-);
-
-function tocarBip(tipo = 'novo') {
-  if (!_audioCtx) {
-    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-    catch(e) { return; }
-  }
-  if (_audioCtx.state === 'suspended') _audioCtx.resume();
-
-  const freqs = {
-    novo:   [[1200, 0], [900, 0.15], [1200, 0.30]],   // 3 bips para novo pedido
-    pronto: [[880,  0], [1100, 0.12], [1320, 0.24]],   // 3 notas ascendentes
-    alerta: [[440,  0], [440, 0.25]],                   // 2 bips curtos
-  };
-  (freqs[tipo] || freqs.novo).forEach(([freq, delay]) => {
-    const o = _audioCtx.createOscillator();
-    const g = _audioCtx.createGain();
-    o.connect(g); g.connect(_audioCtx.destination);
-    o.type = 'square';
-    o.frequency.setValueAtTime(freq, _audioCtx.currentTime + delay);
-    g.gain.setValueAtTime(0.4, _audioCtx.currentTime + delay);
-    g.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + delay + 0.28);
-    o.start(_audioCtx.currentTime + delay);
-    o.stop(_audioCtx.currentTime + delay + 0.28);
-  });
 }
 
 // ── WHATSAPP — notificação para o cliente ────────────────────────────────────
