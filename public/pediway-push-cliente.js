@@ -9,7 +9,7 @@
 'use strict';
 
 // ── CONFIGURE AQUI ────────────────────────────────────────────────────────────
-const VAPID_PUBLIC_KEY = 'COLE_SUA_CHAVE_PUBLICA_VAPID_AQUI';
+const VAPID_PUBLIC_KEY = 'BDDEWNxtb20sU1B-lJw2bZvTfMxBWahe7_rLzn4D5ljZqKIh-PbH5kS29XI-VzdG-QfUMdovNJn7uXOLYve828w';
 const SUPABASE_URL     = 'https://nmttkjmfazcipefeakkx.supabase.co';
 const SUPABASE_ANON    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tdHRram1mYXpjaXBlZmVha2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTM3NjQsImV4cCI6MjA5MDI4OTc2NH0.MMTX_6iQJk7Uv3HPSk0m32_BihvqsWhHJ_qiRkw0WYo';
 
