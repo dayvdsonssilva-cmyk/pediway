@@ -4476,8 +4476,8 @@ async function carregarConfigPlataforma() {
       _platformConfig.wpp = wpp;
       var n   = wpp.length > 11 ? wpp : '55' + wpp;
       var msg = encodeURIComponent(_platformConfig.wppMsg);
-      var link = document.getElementById('link-me-ajuda');
-      if (link) link.href = 'https://wa.me/' + n + '?text=' + msg;
+      // Salva URL global — usada pelo onclick do card de suporte
+      window._pediwaySupportUrl = 'https://wa.me/' + n + '?text=' + msg;
     }
 
     // Atualiza preços exibidos no painel de planos
