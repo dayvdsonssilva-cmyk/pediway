@@ -366,7 +366,7 @@ input,select,textarea{font-size:16px !important;touch-action:manipulation;}
       <div class="story-bars" id="story-bars" style="padding:0;"></div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
         <div style="display:flex;align-items:center;gap:10px;">
-          <div style="width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:14px;">🏪</div>
+          <div id="story-loja-logo" style="width:36px;height:36px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;"></div>
           <span id="story-loja-nome" style="font-size:13px;font-weight:700;color:#fff;"></span>
         </div>
         <button onclick="fecharStory()" style="background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
@@ -2633,6 +2633,14 @@ window.abrirStory = function(url, tipo, id) {
   _storyIdx = _stories.findIndex(s=>s.url===url); if(_storyIdx<0) _storyIdx=0;
   $('story-viewer').classList.add('open');
   $('story-loja-nome').textContent = _loja?.nome||'';
+  const logoEl = $('story-loja-logo');
+  if(logoEl) {
+    if(_loja?.logo_url) {
+      logoEl.innerHTML = `<img src="${_loja.logo_url}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.textContent='${_loja._emoji||'🏪'}'">`;
+    } else {
+      logoEl.textContent = _loja?._emoji || '🏪';
+    }
+  }
   renderStory();
 };
 function renderStory(){
