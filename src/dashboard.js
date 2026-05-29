@@ -150,16 +150,8 @@ function aplicarRestricaoPlano(estab) {
   if (banner) banner.style.display = (plano === 'basico' && !trialAtivo) ? 'flex' : 'none';
 }
 
-// ── Link ME AJUDA PEDIWAY — usa config do CEO ──────────────────────────────
-function atualizarLinkSuporte() {
-  const cfg = JSON.parse(localStorage.getItem('pw_ceo_cfg') || '{}');
-  // Valida que wpp contém apenas dígitos (evita javascript: ou URLs maliciosas)
-  const wppRaw = String(cfg.wpp || '5500000000000').replace(/\D/g, '');
-  const wpp = !(wppRaw.length < 10) && !(wppRaw.length > 15) ? wppRaw : '5500000000000';
-  const msg = encodeURIComponent(String(cfg.wppMsg || 'Olá! Preciso de ajuda com o PEDIWAY.').slice(0, 500));
-  const link = document.getElementById('link-me-ajuda');
-  if (link) link.href = `https://wa.me/${wpp}?text=${msg}`;
-}
+// Link ME AJUDA PEDIWAY — atualizado via carregarConfigPlataforma() (Supabase)
+// Função legada removida — não usa mais localStorage/pw_ceo_cfg
 
 
 // ── CHECKOUT / PLANOS ─────────────────────────────────────────────────────────
@@ -203,7 +195,7 @@ function atualizarInfoPlano() {
 export async function initDashboard() {
   let estab = getEstab();
   if (!estab) return;
-  atualizarLinkSuporte();
+  // carregarConfigPlataforma() já atualiza o link
   atualizarInfoPlano();
   aplicarRestricaoPlano(estab);
   atualizarPrecosDash();
