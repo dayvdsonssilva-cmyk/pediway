@@ -809,7 +809,8 @@ async function carregarCfg() {
       localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
     }
   } catch(e) { console.warn('carregarCfg Supabase:', e.message); }
-  const wppRaw = cfg.wpp || '';
+  let wppRaw = (cfg.wpp || '').replace(/\D/g,'');
+  if (wppRaw.startsWith('55') && wppRaw.length > 11) wppRaw = wppRaw.slice(2);
   let wppFmt = wppRaw;
   if (wppRaw.length === 11) wppFmt = '(' + wppRaw.slice(0,2) + ') ' + wppRaw.slice(2,7) + '-' + wppRaw.slice(7);
   else if (wppRaw.length === 10) wppFmt = '(' + wppRaw.slice(0,2) + ') ' + wppRaw.slice(2,6) + '-' + wppRaw.slice(6);
@@ -819,9 +820,12 @@ async function carregarCfg() {
   gel('cfg-preco-prem').value = cfg.precoPrem || '99';
 }
 
-// Aplica máscara (00) 00000-0000 no campo de telefone
+// Aplica máscara (00) 00000-0000 — armazena só dígitos locais (sem código 55)
 gel('cfg-wpp').addEventListener('input', function() {
-  let v = this.value.replace(/\D/g,'').slice(0,11);
+  // Remove tudo que não é dígito e descarta código de país 55 se houver
+  let v = this.value.replace(/\D/g,'');
+  if (v.startsWith('55') && v.length > 11) v = v.slice(2); // remove código do país
+  v = v.slice(0,11);
   if (v.length > 10) v = v.replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3');
   else if (v.length > 6) v = v.replace(/(\d{2})(\d{4})(\d*)/,'($1) $2-$3');
   else if (v.length > 2) v = v.replace(/(\d{2})(\d*)/,'($1) $2');
@@ -863,7 +867,7 @@ gel('btn-desativar-inad').addEventListener('click', async () => {
   if (!inad.length) return toast('Nenhuma loja inadimplente.','#f59e0b');
   if (!confirm(`Desativar ${inad.length} loja(s) inadimplente(s)?`)) return;
   let ok=0;
-  for (const l of inad) { const {error}=await db.from('estabelecimentos').update({aberto:false}).eq('id',l.id); if(!error) ok++; }
+  for (const l of inad) { try { await adminOp('toggle_loja', { id: l.id, aberto: false }); ok++; } catch(e) { console.warn('Erro ao desativar', l.nome, e.message); } }
   toast(`${ok} loja(s) desativada(s).`);
   await load();
 });
@@ -1076,11 +1080,12 @@ async function toggleLoja(id, estaAtiva) {
   const novoEstado = !estaAtiva;
   const nomeLoja   = lojas.find(l=>l.id===id)?.nome||'';
   if (estaAtiva && !confirm(`Desativar "${nomeLoja}"? Ela ficará inacessível para clientes.`)) return;
-  const {error} = await db.from('estabelecimentos').update({aberto:novoEstado}).eq('id',id);
-  if (error) return toast('❌ Erro ao atualizar loja.','#ef4444');
-  toast(novoEstado?'✅ "'+nomeLoja+'" ativada!':'🚫 "'+nomeLoja+'" desativada!');
-  gel('ov-loja').classList.remove('on');
-  await load();
+  try {
+    await adminOp('toggle_loja', { id, aberto: novoEstado });
+    toast(novoEstado ? '✅ "'+nomeLoja+'" ativada!' : '🚫 "'+nomeLoja+'" desativada!');
+    gel('ov-loja').classList.remove('on');
+    await load();
+  } catch(e) { toast('❌ Erro: ' + e.message, '#ef4444'); }
 }
 
 async function delLoja(id, nome) {
