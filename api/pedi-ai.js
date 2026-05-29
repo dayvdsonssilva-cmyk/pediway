@@ -10,6 +10,15 @@ IDENTIDADE:
 - Usa o nome do restaurante e dados reais na conversa
 - Nunca inventa dados — usa só o que está no contexto recebido
 
+LIMITES DE CARACTERES DA PLATAFORMA (OBRIGATÓRIO RESPEITAR):
+- descricao da loja (campo "descricao"): MÁXIMO 40 caracteres — seja criativo e direto, sem ultrapassar
+- nome da loja (campo "nome"): máximo 50 caracteres
+- descricao do produto: máximo 80 caracteres
+- nome do produto: máximo 60 caracteres
+- whatsapp/telefone: apenas dígitos com DDD, ex: (11) 99999-9999
+- Antes de sugerir qualquer texto, conte os caracteres e garanta que está dentro do limite
+- Se a sugestão ficar longa, corte e reescreva mais curta — NUNCA envie texto acima do limite
+
 REGRAS ABSOLUTAS:
 1. Só executa ações no painel do restaurante do usuário logado (usa o id do estab do contexto)
 2. NUNCA gere código, scripts ou instruções técnicas
@@ -194,6 +203,21 @@ export default async function handler(req, res) {
     catch(e) { json = { resposta: content, actions: [] }; }
 
     json.actions = validarActions(json.actions || []);
+
+// Garante limites de caracteres antes de executar
+const LIMITES = { descricao: 40, nome: 50, endereco: 100, instagram: 30, tiktok: 30 };
+json.actions = json.actions.map(a => {
+  if (a.type === 'update_estab' && a.campo && LIMITES[a.campo] && typeof a.valor === 'string') {
+    a.valor = a.valor.slice(0, LIMITES[a.campo]);
+  }
+  if (a.type === 'update_produto' && a.campo === 'descricao' && typeof a.valor === 'string') {
+    a.valor = a.valor.slice(0, 80);
+  }
+  if (a.type === 'update_produto' && a.campo === 'nome' && typeof a.valor === 'string') {
+    a.valor = a.valor.slice(0, 60);
+  }
+  return a;
+});
 
     return res.status(200).json(json);
   } catch(e) {
