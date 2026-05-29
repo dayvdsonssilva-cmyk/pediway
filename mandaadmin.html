@@ -1084,8 +1084,10 @@ async function toggleLoja(id, estaAtiva) {
   const nomeLoja   = lojas.find(l=>l.id===id)?.nome||'';
   if (estaAtiva && !confirm(`Desativar "${nomeLoja}"? Ela ficará inacessível para clientes.`)) return;
   try {
-    const { error } = await getDbAdmin().from('estabelecimentos').update({ aberto: novoEstado }).eq('id', id);
+    const { data: togResult, error } = await getDbAdmin().from('estabelecimentos')
+      .update({ aberto: novoEstado }).eq('id', id).select('id, aberto');
     if (error) throw error;
+    if (!togResult?.length) throw new Error('Nenhuma loja atualizada. Verifique a service_role key.');
     toast(novoEstado ? '✅ "'+nomeLoja+'" ativada!' : '🚫 "'+nomeLoja+'" desativada!');
     gel('ov-loja').classList.remove('on');
     await load();
@@ -1098,16 +1100,17 @@ async function delLoja(id, nome) {
   if (conf2?.trim() !== nome?.trim()) return toast('Nome incorreto. Remoção cancelada.','#f59e0b');
   toast('Removendo loja...','#f59e0b');
   try {
-    await db.from('pedidos').delete().eq('estabelecimento_id',id);
-    await db.from('cancelamentos_plano').delete().eq('estabelecimento_id',id);
-    await db.from('produtos').delete().eq('estabelecimento_id',id);
-    await db.from('avaliacoes').delete().eq('estabelecimento_id',id);
-    const {error} = await db.from('estabelecimentos').delete().eq('id',id);
+    const adm = getDbAdmin();
+    await adm.from('pedidos').delete().eq('estabelecimento_id',id);
+    await adm.from('cancelamentos_plano').delete().eq('estabelecimento_id',id);
+    await adm.from('produtos').delete().eq('estabelecimento_id',id);
+    await adm.from('avaliacoes').delete().eq('estabelecimento_id',id);
+    const {error} = await adm.from('estabelecimentos').delete().eq('id',id);
     if (error) throw new Error(error.message);
     toast('✅ Loja removida!');
     gel('ov-loja').classList.remove('on');
     await load();
-  } catch(err) { toast('❌ Erro ao remover loja. Verifique o console.','#ef4444'); console.error('[delLoja]', err.message); }
+  } catch(err) { toast('❌ Erro: ' + err.message,'#ef4444'); console.error('[delLoja]', err); }
 }
 
 // Mensagem para loja via WhatsApp
@@ -1298,15 +1301,19 @@ gel('salvar-plano').addEventListener('click', async() => {
   btn.disabled = true; btn.textContent = 'Salvando...';
 
   try {
-    const { error: errPlano } = await getDbAdmin().from('estabelecimentos')
+    const { data: updated, error: errPlano } = await getDbAdmin()
+      .from('estabelecimentos')
       .update({ plano, assinatura_vencimento: venc || null, pagamento_status: st, aberto: ativo })
-      .eq('id', id);
+      .eq('id', id)
+      .select('id, nome, plano');
     if (errPlano) throw errPlano;
-    toast('✅ Plano salvo!');
+    if (!updated || updated.length === 0) throw new Error('Nenhuma loja atualizada. Verifique o ID selecionado.');
+    toast('✅ Plano salvo! — ' + (updated[0]?.nome || ''));
     gel('ov-plano').classList.remove('on');
     await load();
   } catch(e) {
-    toast('Erro: ' + e.message, '#ef4444');
+    toast('❌ Erro: ' + e.message, '#ef4444');
+    console.error('[salvar-plano]', e);
   } finally {
     btn.disabled = false; btn.textContent = '💾 Salvar';
   }
@@ -1426,6 +1433,7 @@ async function carregarCancelamentos() {
 }
 window.marcarLido = async function(id) {
   const {error}=await getDbAdmin().from('cancelamentos_plano').update({lido:true}).eq('id',id);
+  if(error) return toast('Erro: '+error.message,'#ef4444');
   if(error) return toast('❌ '+error.message,'#ef4444');
   toast('✅ Marcado como lido!'); carregarCancelamentos();
 };
