@@ -509,7 +509,9 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const SURL = 'https://nmttkjmfazcipefeakkx.supabase.co';
-const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tdHRram1mYXpjaXBlZmVha2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTM3NjQsImV4cCI6MjA5MDI4OTc2NH0.MMTX_6iQJk7Uv3HPSk0m32_BihvqsWhHJ_qiRkw0WYo';
+// ⚠️ USE A SERVICE_ROLE KEY AQUI (Supabase → Project Settings → API → service_role)
+// A anon key não consegue atualizar dados de outras lojas por causa do RLS
+const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tdHRram1mYXpjaXBlZmVha2t4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDcxMzc2NCwiZXhwIjoyMDkwMjg5NzY0fQ.s_d-eKhQdXK1nzYoy8Wbxw0nQ-dHoe3fUdGOCbmsfeI';
 const db   = createClient(SURL, SKEY);
 
 const CFG_KEY = 'pw_ceo_cfg_v2';
@@ -1237,9 +1239,30 @@ gel('salvar-plano').addEventListener('click', async() => {
   const venc = gel('pl-venc').value;
   const st   = gel('pl-pgst').value;
   const ativo= gel('pl-ativo').value==='1';
-  const {error}=await db.from('estabelecimentos').update({plano,assinatura_vencimento:venc||null,pagamento_status:st,aberto:ativo}).eq('id',id);
-  if(error) return toast('Erro: '+error.message,'#ef4444');
-  toast('✅ Plano salvo!'); gel('ov-plano').classList.remove('on');
+  const obs  = gel('pl-obs')?.value?.trim() || null;
+
+  if (!id) return toast('Selecione uma loja.', '#f59e0b');
+
+  const btn = gel('salvar-plano');
+  btn.disabled = true; btn.textContent = 'Salvando...';
+
+  const { data, error } = await db
+    .from('estabelecimentos')
+    .update({ plano, assinatura_vencimento: venc || null, pagamento_status: st, aberto: ativo, obs_admin: obs })
+    .eq('id', id)
+    .select('id');
+
+  btn.disabled = false; btn.textContent = '💾 Salvar';
+
+  if (error) {
+    console.error('Erro ao salvar plano:', error);
+    return toast('Erro: ' + error.message + ' — Verifique se está usando a service_role key.', '#ef4444');
+  }
+  if (!data || data.length === 0) {
+    return toast('⚠️ Nenhuma linha atualizada. Troque a SKEY pela service_role key no código.', '#f59e0b');
+  }
+  toast('✅ Plano salvo!');
+  gel('ov-plano').classList.remove('on');
   await load();
 });
 
