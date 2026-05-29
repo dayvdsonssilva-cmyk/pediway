@@ -4034,30 +4034,19 @@ window.toggleCfgTaxaServico = function(ativo) {
 
 
 window.fecharCfgModal = function() {
-  const ov = document.getElementById('cfg-modal-overlay');
-  if (!ov) return;
-  // Sincroniza valores do modal de volta ao body original (para salvar depois)
-  if (ov._sourceBody) {
-    const mb = document.getElementById('cfg-modal-body');
-    if (mb) {
-      mb.querySelectorAll('input,select,textarea').forEach(function(el) {
-        if (!el.id) return;
-        const orig = ov._sourceBody.querySelector('#' + el.id);
-        if (orig) {
-          if (el.type === 'checkbox') orig.checked = el.checked;
-          else orig.value = el.value;
-        }
-      });
-    }
+  // Delega para fecharCfgPopup que devolve os filhos ao cfg-topic-body corretamente
+  if (typeof window.fecharCfgPopup === 'function') {
+    window.fecharCfgPopup();
+  } else {
+    const ov = document.getElementById('cfg-modal-overlay');
+    if (ov) ov.style.display = 'none';
   }
-  ov.style.display = 'none';
-  ov._sourceBody = null;
 };
 
 // Fecha ao clicar fora
 document.addEventListener('click', function(e) {
   const ov = document.getElementById('cfg-modal-overlay');
-  if (ov && e.target === ov) ov.style.display = 'none';
+  if (ov && e.target === ov) window.fecharCfgModal();
 });
 
 function abrirCfgModal(header) {
