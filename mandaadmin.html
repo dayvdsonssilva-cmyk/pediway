@@ -515,27 +515,55 @@ const SURL      = 'https://nmttkjmfazcipefeakkx.supabase.co';
 const SKEY_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tdHRram1mYXpjaXBlZmVha2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTM3NjQsImV4cCI6MjA5MDI4OTc2NH0.MMTX_6iQJk7Uv3HPSk0m32_BihvqsWhHJ_qiRkw0WYo';
 const db = createClient(SURL, SKEY_ANON); // anon: leitura pública
 
-// Cliente admin criado em runtime com a service_role key digitada no login
-let dbAdmin = null;
-const _SRK = 'pw_srk'; // chave no sessionStorage
+// Service key fica só no sessionStorage — nunca no código
+const _SRK = 'pw_srk';
 
-function getDbAdmin() {
-  if (dbAdmin) return dbAdmin;
-  // Tenta recriar do sessionStorage (persiste entre recargas da sessão)
-  const srk = sessionStorage.getItem(_SRK);
-  if (srk && srk.startsWith('eyJ')) {
-    dbAdmin = createClient(SURL, srk);
-    return dbAdmin;
-  }
-  throw new Error('Service key não configurada. Faça login novamente.');
+function getServiceKey() {
+  const k = sessionStorage.getItem(_SRK) || '';
+  if (!k) throw new Error('Service key não configurada. Faça login novamente.');
+  return k;
 }
 
 function setServiceKey(key) {
-  if (key && key.startsWith('eyJ')) {
-    sessionStorage.setItem(_SRK, key);
-    dbAdmin = createClient(SURL, key);
-  }
+  if (key && key.startsWith('eyJ')) sessionStorage.setItem(_SRK, key);
 }
+
+// Chamada direta à REST API do Supabase com service_role (bypassa RLS 100%)
+async function adminRest(method, table, body, query) {
+  const srk = getServiceKey();
+  const url  = SURL + '/rest/v1/' + table + (query || '');
+  const opts = {
+    method,
+    headers: {
+      'apikey': srk,
+      'Authorization': 'Bearer ' + srk,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res  = await fetch(url, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || data.hint || data.error || ('Erro HTTP ' + res.status));
+  return Array.isArray(data) ? data : [data];
+}
+
+// Atalhos por operação
+async function adminUpdate(table, body, filter) { return adminRest('PATCH', table, body, filter); }
+async function adminUpsert(table, body)         {
+  const srk = getServiceKey();
+  const url  = SURL + '/rest/v1/' + table;
+  const res  = await fetch(url, {
+    method: 'POST',
+    headers: { 'apikey': srk, 'Authorization': 'Bearer ' + srk,
+               'Content-Type': 'application/json', 'Prefer': 'return=representation,resolution=merge-duplicates' },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || data.hint || data.error || ('Erro HTTP ' + res.status));
+  return data;
+}
+async function adminDelete(table, filter)       { return adminRest('DELETE', table, null, filter); }
 
 const CFG_KEY = 'pw_ceo_cfg_v2';
 let cfg = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
@@ -552,8 +580,7 @@ const saveCfg = async () => {
     updated_at: new Date().toISOString()
   };
   try {
-    const { error } = await getDbAdmin().from('pediway_config').upsert(payload);
-    if (error) throw error;
+    await adminUpsert('pediway_config', payload);
   } catch(e) { console.warn('saveCfg erro:', e.message); toast('Erro ao salvar: ' + e.message, '#ef4444'); }
 };
 const $R = v => 'R$ ' + Number(v||0).toFixed(2).replace('.',',');
@@ -728,8 +755,7 @@ function doLogin() {
 }
 
 gel('btn-entrar').addEventListener('click', () => {
-  const token = gel('inp-token')?.value?.trim() || '';
-  setServiceKey(token);
+  setServiceKey(gel('inp-token')?.value?.trim() || '');
   doLogin();
 });
 gel('pin').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
@@ -737,7 +763,6 @@ gel('pin').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 gel('btn-sair').addEventListener('click', () => {
   sessionStorage.removeItem(SESS_KEY);
   sessionStorage.removeItem(_SRK);
-  dbAdmin = null;
   gel('hdr').style.display = 'none';
   gel('main').style.display = 'none';
   gel('login').style.display = 'flex';
@@ -870,7 +895,7 @@ gel('btn-desativar-inad').addEventListener('click', async () => {
   if (!inad.length) return toast('Nenhuma loja inadimplente.','#f59e0b');
   if (!confirm(`Desativar ${inad.length} loja(s) inadimplente(s)?`)) return;
   let ok=0;
-  for (const l of inad) { try { const {error}=await getDbAdmin().from('estabelecimentos').update({aberto:false,pagamento_status:'vencido'}).eq('id',l.id); if(!error) ok++; } catch(e) { console.warn('Erro ao desativar', l.nome, e.message); } }
+  for (const l of inad) { try { await adminUpdate('estabelecimentos', {aberto:false,pagamento_status:'vencido'}, '?id=eq.' + l.id); ok++; } catch(e) { console.warn('Erro ao desativar', l.nome, e.message); } }
   toast(`${ok} loja(s) desativada(s).`);
   await load();
 });
@@ -1084,10 +1109,8 @@ async function toggleLoja(id, estaAtiva) {
   const nomeLoja   = lojas.find(l=>l.id===id)?.nome||'';
   if (estaAtiva && !confirm(`Desativar "${nomeLoja}"? Ela ficará inacessível para clientes.`)) return;
   try {
-    const { data: togResult, error } = await getDbAdmin().from('estabelecimentos')
-      .update({ aberto: novoEstado }).eq('id', id).select('id, aberto');
-    if (error) throw error;
-    if (!togResult?.length) throw new Error('Nenhuma loja atualizada. Verifique a service_role key.');
+    const togResult = await adminUpdate('estabelecimentos', { aberto: novoEstado }, '?id=eq.' + id);
+    if (!togResult?.length) throw new Error('Loja não encontrada.');
     toast(novoEstado ? '✅ "'+nomeLoja+'" ativada!' : '🚫 "'+nomeLoja+'" desativada!');
     gel('ov-loja').classList.remove('on');
     await load();
@@ -1100,13 +1123,11 @@ async function delLoja(id, nome) {
   if (conf2?.trim() !== nome?.trim()) return toast('Nome incorreto. Remoção cancelada.','#f59e0b');
   toast('Removendo loja...','#f59e0b');
   try {
-    const adm = getDbAdmin();
-    await adm.from('pedidos').delete().eq('estabelecimento_id',id);
-    await adm.from('cancelamentos_plano').delete().eq('estabelecimento_id',id);
-    await adm.from('produtos').delete().eq('estabelecimento_id',id);
-    await adm.from('avaliacoes').delete().eq('estabelecimento_id',id);
-    const {error} = await adm.from('estabelecimentos').delete().eq('id',id);
-    if (error) throw new Error(error.message);
+    await adminDelete('pedidos', '?estabelecimento_id=eq.' + id);
+    await adminDelete('cancelamentos_plano', '?estabelecimento_id=eq.' + id);
+    await adminDelete('produtos', '?estabelecimento_id=eq.' + id);
+    await adminDelete('avaliacoes', '?estabelecimento_id=eq.' + id);
+    await adminDelete('estabelecimentos', '?id=eq.' + id);
     toast('✅ Loja removida!');
     gel('ov-loja').classList.remove('on');
     await load();
@@ -1301,13 +1322,10 @@ gel('salvar-plano').addEventListener('click', async() => {
   btn.disabled = true; btn.textContent = 'Salvando...';
 
   try {
-    const { data: updated, error: errPlano } = await getDbAdmin()
-      .from('estabelecimentos')
-      .update({ plano, assinatura_vencimento: venc || null, pagamento_status: st, aberto: ativo })
-      .eq('id', id)
-      .select('id, nome, plano');
-    if (errPlano) throw errPlano;
-    if (!updated || updated.length === 0) throw new Error('Nenhuma loja atualizada. Verifique o ID selecionado.');
+    const updated = await adminUpdate('estabelecimentos',
+      { plano, assinatura_vencimento: venc || null, pagamento_status: st, aberto: ativo },
+      '?id=eq.' + id);
+    if (!updated?.length) throw new Error('Loja não encontrada.');
     toast('✅ Plano salvo! — ' + (updated[0]?.nome || ''));
     gel('ov-plano').classList.remove('on');
     await load();
@@ -1432,8 +1450,7 @@ async function carregarCancelamentos() {
       }).join('');
 }
 window.marcarLido = async function(id) {
-  const {error}=await getDbAdmin().from('cancelamentos_plano').update({lido:true}).eq('id',id);
-  if(error) return toast('Erro: '+error.message,'#ef4444');
+  try { await adminUpdate('cancelamentos_plano', {lido:true}, '?id=eq.' + id); } catch(e) { return toast('Erro: '+e.message,'#ef4444'); }
   if(error) return toast('❌ '+error.message,'#ef4444');
   toast('✅ Marcado como lido!'); carregarCancelamentos();
 };
