@@ -4204,23 +4204,38 @@ window.filtrarPedidosData = async function() {
 async function verificarExpiracaoQuente() {
   const estab = getEstab();
   if (!estab || estab.id === 'demo') return;
-  const hoje    = new Date().toDateString();
-  const chave   = 'pw_quente_dia_' + estab.id;
-  if (localStorage.getItem(chave) === hoje) return;
+  const hoje  = new Date().toDateString();
+  const chave = 'pw_quente_dia_' + estab.id;
+  if (localStorage.getItem(chave) === hoje) return; // já resetou hoje
   try {
     const { data: promos } = await getSupa()
       .from('produtos').select('id,preco_original')
       .eq('estabelecimento_id', estab.id).eq('em_promocao', true);
     if (promos && promos.length) {
       for (var p of promos) {
-        await getSupa().from('produtos').update({ em_promocao: false, desconto_percent: 0 }).eq('id', p.id);
+        await getSupa().from('produtos').update({ em_promocao: false, desconto_percent: 0, preco: p.preco_original || p.preco }).eq('id', p.id);
       }
-      showToast('Promoções QUENTE do dia anterior foram desativadas.');
+      showToast('🌅 Promoções Quente do dia anterior foram encerradas.');
       await renderCardapio();
     }
-  } catch(e) {}
+  } catch(e) { console.warn('Erro ao expirar promoções:', e); }
   localStorage.setItem(chave, hoje);
 }
+
+// Agenda reset exato à meia-noite, depois repete a cada 24h
+function agendarResetMeiaNoite() {
+  var agora = new Date();
+  var meiaNoite = new Date(agora);
+  meiaNoite.setHours(24, 0, 0, 100); // próxima meia-noite + 100ms de margem
+  var msAte = meiaNoite - agora;
+  setTimeout(function() {
+    verificarExpiracaoQuente();
+    setInterval(verificarExpiracaoQuente, 24 * 60 * 60 * 1000); // repete todo dia
+  }, msAte);
+}
+agendarResetMeiaNoite();
+
+// Fallback: também verifica a cada hora (cobre casos de tab dormindo)
 setInterval(function() { verificarExpiracaoQuente(); }, 60 * 60 * 1000);
 
 // ═══════════════════════════════════════════════════════════════════════════
