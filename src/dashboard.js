@@ -291,6 +291,8 @@ function preencherConfig(estab) {
   set('cfg-tiktok',    estab.tiktok || '');
   set('cfg-site',      estab.site || '');
   set('cfg-msg-nota',  estab.msg_nota || '');
+  // Horários de funcionamento
+  if (typeof window.renderHorariosCfg === 'function') window.renderHorariosCfg(estab.horarios || null);
   const cfgLink = $('cfg-link-preview');
   if (cfgLink) { cfgLink.textContent = `${BASE_URL}/${estab.slug}`; Object.assign(cfgLink.style,{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',display:'block',maxWidth:'100%'}); }
   const cfgLinkGarcom = $('cfg-link-garcom');
@@ -668,6 +670,7 @@ export async function salvarConfig() {
       taxa_entrega, aceita_pix, aceita_cartao, aceita_dinheiro,
       taxa_servico, perc_servico,
       telefone_contato, cnpj, instagram, tiktok, site, msg_nota,
+      horarios: typeof window.getHorariosFromForm === 'function' ? window.getHorariosFromForm() : undefined,
     };
 
     const { error } = await getSupa().from('estabelecimentos').update(updates).eq('id', estab.id);
