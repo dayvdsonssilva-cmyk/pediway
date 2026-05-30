@@ -293,6 +293,10 @@ function preencherConfig(estab) {
   set('cfg-msg-nota',  estab.msg_nota || '');
   // Horários de funcionamento
   if (typeof window.renderHorariosCfg === 'function') window.renderHorariosCfg(estab.horarios || null);
+  // Tipo do estabelecimento (nicho)
+  if (typeof window.renderTipoCfgGrid === 'function') window.renderTipoCfgGrid(estab.tipo_estab || estab.tipo_estabelecimento || '');
+  const _cfgTipo = document.getElementById('cfg-tipo-estab');
+  if (_cfgTipo) _cfgTipo.value = estab.tipo_estab || estab.tipo_estabelecimento || '';
   const cfgLink = $('cfg-link-preview');
   if (cfgLink) { cfgLink.textContent = `${BASE_URL}/${estab.slug}`; Object.assign(cfgLink.style,{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',display:'block',maxWidth:'100%'}); }
   const cfgLinkGarcom = $('cfg-link-garcom');
@@ -671,6 +675,7 @@ export async function salvarConfig() {
       taxa_servico, perc_servico,
       telefone_contato, cnpj, instagram, tiktok, site, msg_nota,
       horarios: typeof window.getHorariosFromForm === 'function' ? window.getHorariosFromForm() : undefined,
+      tipo_estab: document.getElementById('cfg-tipo-estab')?.value || null,
     };
 
     const { error } = await getSupa().from('estabelecimentos').update(updates).eq('id', estab.id);
