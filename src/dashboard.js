@@ -4185,11 +4185,23 @@ window.initCfgAccordion = function() {
           b.classList.remove('open');
           var h = b.closest('.cfg-topic-card')?.querySelector('.cfg-topic-header');
           if (h) h.classList.remove('open');
+          // Remove botões de ação do accordion fechado
+          var oldActs = b.querySelector('.cfg-popup-actions-mobile');
+          if (oldActs) oldActs.remove();
         });
         if (!isOpen) {
           body.classList.add('open');
           header.classList.add('open');
-          body.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          // Adiciona botões Salvar/Cancelar no mobile
+          if (!body.querySelector('.cfg-popup-actions-mobile')) {
+            var actsMobile = document.createElement('div');
+            actsMobile.className = 'cfg-popup-actions-mobile';
+            actsMobile.style.cssText = 'display:flex;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid #f0ebe4;';
+            actsMobile.innerHTML = '<button onclick="this.closest('.cfg-topic-body').classList.remove('open');this.closest('.cfg-topic-card').querySelector('.cfg-topic-header').classList.remove('open');this.parentElement.remove();" style="flex:1;background:none;border:1.5px solid #ddd;border-radius:12px;padding:12px;font-family:inherit;font-size:.85rem;font-weight:700;color:#666;cursor:pointer">Cancelar</button>'
+              + '<button onclick="salvarConfig();this.closest('.cfg-topic-body').classList.remove('open');this.closest('.cfg-topic-card').querySelector('.cfg-topic-header').classList.remove('open');this.parentElement.remove();" style="flex:2;background:var(--red);color:#fff;border:none;border-radius:12px;padding:12px;font-family:inherit;font-size:.88rem;font-weight:800;cursor:pointer">💾 Salvar</button>';
+            body.appendChild(actsMobile);
+          }
+          setTimeout(function() { body.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
         }
       }
     });
