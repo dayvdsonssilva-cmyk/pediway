@@ -2661,7 +2661,7 @@ function iniciarRealtime() {
 
   // Realtime fresquinho — atualiza promoções sem precisar abrir o painel
   try {
-    getSupa()
+    db
       .channel('fresquinho-rt')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'fresquinhos' }, payload => {
         // Recarrega fresquinhos e re-renderiza o banner
