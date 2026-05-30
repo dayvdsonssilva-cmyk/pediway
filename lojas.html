@@ -2663,11 +2663,8 @@ function iniciarRealtime() {
   try {
     db
       .channel('fresquinho-rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'fresquinhos' }, payload => {
-        // Recarrega fresquinhos e re-renderiza o banner
-        if (typeof carregarFresquinhos === 'function') carregarFresquinhos().then(() => {
-          if (_screen === 'home' || _screen === 'search') renderBanner();
-        });
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'fresquinhos' }, () => {
+        if (typeof renderBanner === 'function') renderBanner();
       })
       .subscribe();
   } catch(e) { console.warn('Realtime fresquinho:', e); }
