@@ -2624,20 +2624,26 @@ function iniciarRealtime() {
         if (idx >= 0) {
           _lojas[idx] = {
             ..._lojas[idx],
-            cor_primaria:  novo.cor_primaria  || _lojas[idx].cor_primaria,
-            aberto:        novo.aberto        !== undefined ? novo.aberto : _lojas[idx].aberto,
-            nome:          novo.nome          || _lojas[idx].nome,
-            descricao:     novo.descricao     ?? _lojas[idx].descricao,
-            logo_url:      novo.logo_url      ?? _lojas[idx].logo_url,
-            tempo_entrega: novo.tempo_entrega || _lojas[idx].tempo_entrega,
-            taxa_entrega:  novo.taxa_entrega  ?? _lojas[idx].taxa_entrega,
-            _bg:           novo.cor_primaria  || _lojas[idx]._bg,
+            cor_primaria:      novo.cor_primaria      || _lojas[idx].cor_primaria,
+            aberto:            novo.aberto            !== undefined ? novo.aberto : _lojas[idx].aberto,
+            nome:              novo.nome              || _lojas[idx].nome,
+            descricao:         novo.descricao         ?? _lojas[idx].descricao,
+            logo_url:          novo.logo_url          ?? _lojas[idx].logo_url,
+            tempo_entrega:     novo.tempo_entrega     || _lojas[idx].tempo_entrega,
+            taxa_entrega:      novo.taxa_entrega      ?? _lojas[idx].taxa_entrega,
+            _bg:               novo.cor_primaria      || _lojas[idx]._bg,
+            quente_dia:        novo.quente_dia        !== undefined ? novo.quente_dia : _lojas[idx].quente_dia,
+            quente_nome:       novo.quente_nome       ?? _lojas[idx].quente_nome,
+            promocao_ativa:    novo.promocao_ativa    !== undefined ? novo.promocao_ativa : _lojas[idx].promocao_ativa,
+            desconto_percent:  novo.desconto_percent  ?? _lojas[idx].desconto_percent,
+            horarios:          novo.horarios          ?? _lojas[idx].horarios,
+            _aberto:           calcularAberto({...(_lojas[idx]), aberto: novo.aberto !== undefined ? novo.aberto : _lojas[idx].aberto, horarios: novo.horarios ?? _lojas[idx].horarios}),
           };
 
           // Se o cliente está vendo o cardápio dessa loja → atualiza o fundo imediatamente
-          if (_lojaAtual?.id === novo.id && novo.cor_primaria) {
+          if (_loja?.id === novo.id && novo.cor_primaria) {
             const hex = normalizeHex(novo.cor_primaria);
-            _lojaAtual = { ..._lojaAtual, cor_primaria: hex, _bg: hex };
+            _loja = { ..._loja, cor_primaria: hex, _bg: hex };
             // Atualiza a capa do cardápio (wallpaper) sem recarregar a tela
             const capaEl = document.querySelector('.store-capa');
             if (capaEl) capaEl.style.background = hex;
@@ -2652,6 +2658,19 @@ function iniciarRealtime() {
       })
       .subscribe();
   } catch(e) { console.warn('Realtime lojas:', e); }
+
+  // Realtime fresquinho — atualiza promoções sem precisar abrir o painel
+  try {
+    getSupa()
+      .channel('fresquinho-rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'fresquinhos' }, payload => {
+        // Recarrega fresquinhos e re-renderiza o banner
+        if (typeof carregarFresquinhos === 'function') carregarFresquinhos().then(() => {
+          if (_screen === 'home' || _screen === 'search') renderBanner();
+        });
+      })
+      .subscribe();
+  } catch(e) { console.warn('Realtime fresquinho:', e); }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2941,6 +2960,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   },true);
 });
+
 </script>
   <script src="/pediway-push-cliente.js" defer></script>
 </body>
