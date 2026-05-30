@@ -2,7 +2,7 @@
 const SW_VERSION   = 'pediway-v2.2.0';
 const CACHE_FONTS  = SW_VERSION + '-fonts';
 
-// Não pré-cacheia nada no install — evita lentidão inicial
+// Não pré-cacheia nada no install — evita lentidão inicial    
 // Cache acontece naturalmente ao usar o site
 
 const NO_CACHE = [
