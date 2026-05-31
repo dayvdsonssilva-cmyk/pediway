@@ -4197,8 +4197,26 @@ window.initCfgAccordion = function() {
             var actsMobile = document.createElement('div');
             actsMobile.className = 'cfg-popup-actions-mobile';
             actsMobile.style.cssText = 'display:flex;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid #f0ebe4;';
-            actsMobile.innerHTML = '<button onclick="this.closest('.cfg-topic-body').classList.remove('open');this.closest('.cfg-topic-card').querySelector('.cfg-topic-header').classList.remove('open');this.parentElement.remove();" style="flex:1;background:none;border:1.5px solid #ddd;border-radius:12px;padding:12px;font-family:inherit;font-size:.85rem;font-weight:700;color:#666;cursor:pointer">Cancelar</button>'
-              + '<button onclick="salvarConfig();this.closest('.cfg-topic-body').classList.remove('open');this.closest('.cfg-topic-card').querySelector('.cfg-topic-header').classList.remove('open');this.parentElement.remove();" style="flex:2;background:var(--red);color:#fff;border:none;border-radius:12px;padding:12px;font-family:inherit;font-size:.88rem;font-weight:800;cursor:pointer">💾 Salvar</button>';
+
+            function fecharAccordionMobile() {
+              body.classList.remove('open');
+              header.classList.remove('open');
+              var acts = body.querySelector('.cfg-popup-actions-mobile');
+              if (acts) acts.remove();
+            }
+
+            var btnCancel = document.createElement('button');
+            btnCancel.textContent = 'Cancelar';
+            btnCancel.style.cssText = 'flex:1;background:none;border:1.5px solid #ddd;border-radius:12px;padding:12px;font-family:inherit;font-size:.85rem;font-weight:700;color:#666;cursor:pointer';
+            btnCancel.addEventListener('click', function(e) { e.stopPropagation(); fecharAccordionMobile(); });
+
+            var btnSave = document.createElement('button');
+            btnSave.textContent = '💾 Salvar';
+            btnSave.style.cssText = 'flex:2;background:var(--red);color:#fff;border:none;border-radius:12px;padding:12px;font-family:inherit;font-size:.88rem;font-weight:800;cursor:pointer';
+            btnSave.addEventListener('click', function(e) { e.stopPropagation(); salvarConfig(); fecharAccordionMobile(); });
+
+            actsMobile.appendChild(btnCancel);
+            actsMobile.appendChild(btnSave);
             body.appendChild(actsMobile);
           }
           setTimeout(function() { body.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
