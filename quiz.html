@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#E8001C">
+<title>PEDIWAY — Pare de Perder Dinheiro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --R:#E8001C;--RD:#B8000F;--RL:#FF2638;--RU:#FFF0F1;--RM:#FFCCD0;
+  --BK:#0A0A0A;--BK2:#111111;--BK3:#1A1A1A;
+  --BD:#252525;--BD2:#383838;
+  --TXT:#F2F2F2;--T2:#9A9A9A;--T3:#505050;
+  --W:#FFFFFF;
+}
+html,body{
+  background:var(--BK);color:var(--TXT);
+  font-family:'Inter',sans-serif;
+  min-height:100vh;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+.scr{
+  display:flex;flex-direction:column;align-items:center;
+  width:100%;max-width:430px;margin:0 auto;min-height:100svh;
+}
+.scr.off{display:none!important}
+
+/* TOP RED BAR */
+.top-bar{width:100%;height:3px;background:linear-gradient(90deg,var(--RD),var(--R),var(--RL));flex-shrink:0}
+
+/* ══════ HOME ══════ */
+#p1{background:var(--BK);overflow:hidden}
+
+.p1-header{
+  width:100%;padding:20px 24px 0;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.logo-wrap{display:flex;align-items:center;gap:10px}
+.logo-box{
+  width:38px;height:38px;border-radius:9px;overflow:hidden;
+  background:var(--R);display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.logo-name{font-size:17px;font-weight:900;letter-spacing:.04em;color:var(--W)}
+.logo-name span{color:var(--R)}
+.free-tag{font-size:10px;font-weight:800;letter-spacing:.14em;color:var(--T3);text-transform:uppercase}
+
+.p1-hero{width:100%;padding:32px 24px 0;display:flex;flex-direction:column}
+
+.kicker{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(232,0,28,.1);border:1px solid rgba(232,0,28,.22);
+  border-radius:5px;padding:5px 12px;
+  font-size:10px;font-weight:800;letter-spacing:.16em;
+  color:var(--R);text-transform:uppercase;
+  margin-bottom:18px;align-self:flex-start;
+}
+.p1-h1{
+  font-size:clamp(40px,12vw,58px);font-weight:900;
+  line-height:.9;letter-spacing:-.03em;color:var(--W);
+}
+.p1-h1 em{font-style:normal;color:var(--R);display:block}
+
+.p1-sub{
+  font-size:14px;font-weight:500;line-height:1.65;
+  color:var(--T2);margin-top:18px;
+}
+.p1-sub strong{color:var(--W);font-weight:700}
+.p1-sub em{font-style:normal;color:var(--R);font-weight:700}
+
+/* LOSS CARD */
+.loss-card{
+  margin-top:24px;width:100%;
+  background:var(--BK2);border:1px solid var(--BD);
+  border-radius:16px;padding:20px;
+  position:relative;overflow:hidden;
+}
+.loss-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--R)}
+.lc-lbl{
+  font-size:10px;font-weight:800;letter-spacing:.14em;
+  color:var(--T3);text-transform:uppercase;
+  margin-bottom:14px;padding-left:12px;
+}
+.lc-rows{display:flex;flex-direction:column;gap:8px}
+.lc-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-left:12px;
+}
+.lc-name{font-size:13px;font-weight:500;color:var(--T2)}
+.lc-val{font-size:14px;font-weight:800;color:var(--R)}
+.lc-total{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 0 0 12px;margin-top:8px;
+  border-top:1px solid var(--BD);
+}
+.lc-total-lbl{font-size:12px;font-weight:600;color:var(--T2)}
+.lc-total-val{font-size:24px;font-weight:900;color:var(--R);letter-spacing:-.03em}
+.lc-note{font-size:11px;color:var(--T3);margin-top:10px;padding-left:12px;line-height:1.5}
+
+/* PROOF */
+.proof-bar{
+  margin-top:16px;width:100%;
+  display:flex;align-items:center;gap:8px;
+  background:var(--BK2);border:1px solid var(--BD);
+  border-radius:10px;padding:11px 14px;
+}
+.pdot{width:7px;height:7px;border-radius:50%;background:var(--R);flex-shrink:0;animation:blink 1.8s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+.proof-bar p{font-size:12px;color:var(--T2);font-weight:500;line-height:1.4}
+.proof-bar strong{color:var(--TXT)}
+
+/* BTN PRIMÁRIO */
+.btn-cta{
+  width:100%;padding:19px 20px;
+  background:var(--R);color:var(--W);
+  font-family:'Inter',sans-serif;font-size:15px;font-weight:800;
+  border:none;border-radius:13px;cursor:pointer;letter-spacing:.01em;
+  box-shadow:0 6px 28px rgba(232,0,28,.35);
+  transition:transform .12s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn-cta:active{transform:scale(.97)}
+.cta-note{text-align:center;font-size:11px;color:var(--T3);margin-top:-4px}
+
+/* ══════ SHARED NAV ══════ */
+.pg-nav{width:100%;display:flex;flex-direction:column;flex-shrink:0}
+.nav-inner{display:flex;align-items:center;gap:12px;padding:16px 24px 0}
+.back-btn{
+  width:38px;height:38px;border-radius:9px;
+  background:var(--BK2);border:1px solid var(--BD);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:18px;color:var(--T2);flex-shrink:0;
+}
+.back-btn:active{background:var(--BD)}
+.prog-wrap{flex:1}
+.prog-row{
+  display:flex;justify-content:space-between;
+  font-size:10px;font-weight:700;color:var(--T3);
+  letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;
+}
+.prog-row em{font-style:normal;color:var(--R)}
+.prog-track{height:2px;background:var(--BD);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;border-radius:99px;background:var(--R);transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+/* ══════ QUIZ ══════ */
+.qbody{width:100%;padding:28px 24px 60px;display:flex;flex-direction:column;flex:1}
+.q-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(232,0,28,.1);border:1px solid rgba(232,0,28,.2);
+  border-radius:5px;padding:4px 11px;
+  font-size:10px;font-weight:800;letter-spacing:.13em;color:var(--R);
+  text-transform:uppercase;margin-bottom:16px;align-self:flex-start;
+}
+.q-title{
+  font-size:clamp(24px,7vw,34px);font-weight:900;
+  line-height:1.05;letter-spacing:-.025em;color:var(--W);margin-bottom:8px;
+}
+.q-title .r{color:var(--R)}
+.q-sub{font-size:13px;color:var(--T2);line-height:1.55;margin-bottom:24px}
+
+.opts{display:flex;flex-direction:column;gap:9px}
+.opt{
+  width:100%;background:var(--BK2);border:1.5px solid var(--BD);border-radius:14px;
+  padding:15px 16px;display:flex;align-items:center;gap:13px;
+  cursor:pointer;text-align:left;font-family:'Inter',sans-serif;color:var(--TXT);
+  transition:border-color .15s,background .15s,transform .1s;
+  animation:up .26s both;
+}
+@keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.opt:active{transform:scale(.988)}
+.opt.sel{border-color:var(--R);background:rgba(232,0,28,.07)}
+.opt-ico{
+  width:42px;height:42px;border-radius:10px;background:var(--BK3);
+  display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;transition:background .15s;
+}
+.opt.sel .opt-ico{background:rgba(232,0,28,.15)}
+.opt-body{flex:1}
+.opt-body p{font-size:14px;font-weight:700;line-height:1.2;color:var(--TXT)}
+.opt-body span{font-size:12px;color:var(--T2);margin-top:3px;display:block}
+.opt.sel .opt-body p{color:var(--W)}
+.chk{
+  width:22px;height:22px;border-radius:50%;border:1.5px solid var(--BD2);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s;
+}
+.opt.sel .chk{background:var(--R);border-color:var(--R);color:var(--W)}
+
+.btn-next{
+  width:100%;padding:17px;background:var(--R);color:var(--W);
+  font-family:'Inter',sans-serif;font-size:15px;font-weight:800;
+  border:none;border-radius:13px;cursor:pointer;margin-top:22px;
+  opacity:.18;pointer-events:none;box-shadow:0 4px 18px rgba(232,0,28,.25);
+  transition:opacity .25s,transform .12s;
+}
+.btn-next.on{opacity:1;pointer-events:all}
+.btn-next:active{transform:scale(.97)}
+
+/* ══════ RESULTADO ══════ */
+#p5{background:var(--BK)}
+
+.r-hero{
+  width:100%;background:var(--R);
+  padding:30px 24px 26px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  position:relative;overflow:hidden;
+}
+.r-hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 120% 80% at 50% 120%,rgba(0,0,0,.45) 0%,transparent 65%);
+}
+.r-crown{font-size:44px;position:relative;z-index:1;animation:crDrop .5s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes crDrop{from{opacity:0;transform:scale(.35)}to{opacity:1;transform:scale(1)}}
+.r-eye{font-size:10px;font-weight:800;letter-spacing:.2em;color:rgba(255,255,255,.5);text-transform:uppercase;position:relative;z-index:1}
+.r-title{
+  width:100%;font-size:clamp(22px,6.5vw,32px);font-weight:900;
+  letter-spacing:-.02em;line-height:1.1;text-align:center;
+  color:var(--W);position:relative;z-index:1;word-break:break-word;padding:0 4px;
+}
+.r-title .rl{color:rgba(255,220,220,1);font-size:clamp(28px,8vw,40px);display:block;margin-top:4px}
+
+.r-body{width:100%;padding:20px 24px 60px;display:flex;flex-direction:column;gap:12px}
+
+/* Saving card */
+.saving-card{
+  background:var(--BK2);border:1px solid var(--BD);border-radius:18px;
+  padding:20px;position:relative;overflow:hidden;
+}
+.saving-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--R)}
+.sc-lbl{font-size:10px;font-weight:800;letter-spacing:.12em;color:var(--T3);text-transform:uppercase;margin-bottom:14px}
+.sc-main{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+.sc-val{font-size:44px;font-weight:900;letter-spacing:-.05em;line-height:1;color:var(--R)}
+.sc-right{text-align:right}
+.sc-period{font-size:11px;color:var(--T3);margin-bottom:3px}
+.sc-note{font-size:12px;color:var(--T2);max-width:140px;text-align:right;line-height:1.4}
+
+/* Diag */
+.diag-card{
+  background:var(--BK2);border:1px solid var(--BD);border-radius:18px;padding:18px;
+}
+.diag-badge{
+  display:inline-flex;align-items:center;
+  background:rgba(232,0,28,.1);border:1px solid rgba(232,0,28,.2);
+  border-radius:5px;padding:3px 10px;
+  font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--R);
+  text-transform:uppercase;margin-bottom:10px;
+}
+.diag-title{font-size:17px;font-weight:800;color:var(--W);margin-bottom:7px;letter-spacing:-.01em;line-height:1.2}
+.diag-desc{font-size:13px;color:var(--T2);line-height:1.65}
+
+/* Benefits */
+.bens{display:flex;flex-direction:column;gap:9px}
+.ben{
+  display:flex;align-items:flex-start;gap:11px;
+  background:var(--BK2);border:1px solid var(--BD);border-radius:12px;padding:13px 14px;
+}
+.ben-ico{
+  width:36px;height:36px;border-radius:8px;
+  background:rgba(232,0,28,.1);
+  display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;
+}
+.ben-txt p{font-size:13px;font-weight:700;color:var(--W);line-height:1.2}
+.ben-txt span{font-size:12px;color:var(--T2);margin-top:2px;display:block}
+
+.urgency{
+  background:rgba(232,0,28,.06);border:1px solid rgba(232,0,28,.15);
+  border-radius:12px;padding:13px 14px;
+  display:flex;align-items:flex-start;gap:8px;
+}
+.u-dot{width:7px;height:7px;border-radius:50%;background:var(--R);flex-shrink:0;margin-top:5px;animation:blink 1.6s ease-in-out infinite}
+.urgency p{font-size:12px;color:var(--T2);font-weight:500;line-height:1.55}
+.urgency strong{color:var(--R)}
+
+.btn-ghost{
+  width:100%;padding:14px;background:transparent;border:1px solid var(--BD);
+  border-radius:12px;color:var(--T3);font-family:'Inter',sans-serif;
+  font-size:13px;font-weight:600;cursor:pointer;
+}
+.btn-ghost:active{background:var(--BK2)}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ HOME ══════════════ -->
+<section class="scr" id="p1">
+<div class="top-bar"></div>
+
+<div class="p1-header">
+  <div class="logo-wrap">
+    <div class="logo-box">
+      <svg width="24" height="24" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 15 L20 85 L36 85 L36 56 Q36 56 54 56 Q76 56 76 36 Q76 15 54 15 Z" fill="white"/>
+        <rect x="44" y="28" width="19" height="5" rx="2.5" fill="#E8001C"/>
+        <rect x="44" y="36" width="15" height="5" rx="2.5" fill="#E8001C"/>
+        <rect x="44" y="44" width="11" height="5" rx="2.5" fill="#E8001C"/>
+      </svg>
+    </div>
+    <div class="logo-name">PEDI<span>WAY</span></div>
+  </div>
+  <div class="free-tag">100% grátis</div>
+</div>
+
+<div class="p1-hero">
+  <div class="kicker">🔥 Alerta para donos de restaurante</div>
+  <h1 class="p1-h1">
+    PARE DE<br>PERDER<br>
+    <em>DINHEIRO.</em>
+  </h1>
+  <p class="p1-sub">
+    Restaurantes como o seu pagam em média <em>R$1.200 por mês</em> em taxas
+    para plataformas que <strong>você pode substituir de graça</strong> — hoje mesmo.
+  </p>
+
+  <div class="loss-card">
+    <div class="lc-lbl">💸 O que você paga sem perceber</div>
+    <div class="lc-rows">
+      <div class="lc-row">
+        <span class="lc-name">Taxa iFood / Rappi (até 30%)</span>
+        <span class="lc-val">−R$900/mês</span>
+      </div>
+      <div class="lc-row">
+        <span class="lc-name">Sistema de gestão</span>
+        <span class="lc-val">−R$180/mês</span>
+      </div>
+      <div class="lc-row">
+        <span class="lc-name">Cardápio digital terceirizado</span>
+        <span class="lc-val">−R$120/mês</span>
+      </div>
+    </div>
+    <div class="lc-total">
+      <span class="lc-total-lbl">Prejuízo anual estimado</span>
+      <span class="lc-total-val">R$14.400</span>
+    </div>
+    <p class="lc-note">*Cálculo médio para restaurante com faturamento de R$15.000/mês</p>
+  </div>
+
+  <div class="proof-bar">
+    <div class="pdot"></div>
+    <p><strong>+2.400 restaurantes</strong> já usam o PEDIWAY e não pagam nada</p>
+  </div>
+</div>
+
+<div style="width:100%;padding:24px 24px 56px;display:flex;flex-direction:column;gap:8px">
+  <button class="btn-cta" onclick="go('p2')">
+    Fazer o diagnóstico gratuito →
+  </button>
+  <p class="cta-note">4 perguntas · menos de 2 min · resultado imediato</p>
+</div>
+</section>
+
+<!-- ══════════════ Q1 ══════════════ -->
+<section class="scr off" id="p2">
+<div class="pg-nav">
+  <div class="top-bar"></div>
+  <div class="nav-inner">
+    <button class="back-btn" onclick="go('p1')">←</button>
+    <div class="prog-wrap">
+      <div class="prog-row"><span>Pergunta <em>1</em> de 4</span><em>25%</em></div>
+      <div class="prog-track"><div class="prog-fill" style="width:25%"></div></div>
+    </div>
+  </div>
+</div>
+<div class="qbody">
+  <div class="q-chip">💰 Custos</div>
+  <h2 class="q-title">Quanto você paga hoje<br>em <span class="r">taxas e plataformas</span><br>todo mês?</h2>
+  <p class="q-sub">Soma iFood, sistema, cardápio digital e qualquer mensalidade de gestão.</p>
+  <div class="opts">
+    <button class="opt" style="animation-delay:.04s" onclick="sel(this,'p2','a')">
+      <div class="opt-ico">😅</div>
+      <div class="opt-body"><p>Menos de R$300/mês</p><span>Ainda assim, esse dinheiro poderia ser seu</span></div>
+      <div class="chk"></div>
+    </button>
+    <button class="opt" style="animation-delay:.1s" onclick="sel(this,'p2','b')">
+      <div class="opt-ico">😬</div>
+      <div class="opt-body"><p>Entre R$300 e R$800/mês</p><span>R$9.600 por ano — dá pra contratar alguém</span></div>
+      <div class="chk"></div>
+    </button>
+    <button class="opt" style="animation-delay:.16s" onclick="sel(this,'p2','c')">
+      <div class="opt-ico">😤</div>
+      <div class="opt-body"><p>Entre R$800 e R$2.000/mês</p><span>Até R$24.000 jogados fora por ano</span></div>
+      <div class="chk"></div>
+    </button>
+    <button class="opt" style="animation-delay:.22s" onclick="sel(this,'p2','d')">
+      <div class="opt-ico">🤯</div>
+      <div class="opt-body"><p>Mais de R$2.000/mês</p><span>Mais de R$24k/ano — isso é lucro, não custo</span></div>
+      <div class="chk"></div>
+    </button>
+  </div>
+  <button class="btn-next" id="bn2" onclick="go('p3')">Próxima →</button>
+</div>
+</section>
+
+<!-- ══════════════ Q2 ══════════════ -->
+<section class="scr off" id="p3">
+<div class="pg-nav">
+  <div class="top-bar"></div>
+  <div class="nav-inner">
+    <button class="back-btn" onclick="go('p2')">←</button>
+    <div class="prog-wrap">
+      <div class="prog-row"><span>Pergunta <em>2</em> de 4</span><em>50%</em></div>
+      <div class="prog-track"><div class="prog-fill" style="width:50%"></div></div>
+    </div>
+  </div>
+</div>
+<div class="qbody">
+  <div class="q-chip">📱 Pedidos</div>
+  <h2 class="q-title">Como seus clientes<br>fazem <span class="r">pedidos hoje?</span></h2>
+  <p class="q-sub">Cada canal tem um custo escondido. Vamos expor o seu.</p>
+  <div class="opts">
+    <button class="opt" style="animation-delay:.04s" onclick="sel(this,'p3','a')">
+      <div class="opt-ico">📞</div>
+      <div class="opt-body"><p>Telefone ou WhatsApp</p><span>Sem controle, sem histórico, sem automação</span></div>
+      <div class="chk"></div>
+    </button>
+    <button class="opt" style="animation-delay:.1s" onclick="sel(this,'p3','b')">
+      <div class="opt-ico">🛵</div>
+      <div class="opt-body"><p>iFood ou Rappi</p><span>Pagando até 30% por pedido pra eles</span></div>
+      <div class="chk"></div>
+    </button>
+    <button class="opt" style="animation-delay:.16s" onclick="sel(this,'p3','c')">
+      <div class="opt-ico">🔗</div>
+      <div class="opt-body"><p>Site ou app próprio pago</p><span>Bom, mas ainda custa mensalidade</span></div>
+      <div class="chk"></div>
+    </button>
+    <button class="opt" style="animation-delay:.22s" onclick="sel(this,'p3','d')">
+      <div class="opt-ico">🤷</div>
+      <div class="opt-body"><p>Tudo junto, sem controle</p><span>Pedidos espalhados, sem visão do negócio</span></div>
+      <div class="chk"></div>
+    </button>
+  </div>
+  <button class="btn-next" id="bn3" onclick="go('p4')">Próxima →</button>
+</div>
+</section>
+
+<!-- ══════════════ Q3 ══════════════ -->
+<section class="scr off" id="p4">
+<div class="pg-nav">
+  <div class="top-bar"></div>
+  <div class="nav-inner">
+    <button class="back-btn" onclick="go('p3')">←</button>
+    <div class="prog-wrap">
+      <div class="prog-row"><span>Pergunta <em>3</em> de 4</span><em>75%</em></div>
+      <div class="prog-track"><div class="prog-fill" style="width:75%"></div></div>
+    </div>
+  </div>
+</div>
+<div class="qbody">
+  <div class="q-chip">📊 Gestão</div>
+  <h2 class="q-title">Você sabe exatamente<br><span class="r">o que vendeu</span><br>ontem?</h2>
+  <p class="q-sub">Gestão cega é lucro perdido. Cada dia sem dado é uma decisão errada.</p>
+  <div class="opts">
+    <button class="opt" style="animation-delay:.04s" onclick="sel(this,'p4','a')">
+      <div class="opt-ico">✅</div>
+      <div class="opt-body"><p>Sim, tenho sistema de gestão</p><span>Mas pago mensalidade por isso todo mês</span></div>
+      <div class="chk"></div>
+    </button>
+    <button class="opt" style="animation-delay:.1s" onclick="sel(this,'p4','b')">
+      <div class="opt-ico">📝</div>
+      <div class="opt-body"><p>Anoto no caderno ou planilha</p><span>Funciona, mas é manual e sujeito a erro</span></div>
+      <div class="chk"></div>
+    </button>
+    <button class="opt" style="animation-delay:.16s" onclick="sel(this,'p4','c')">
+      <div class="opt-ico">😶</div>
+      <div class="opt-body"><p>Mais ou menos, vejo pelo caixa</p><span>Sem visão de produto, cliente ou horário de pico</span></div>
+      <div class="chk"></div>
+    </button>
+    <button class="opt" style="animation-delay:.22s" onclick="sel(this,'p4','d')">
+      <div class="opt-ico">❌</div>
+      <div class="opt-body"><p>Não tenho controle nenhum</p><span>Tô voando no escuro todo dia</span></div>
+      <div class="chk"></div>
+    </button>
+  </div>
+  <button class="btn-next" id="bn4" onclick="go('p4b')">Próxima →</button>
+</div>
+</section>
+
+<!-- ══════════════ Q4 ══════════════ -->
+<section class="scr off" id="p4b">
+<div class="pg-nav">
+  <div class="top-bar"></div>
+  <div class="nav-inner">
+    <button class="back-btn" onclick="go('p4')">←</button>
+    <div class="prog-wrap">
+      <div class="prog-row"><span>Pergunta <em>4</em> de 4</span><em>100%</em></div>
+      <div class="prog-track"><div class="prog-fill" style="width:100%"></div></div>
+    </div>
+  </div>
+</div>
+<div class="qbody">
+  <div class="q-chip">🚀 Decisão</div>
+  <h2 class="q-title">Se tudo isso fosse<br><span class="r">100% gratuito,</span><br>o que você faria?</h2>
+  <p class="q-sub">Cardápio digital, pedidos online, gestão e relatórios — sem pagar nada por mês.</p>
+  <div class="opts">
+    <button class="opt" style="animation-delay:.04s" onclick="sel(this,'p4b','a')">
+      <div class="opt-ico">🔥</div>
+      <div class="opt-body"><p>Começaria agora mesmo</p><span>Já perdi dinheiro demais esperando</span></div>
+      <div class="chk"></div>
+    </button>
+    <button class="opt" style="animation-delay:.1s" onclick="sel(this,'p4b','b')">
+      <div class="opt-ico">🤔</div>
+      <div class="opt-body"><p>Precisaria entender melhor</p><span>Quero ver como funciona na prática</span></div>
+      <div class="chk"></div>
+    </button>
+    <button class="opt" style="animation-delay:.16s" onclick="sel(this,'p4b','c')">
+      <div class="opt-ico">😌</div>
+      <div class="opt-body"><p>Já uso algo parecido</p><span>Mas estou aberto a comparar</span></div>
+      <div class="chk"></div>
+    </button>
+    <button class="opt" style="animation-delay:.22s" onclick="sel(this,'p4b','d')">
+      <div class="opt-ico">💭</div>
+      <div class="opt-body"><p>Ainda tenho dúvidas</p><span>Quero tirar perguntas antes de decidir</span></div>
+      <div class="chk"></div>
+    </button>
+  </div>
+  <button class="btn-next" id="bn4b" onclick="go('p5')">Ver meu diagnóstico →</button>
+</div>
+</section>
+
+<!-- ══════════════ RESULTADO ══════════════ -->
+<section class="scr off" id="p5">
+<div class="top-bar"></div>
+<div class="r-hero">
+  <div class="r-crown">💡</div>
+  <p class="r-eye">Diagnóstico completo</p>
+  <h2 class="r-title">
+    Você está perdendo
+    <span class="rl" id="rSaving">R$14.400/ano</span>
+  </h2>
+</div>
+
+<div class="r-body">
+
+  <div class="saving-card">
+    <div class="sc-lbl">💰 Sua economia potencial com PEDIWAY</div>
+    <div class="sc-main">
+      <div class="sc-val" id="scVal">R$0</div>
+      <div class="sc-right">
+        <div class="sc-period">por ano, no seu bolso</div>
+        <p class="sc-note" id="scNote">calculando...</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="diag-card">
+    <div class="diag-badge">📋 Seu diagnóstico</div>
+    <div class="diag-title" id="diagTitle">Carregando...</div>
+    <p class="diag-desc" id="diagDesc"></p>
+  </div>
+
+  <div class="bens">
+    <div class="ben">
+      <div class="ben-ico">🛒</div>
+      <div class="ben-txt"><p>Cardápio digital próprio</p><span>Link direto, sem taxa por pedido, sem comissão</span></div>
+    </div>
+    <div class="ben">
+      <div class="ben-ico">📊</div>
+      <div class="ben-txt"><p>Gestão e relatórios em tempo real</p><span>Vendas, produtos e horários de pico</span></div>
+    </div>
+    <div class="ben">
+      <div class="ben-ico">🖨️</div>
+      <div class="ben-txt"><p>Comanda e impressão automática</p><span>Pedido vai direto na cozinha, sem erro humano</span></div>
+    </div>
+    <div class="ben">
+      <div class="ben-ico">💳</div>
+      <div class="ben-txt"><p>Pix, crédito e débito integrados</p><span>Sem maquininha cara, sem taxa absurda</span></div>
+    </div>
+  </div>
+
+  <button class="btn-cta" onclick="window.open('https://pediway.com.br','_blank')">
+    🚀 Criar minha conta grátis agora →
+  </button>
+  <p class="cta-note">Sem cartão · Sem contrato · Sem mensalidade · Para sempre</p>
+
+  <div class="urgency">
+    <div class="u-dot"></div>
+    <p>Cada mês que passa você joga fora em média <strong>R$1.200</strong> que poderiam estar no seu caixa.</p>
+  </div>
+
+  <button class="btn-ghost" onclick="restart()">↺ Refazer o diagnóstico</button>
+
+</div>
+</section>
+
+<script>
+var A = {};
+
+function go(id){
+  document.querySelectorAll('.scr').forEach(function(s){s.classList.add('off')});
+  document.getElementById(id).classList.remove('off');
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='p5') buildResult();
+}
+
+function sel(btn, page, val){
+  document.getElementById(page).querySelectorAll('.opt').forEach(function(o){
+    o.classList.remove('sel');o.querySelector('.chk').textContent='';
+  });
+  btn.classList.add('sel');btn.querySelector('.chk').textContent='✓';
+  A[page]=val;
+  var bn={p2:'bn2',p3:'bn3',p4:'bn4',p4b:'bn4b'}[page];
+  if(bn) document.getElementById(bn).classList.add('on');
+}
+
+function buildResult(){
+  var custo = A['p2']||'b';
+  var data = {
+    a:{val:'R$3.600/ano', note:'Mesmo pouco, zero é melhor que qualquer valor',
+       title:'Você ainda tem margem pra crescer',
+       desc:'Seus custos estão baixos, mas com o PEDIWAY você zera até o que paga de pouco e ainda tem ferramentas profissionais que seus concorrentes pagam caro pra ter.'},
+    b:{val:'R$9.600/ano', note:'É o salário de um funcionário desperdiçado',
+       title:'Você está pagando por algo que pode ter de graça',
+       desc:'R$300 a R$800 por mês parece pouco, mas R$9.600 no final do ano é dinheiro real que sai do seu lucro. Com PEDIWAY você zera isso e ainda tem um sistema mais completo.'},
+    c:{val:'R$24.000/ano', note:'Dá pra reformar o restaurante com isso',
+       title:'Você está sangrando dinheiro todo mês',
+       desc:'Mais de R$800/mês em taxas é inadmissível quando existe uma alternativa gratuita. Você está pagando R$24.000 por ano pra enriquecer as plataformas — dinheiro que deveria ser seu.'},
+    d:{val:'R$28.800/ano', note:'Mais de 2 anos de desperdício acumulado',
+       title:'Emergência: você está no nível crítico de desperdício',
+       desc:'Mais de R$2.000/mês em taxas é uma hemorragia financeira. Com PEDIWAY você corta isso do dia pra noite, sem perder nenhuma funcionalidade — e ainda ganha mais controle do negócio.'}
+  };
+  var d = data[custo];
+  document.getElementById('rSaving').textContent = d.val;
+  document.getElementById('scVal').textContent = d.val;
+  document.getElementById('scNote').textContent = d.note;
+  document.getElementById('diagTitle').textContent = d.title;
+  document.getElementById('diagDesc').textContent = d.desc;
+}
+
+function restart(){
+  A={};
+  ['bn2','bn3','bn4','bn4b'].forEach(function(id){document.getElementById(id).classList.remove('on')});
+  document.querySelectorAll('.opt').forEach(function(o){o.classList.remove('sel');o.querySelector('.chk').textContent='';});
+  go('p1');
+}
+</script>
+</body>
+</html>
