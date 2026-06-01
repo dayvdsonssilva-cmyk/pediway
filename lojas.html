@@ -54,7 +54,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
 <title>PEDIWAY</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://nmttkjmfazcipefeakkx.supabase.co">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -80,7 +83,7 @@ html,body{height:100%;overflow:hidden;background:#FFFFFF;font-family:var(--font)
 
 /* ── NAV ── */
 .bottom-nav{flex-shrink:0;display:flex;background:#fff;border-top:1.5px solid var(--accent2);padding-bottom:env(safe-area-inset-bottom);z-index:50;}
-.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 8px;cursor:pointer;border:none;background:none;font-family:var(--font);font-size:10px;font-weight:600;color:var(--gray);position:relative;transition:color .15s;}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 8px;cursor:pointer;border:none;background:none;font-family:var(--font);font-size:10px;font-weight:600;color:var(--gray);position:relative;transition:color .15s;touch-action:manipulation;}
 .nav-item.active{color:var(--red);}
 .nav-item svg{width:22px;height:22px;}
 .nav-badge{position:absolute;top:6px;right:calc(50% - 18px);min-width:16px;height:16px;background:var(--red);color:#fff;font-size:9px;font-weight:800;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;}
@@ -97,13 +100,13 @@ html,body{height:100%;overflow:hidden;background:#FFFFFF;font-family:var(--font)
 .hero-banner::after{content:'🍽️';position:absolute;right:-12px;bottom:-18px;font-size:84px;opacity:.08;pointer-events:none;}
 
 /* ── CATEGORIES ── */
-.cat-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:50px;border:1.5px solid var(--accent2);background:#fff;font-family:var(--font);font-size:12px;font-weight:600;color:var(--mid);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;}
+.cat-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:50px;border:1.5px solid var(--accent2);background:#fff;font-family:var(--font);font-size:12px;font-weight:600;color:var(--mid);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;touch-action:manipulation;}
 .cat-pill.active{background:var(--red);border-color:var(--red);color:#fff;}
 .scroll-x{overflow-x:auto;scrollbar-width:none;display:flex;gap:8px;padding:14px 18px 6px;}
 .scroll-x::-webkit-scrollbar{display:none;}
 
 /* ── STORE CARD ── */
-.store-card{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 2px 14px rgba(232,0,28,.08);border:1px solid var(--accent2);cursor:pointer;transition:transform .15s,box-shadow .15s;}
+.store-card{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 2px 14px rgba(232,0,28,.08);border:1px solid var(--accent2);cursor:pointer;transition:transform .15s,box-shadow .15s;touch-action:manipulation;will-change:transform;}
 .store-card:active{transform:scale(.99);}
 .store-hero{height:120px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;}
 .store-hero-logo{width:80px;height:80px;border-radius:18px;object-fit:cover;display:block;box-shadow:0 4px 20px rgba(0,0,0,.4);border:2.5px solid rgba(255,255,255,.2);}
@@ -111,7 +114,7 @@ html,body{height:100%;overflow:hidden;background:#FFFFFF;font-family:var(--font)
 .store-info{padding:12px 14px 14px;}
 .store-name{font-size:14px;font-weight:800;color:var(--dark);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 /* Card B — horizontal: logo grande + info lado a lado */
-.store-card-b{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 2px 14px rgba(232,0,28,.08);border:1px solid var(--accent2);cursor:pointer;transition:transform .15s,box-shadow .15s;display:flex;align-items:stretch;}
+.store-card-b{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 2px 14px rgba(232,0,28,.08);border:1px solid var(--accent2);cursor:pointer;transition:transform .15s,box-shadow .15s;display:flex;align-items:stretch;touch-action:manipulation;will-change:transform;}
 .store-card-b:active{transform:scale(.98);}
 .store-card-b-img{width:80px;height:80px;flex-shrink:0;position:relative;overflow:hidden;border-radius:14px;margin:10px 0 10px 10px;align-self:center;background:#fff;border:1px solid #f0ebe4;}
 .store-card-b-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:0;}
@@ -179,7 +182,7 @@ html,body{height:100%;overflow:hidden;background:#FFFFFF;font-family:var(--font)
 .filtro-pill.ativo{background:#E8001C;border-color:#E8001C;color:#fff;}
 
 /* Produto card */
-.produto-card{background:#fff;border-radius:14px;overflow:hidden;display:flex;align-items:stretch;box-shadow:0 1px 10px rgba(232,0,28,.07);border:1px solid var(--accent2);cursor:pointer;transition:transform .12s;max-height:130px;}
+.produto-card{background:#fff;border-radius:14px;overflow:hidden;display:flex;align-items:stretch;box-shadow:0 1px 10px rgba(232,0,28,.07);border:1px solid var(--accent2);cursor:pointer;transition:transform .12s;max-height:130px;touch-action:manipulation;will-change:transform;}
 .produto-card:active{transform:scale(.99);}
 .produto-img-wrap{width:110px;min-width:110px;max-width:110px;max-height:130px;overflow:hidden;background:var(--cream);flex-shrink:0;align-self:stretch;}
 .produto-img-wrap img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .3s;}
@@ -219,7 +222,7 @@ html,body{height:100%;overflow:hidden;background:#FFFFFF;font-family:var(--font)
 .adicional-sub{font-size:10px;color:var(--gray);margin-bottom:8px;}
 .adicional-opcao{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1.5px solid #e0dbd5;border-radius:10px;cursor:pointer;margin-bottom:6px;transition:all .15s;}
 .adicional-opcao .adic-check{width:20px;height:20px;border-radius:6px;border:1.5px solid #ddd;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;transition:all .15s;}
-.btn-add-cart{width:100%;padding:14px;border-radius:14px;background:#E8001C;color:#fff;border:none;font-family:var(--font);font-size:15px;font-weight:800;cursor:pointer;transition:background .15s;}
+.btn-add-cart{width:100%;padding:14px;border-radius:14px;background:#E8001C;color:#fff;border:none;font-family:var(--font);font-size:15px;font-weight:800;cursor:pointer;transition:background .15s;touch-action:manipulation;}
 .btn-add-cart:hover{background:#C0001A;}
 
 /* FAB carrinho */
@@ -473,7 +476,12 @@ input,select,textarea{font-size:16px !important;touch-action:manipulation;}
           <div style="font-size:15px;font-weight:700;color:var(--dark);" id="home-lojas-title">Todos os restaurantes</div>
           <button id="toggle-card-btn" onclick="toggleCardStyle()" style="width:32px;height:32px;border-radius:9px;background:var(--cream);border:1.5px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;" title="Mudar layout">⊞</button>
         </div>
-        <div id="home-grid" style="display:flex;flex-direction:column;gap:12px;"></div>
+        <div id="home-grid" style="display:flex;flex-direction:column;gap:12px;">
+          <!-- Skeleton enquanto carrega -->
+          <div class="skel-card" id="skel-1"><div class="skel skel-img"></div><div class="skel-body"><div class="skel skel-line w80"></div><div class="skel skel-line w60"></div><div class="skel skel-line w40"></div></div></div>
+          <div class="skel-card" id="skel-2"><div class="skel skel-img"></div><div class="skel-body"><div class="skel skel-line w80"></div><div class="skel skel-line w60"></div><div class="skel skel-line w40"></div></div></div>
+          <div class="skel-card" id="skel-3"><div class="skel skel-img"></div><div class="skel-body"><div class="skel skel-line w80"></div><div class="skel skel-line w60"></div><div class="skel skel-line w40"></div></div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -775,7 +783,7 @@ function wppLink(num, msg) {
 // INIT
 // ═══════════════════════════════════════════════════════
 async function init() {
-  // Carrega usuário
+  // Carrega usuário (síncrono, instantâneo)
   try { const s = localStorage.getItem('pw_cliente'); if(s) _user = JSON.parse(s); } catch(e){}
   if(_user?.nome) {
     $('home-avatar').textContent = _user.nome[0].toUpperCase();
@@ -783,14 +791,22 @@ async function init() {
     if(_user.cidade) { _cidade = _user.cidade; $('home-cidade').textContent = '📍 ' + _cidade; $('home-cidade').style.display='block'; }
   }
 
-  // Carrega estados IBGE em background
+  // Estados IBGE em background — não bloqueia
   carregarEstados();
 
-  // Carrega promos ANTES das lojas para ter _promoItems disponível
-  try {
-    const {data:pd} = await db.from('produtos')
+  // ── PARALELO: promos + lojas ao mesmo tempo (economiza ~400ms) ──
+  const [promosRes, lojasRes] = await Promise.allSettled([
+    db.from('produtos')
       .select('id,nome,preco,preco_original,desconto_percent,estabelecimento_id,foto_url')
-      .eq('em_promocao',true).gt('desconto_percent',0).eq('disponivel',true);
+      .eq('em_promocao',true).gt('desconto_percent',0).eq('disponivel',true),
+    db.from('estabelecimentos')
+      .select('id,nome,slug,logo_url,cor_primaria,cidade,aberto,descricao,taxa_entrega,tempo_entrega,faz_entrega,faz_retirada,whatsapp,promocao_ativa,desconto_percent,tipo_estab,horarios,quente_dia,quente_nome')
+      .order('nome'),
+  ]);
+
+  // Processa promos
+  try {
+    const pd = promosRes.value?.data;
     _promoItems = (pd||[]).map(p=>({
       ...p, name:p.nome, desconto:parseInt(p.desconto_percent||0),
       preco_com_desc:parseFloat(p.preco||0),
@@ -798,52 +814,52 @@ async function init() {
     }));
   } catch(e){ _promoItems=[]; }
 
-  // Carrega lojas
-  const {data, error} = await db.from('estabelecimentos')
-    .select('id,nome,slug,logo_url,cor_primaria,cidade,aberto,descricao,taxa_entrega,tempo_entrega,faz_entrega,faz_retirada,whatsapp,promocao_ativa,desconto_percent,tipo_estab,horarios,quente_dia,quente_nome')
-    .order('nome');
-  if(!error) {
-    _lojas = (data||[]).map(l => ({
+  // Processa lojas — renderiza imediatamente sem esperar avaliações
+  const lojasData = lojasRes.value?.data;
+  const lojasError = lojasRes.value?.error;
+  if(!lojasError && lojasData) {
+    _lojas = lojasData.map(l => ({
       ...l,
       _emoji:       lojaEmoji(l.nome),
       _bg:          l.cor_primaria||'#C0001A',
-      _aberto:      calcularAberto(l), // usa helper centralizado
+      _aberto:      calcularAberto(l),
       _horarioHoje: horarioHoje(l.horarios),
     }));
 
-    // Busca médias de avaliação
-    try {
-      const {data: avals} = await db.from('avaliacoes').select('estabelecimento_id,nota');
-      if (avals?.length) {
-        const medias = {};
-        avals.forEach(a => {
-          if (!medias[a.estabelecimento_id]) medias[a.estabelecimento_id] = [];
-          medias[a.estabelecimento_id].push(a.nota);
-        });
-        _lojas = _lojas.map(l => ({
-          ...l,
-          _media: medias[l.id]?.length
-            ? (medias[l.id].reduce((s,n)=>s+n,0)/medias[l.id].length).toFixed(1)
-            : null,
-          _totalAvals: medias[l.id]?.length || 0,
-        }));
-      }
-    } catch(e) {}
-
+    // Renderiza logo — usuário já vê as lojas
     renderHome();
     renderBanner();
     renderSearchCats();
+
+    // Avaliações em background — atualiza estrelas sem bloquear
+    db.from('avaliacoes').select('estabelecimento_id,nota').then(({data: avals}) => {
+      if (!avals?.length) return;
+      const medias = {};
+      avals.forEach(a => {
+        if (!medias[a.estabelecimento_id]) medias[a.estabelecimento_id] = [];
+        medias[a.estabelecimento_id].push(a.nota);
+      });
+      _lojas = _lojas.map(l => ({
+        ...l,
+        _media: medias[l.id]?.length
+          ? (medias[l.id].reduce((s,n)=>s+n,0)/medias[l.id].length).toFixed(1)
+          : null,
+        _totalAvals: medias[l.id]?.length || 0,
+      }));
+      if (_screen === 'home') renderHome();
+    }).catch(()=>{});
   }
 
   // Modal primeira visita
   if(!_user) setTimeout(() => abrirPerfil(true), 700);
 
-  // Carrega pedidos salvos
+  // Pedidos salvos
   renderOrders();
 
-  // Carrega status atuais antes de iniciar monitoramento
-  await carregarStatusIniciais();
-  _pollingId = setInterval(pollarPedidos, 3000);
+  // Status + polling em background — não bloqueia a tela
+  carregarStatusIniciais().then(() => {
+    _pollingId = setInterval(pollarPedidos, 3000);
+  });
 
   iniciarRealtime();
 }
