@@ -15,7 +15,7 @@
   --BK:#0A0A0A;--BK2:#111111;--BK3:#1C1C1C;
   --BD:#252525;--BD2:#383838;
   --TXT:#F2F2F2;--T2:#888;--T3:#484848;
-  --W:#fff;
+  --W:#fff;--GRN:#22C55E;
 }
 html,body{
   background:var(--BK);color:var(--TXT);
@@ -28,24 +28,20 @@ html,body{
   width:100%;max-width:430px;margin:0 auto;min-height:100svh;
 }
 .scr.off{display:none!important}
-
 .top-bar{width:100%;height:3px;background:linear-gradient(90deg,var(--RD),var(--R),var(--RL));flex-shrink:0}
 
 /* ══ HOME ══ */
 .p1-header{
-  width:100%;padding:20px 24px 0;
+  width:100%;padding:18px 24px;
   display:flex;align-items:center;justify-content:space-between;
+  background:var(--R);
 }
 .logo-wrap{display:flex;align-items:center;gap:10px}
-.logo-box{
-  width:36px;height:36px;border-radius:8px;
-  background:var(--R);display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.logo-name{font-size:16px;font-weight:900;letter-spacing:.04em;color:var(--W)}
-.logo-name span{color:var(--R)}
+.logo-box{width:36px;height:36px;border-radius:8px;background:var(--R);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-name{font-size:16px;font-weight:900;letter-spacing:.06em;color:var(--W)}
+.logo-name span{color:var(--W)}
 
 .p1-hero{width:100%;padding:32px 24px 0}
-
 .kicker{
   display:inline-flex;align-items:center;gap:6px;
   background:rgba(232,0,28,.1);border:1px solid rgba(232,0,28,.2);
@@ -58,25 +54,22 @@ html,body{
   line-height:.9;letter-spacing:-.03em;color:var(--W);margin-bottom:16px;
 }
 .p1-h1 em{font-style:normal;color:var(--R);display:block}
-
-.p1-sub{
-  font-size:14px;font-weight:500;line-height:1.6;color:var(--T2);
-}
+.p1-sub{font-size:14px;font-weight:500;line-height:1.6;color:var(--T2)}
 .p1-sub strong{color:var(--W)}
 .p1-sub em{font-style:normal;color:var(--R);font-weight:700}
 
-/* LOSS CARD */
-.loss-card{
+/* CONTADOR AO VIVO */
+.live-counter{
   margin-top:24px;width:100%;
   background:var(--BK2);border:1px solid var(--BD);
-  border-radius:16px;padding:20px 20px 16px;
+  border-radius:16px;padding:20px;
   position:relative;overflow:hidden;
 }
-.loss-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--R)}
-.lc-lbl{
-  font-size:10px;font-weight:800;letter-spacing:.14em;color:var(--T3);
-  text-transform:uppercase;margin-bottom:14px;padding-left:12px;
-}
+.live-counter::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--R)}
+.lc-top{display:flex;align-items:center;gap:8px;padding-left:12px;margin-bottom:14px}
+.lc-dot{width:7px;height:7px;border-radius:50%;background:var(--R);animation:blink 1s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.lc-top-lbl{font-size:10px;font-weight:800;letter-spacing:.14em;color:var(--T3);text-transform:uppercase}
 .lc-rows{display:flex;flex-direction:column;gap:9px;padding-left:12px}
 .lc-row{display:flex;align-items:center;justify-content:space-between}
 .lc-name{font-size:13px;font-weight:500;color:var(--T2)}
@@ -86,24 +79,30 @@ html,body{
   padding:14px 0 0 12px;margin-top:12px;border-top:1px solid var(--BD);
 }
 .lc-total-lbl{font-size:12px;font-weight:600;color:var(--T2)}
-.lc-total-val{font-size:22px;font-weight:900;color:var(--R);letter-spacing:-.03em}
+.lc-total-val{font-size:24px;font-weight:900;color:var(--R);letter-spacing:-.03em}
 
-/* PROOF */
+/* TICKER — dinheiro escorrendo em tempo real */
+.ticker{
+  margin-top:12px;width:100%;
+  background:rgba(232,0,28,.06);border:1px solid rgba(232,0,28,.15);
+  border-radius:10px;padding:10px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.ticker-lbl{font-size:11px;color:var(--T2);font-weight:500}
+.ticker-val{font-size:14px;font-weight:900;color:var(--R);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+
 .proof-bar{
-  margin-top:14px;width:100%;
+  margin-top:12px;width:100%;
   display:flex;align-items:center;gap:8px;
   background:var(--BK2);border:1px solid var(--BD);
   border-radius:10px;padding:11px 14px;
 }
-.pdot{width:7px;height:7px;border-radius:50%;background:var(--R);flex-shrink:0;animation:blink 1.8s ease-in-out infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+.pdot{width:7px;height:7px;border-radius:50%;background:var(--GRN);flex-shrink:0;animation:blink 1.8s ease-in-out infinite}
 .proof-bar p{font-size:12px;color:var(--T2);font-weight:500}
 .proof-bar strong{color:var(--TXT)}
 
-/* BTN */
 .btn-cta{
-  width:100%;padding:18px 20px;
-  background:var(--R);color:var(--W);
+  width:100%;padding:18px 20px;background:var(--R);color:var(--W);
   font-family:'Inter',sans-serif;font-size:15px;font-weight:800;
   border:none;border-radius:13px;cursor:pointer;
   box-shadow:0 6px 24px rgba(232,0,28,.32);
@@ -134,7 +133,7 @@ html,body{
 .prog-fill{height:100%;border-radius:99px;background:var(--R);transition:width .5s cubic-bezier(.4,0,.2,1)}
 
 /* ══ QUIZ ══ */
-.qbody{width:100%;padding:28px 24px 60px;display:flex;flex-direction:column;flex:1}
+.qbody{width:100%;padding:26px 24px 60px;display:flex;flex-direction:column;flex:1}
 .q-chip{
   display:inline-flex;align-items:center;gap:5px;
   background:rgba(232,0,28,.1);border:1px solid rgba(232,0,28,.2);
@@ -148,6 +147,15 @@ html,body{
 }
 .q-title .r{color:var(--R)}
 .q-sub{font-size:13px;color:var(--T2);line-height:1.5;margin-bottom:22px}
+
+/* mini contador no quiz */
+.q-counter{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(232,0,28,.06);border:1px solid rgba(232,0,28,.14);
+  border-radius:9px;padding:9px 13px;margin-bottom:18px;
+}
+.q-counter-lbl{font-size:11px;color:var(--T2)}
+.q-counter-val{font-size:13px;font-weight:900;color:var(--R);margin-left:auto;font-variant-numeric:tabular-nums}
 
 .opts{display:flex;flex-direction:column;gap:8px}
 .opt{
@@ -170,7 +178,7 @@ html,body{
 .opt-body span{font-size:11px;color:var(--T2);margin-top:2px;display:block}
 .chk{
   width:20px;height:20px;border-radius:50%;border:1.5px solid var(--BD2);flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .15s;
+  display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .15em;
 }
 .opt.sel .chk{background:var(--R);border-color:var(--R);color:var(--W)}
 
@@ -183,12 +191,43 @@ html,body{
 .btn-next.on{opacity:1;pointer-events:all}
 .btn-next:active{transform:scale(.97)}
 
+/* ══ CAPTURA WHATSAPP ══ */
+#p_wpp{background:var(--BK)}
+.wpp-body{
+  width:100%;padding:32px 24px 60px;
+  display:flex;flex-direction:column;align-items:center;gap:16px;
+  flex:1;
+}
+.wpp-icon{font-size:48px;line-height:1;animation:crDrop .5s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes crDrop{from{opacity:0;transform:scale(.35)}to{opacity:1;transform:scale(1)}}
+.wpp-title{font-size:clamp(22px,6.5vw,28px);font-weight:900;text-align:center;line-height:1.1;letter-spacing:-.02em}
+.wpp-title span{color:var(--R)}
+.wpp-sub{font-size:13px;color:var(--T2);text-align:center;line-height:1.55;max-width:300px}
+
+.wpp-input-wrap{width:100%;display:flex;flex-direction:column;gap:8px}
+.wpp-label{font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--T3);text-transform:uppercase}
+.wpp-input{
+  width:100%;background:var(--BK2);border:1.5px solid var(--BD);
+  border-radius:12px;color:var(--TXT);
+  font-family:'Inter',sans-serif;font-size:17px;font-weight:600;
+  padding:15px 16px;outline:none;
+  transition:border-color .2s,box-shadow .2s;
+  -webkit-appearance:none;
+}
+.wpp-input:focus{border-color:var(--R);box-shadow:0 0 0 3px rgba(232,0,28,.12)}
+.wpp-input::placeholder{color:var(--T3)}
+
+.privacy-note{
+  display:flex;align-items:center;gap:6px;
+  font-size:11px;color:var(--T3);
+}
+.privacy-note span{font-size:14px}
+
 /* ══ RESULTADO ══ */
 #p5{background:var(--BK)}
-
 .r-hero{
   width:100%;background:var(--R);
-  padding:32px 24px 28px;
+  padding:30px 24px 26px;
   display:flex;flex-direction:column;align-items:center;gap:8px;
   position:relative;overflow:hidden;
 }
@@ -197,22 +236,17 @@ html,body{
   background:radial-gradient(ellipse 120% 80% at 50% 120%,rgba(0,0,0,.4) 0%,transparent 65%);
 }
 .r-crown{font-size:42px;position:relative;z-index:1;animation:crDrop .5s cubic-bezier(.34,1.56,.64,1) both}
-@keyframes crDrop{from{opacity:0;transform:scale(.35)}to{opacity:1;transform:scale(1)}}
 .r-eye{font-size:10px;font-weight:800;letter-spacing:.2em;color:rgba(255,255,255,.5);text-transform:uppercase;position:relative;z-index:1}
 .r-title{
-  width:100%;
-  font-size:clamp(22px,6.5vw,30px);font-weight:900;
+  width:100%;font-size:clamp(20px,6vw,28px);font-weight:900;
   letter-spacing:-.02em;line-height:1.1;text-align:center;
   color:var(--W);position:relative;z-index:1;
 }
-.r-title .big{
-  font-size:clamp(30px,9vw,42px);display:block;margin-top:6px;
-  color:#fff;letter-spacing:-.03em;
-}
+.r-title .big{font-size:clamp(28px,8.5vw,40px);display:block;margin-top:6px;letter-spacing:-.03em}
 
-/* CARDS RESULTADO */
 .r-body{width:100%;padding:20px 24px 56px;display:flex;flex-direction:column;gap:12px}
 
+/* SAVING */
 .saving-card{
   background:var(--BK2);border:1px solid var(--BD);border-radius:16px;
   padding:20px;position:relative;overflow:hidden;
@@ -222,6 +256,7 @@ html,body{
 .sc-val{font-size:40px;font-weight:900;letter-spacing:-.04em;line-height:1;color:var(--R);margin-bottom:6px}
 .sc-note{font-size:12px;color:var(--T2);line-height:1.4}
 
+/* DIAGNÓSTICO personalizado */
 .diag-card{
   background:var(--BK2);border:1px solid var(--BD);border-radius:16px;padding:18px;
 }
@@ -235,7 +270,24 @@ html,body{
 .diag-title{font-size:16px;font-weight:800;color:var(--W);margin-bottom:6px;line-height:1.25}
 .diag-desc{font-size:13px;color:var(--T2);line-height:1.6}
 
-/* BENEFÍCIOS — mais limpos */
+/* PLANO personalizado */
+.plan-card{
+  background:var(--BK2);border:1px solid var(--BD);border-radius:16px;
+  padding:18px;display:flex;flex-direction:column;gap:10px;
+  position:relative;overflow:hidden;
+}
+.plan-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--R)}
+.plan-lbl{font-size:10px;font-weight:800;letter-spacing:.12em;color:var(--T3);text-transform:uppercase;padding-left:12px;margin-bottom:2px}
+.plan-step{display:flex;align-items:flex-start;gap:11px;padding-left:12px}
+.plan-num{
+  width:24px;height:24px;border-radius:6px;background:var(--R);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;color:var(--W);flex-shrink:0;
+}
+.plan-txt p{font-size:13px;font-weight:700;color:var(--W);line-height:1.2}
+.plan-txt span{font-size:12px;color:var(--T2);margin-top:2px;display:block}
+
+/* BENS */
 .bens{display:flex;flex-direction:column;gap:8px}
 .ben{
   display:flex;align-items:center;gap:12px;
@@ -248,16 +300,14 @@ html,body{
   display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;
 }
 .ben-txt{font-size:13px;font-weight:600;color:var(--TXT);line-height:1.3}
-.ben-txt span{font-size:12px;color:var(--T2);font-weight:400;display:block;margin-top:1px}
+.ben-txt span{font-size:11px;color:var(--T2);font-weight:400;display:block;margin-top:1px}
 
-/* CTA FINAL */
 .urgency{
   background:rgba(232,0,28,.06);border:1px solid rgba(232,0,28,.14);
   border-radius:12px;padding:12px 14px;
   display:flex;align-items:flex-start;gap:8px;
 }
-.u-dot{width:7px;height:7px;border-radius:50%;background:var(--R);
-  flex-shrink:0;margin-top:4px;animation:blink 1.6s ease-in-out infinite}
+.u-dot{width:7px;height:7px;border-radius:50%;background:var(--R);flex-shrink:0;margin-top:4px;animation:blink 1.6s ease-in-out infinite}
 .urgency p{font-size:12px;color:var(--T2);line-height:1.55}
 .urgency strong{color:var(--R)}
 
@@ -273,47 +323,35 @@ html,body{
 
 <!-- ══════ HOME ══════ -->
 <section class="scr" id="p1">
-<div class="top-bar"></div>
-
 <div class="p1-header">
   <div class="logo-wrap">
-    <div class="logo-box">
-      <svg width="22" height="22" viewBox="0 0 100 100" fill="none">
-        <path d="M20 15 L20 85 L36 85 L36 56 Q54 56 54 56 Q76 56 76 36 Q76 15 54 15 Z" fill="white"/>
-        <rect x="44" y="28" width="19" height="5" rx="2.5" fill="#E8001C"/>
-        <rect x="44" y="36" width="15" height="5" rx="2.5" fill="#E8001C"/>
-        <rect x="44" y="44" width="11" height="5" rx="2.5" fill="#E8001C"/>
-      </svg>
-    </div>
-    <div class="logo-name">PEDI<span>WAY</span></div>
+    <img src="/publico/icons/icone-128.png" alt="PEDIWAY" style="width:36px;height:36px;object-fit:contain">
+    <div class="logo-name">PEDIWAY</div>
   </div>
 </div>
 
 <div class="p1-hero">
   <div class="kicker">🔥 Para donos de restaurante</div>
-  <h1 class="p1-h1">
-    PARE DE<br>PERDER<br>
-    <em>DINHEIRO.</em>
-  </h1>
-  <p class="p1-sub">
-    Restaurantes pagam em média <em>R$1.200/mês</em> em taxas que
-    <strong>podem ser reduzidas drasticamente</strong> com a plataforma certa.
-  </p>
+  <h1 class="p1-h1">PARE DE<br>PERDER<br><em>DINHEIRO.</em></h1>
+  <p class="p1-sub">Restaurantes pagam em média <em>R$1.200/mês</em> em taxas que <strong>podem ser eliminadas hoje.</strong></p>
 
-  <div class="loss-card">
-    <div class="lc-lbl">💸 O que você paga todo mês</div>
+  <div class="live-counter">
+    <div class="lc-top">
+      <div class="lc-dot"></div>
+      <span class="lc-top-lbl">💸 O que você paga todo mês</span>
+    </div>
     <div class="lc-rows">
       <div class="lc-row">
-        <span class="lc-name">Taxa iFood / Rappi</span>
-        <span class="lc-val">−R$900/mês</span>
+        <span class="lc-name">iFood / Rappi (até 30%)</span>
+        <span class="lc-val">−R$900</span>
       </div>
       <div class="lc-row">
         <span class="lc-name">Sistema de gestão</span>
-        <span class="lc-val">−R$180/mês</span>
+        <span class="lc-val">−R$180</span>
       </div>
       <div class="lc-row">
         <span class="lc-name">Cardápio digital</span>
-        <span class="lc-val">−R$120/mês</span>
+        <span class="lc-val">−R$120</span>
       </div>
     </div>
     <div class="lc-total">
@@ -322,7 +360,13 @@ html,body{
     </div>
   </div>
 
-  <div class="proof-bar" style="margin-top:14px">
+  <!-- Ticker ao vivo -->
+  <div class="ticker">
+    <span class="ticker-lbl">⏱ Você perdeu hoje enquanto lê isso</span>
+    <span class="ticker-val" id="tickerVal">R$0,00</span>
+  </div>
+
+  <div class="proof-bar">
     <div class="pdot"></div>
     <p><strong>+2.400 restaurantes</strong> já usam o PEDIWAY</p>
   </div>
@@ -330,7 +374,7 @@ html,body{
 
 <div style="width:100%;padding:22px 24px 52px;display:flex;flex-direction:column;gap:8px">
   <button class="btn-cta" onclick="go('p2')">Fazer o diagnóstico gratuito →</button>
-  <p class="cta-note">4 perguntas · menos de 2 min</p>
+  <p class="cta-note">4 perguntas · resultado imediato</p>
 </div>
 </section>
 
@@ -349,21 +393,24 @@ html,body{
 <div class="qbody">
   <div class="q-chip">💰 Custos</div>
   <h2 class="q-title">Quanto você paga em<br><span class="r">taxas e plataformas</span> por mês?</h2>
-  <p class="q-sub">Soma iFood, sistemas e cardápio digital.</p>
+  <div class="q-counter">
+    <span class="q-counter-lbl">⏱ Perdendo agora</span>
+    <span class="q-counter-val" id="qTicker1">R$0,00</span>
+  </div>
   <div class="opts">
     <button class="opt" style="animation-delay:.04s" onclick="sel(this,'p2','a')">
       <div class="opt-ico">😅</div>
-      <div class="opt-body"><p>Menos de R$300/mês</p><span>R$3.600 por ano saindo do caixa</span></div>
+      <div class="opt-body"><p>Menos de R$300/mês</p><span>R$3.600 saindo do caixa por ano</span></div>
       <div class="chk"></div>
     </button>
     <button class="opt" style="animation-delay:.1s" onclick="sel(this,'p2','b')">
       <div class="opt-ico">😬</div>
-      <div class="opt-body"><p>Entre R$300 e R$800/mês</p><span>Até R$9.600 por ano</span></div>
+      <div class="opt-body"><p>R$300 a R$800/mês</p><span>Até R$9.600 por ano perdido</span></div>
       <div class="chk"></div>
     </button>
     <button class="opt" style="animation-delay:.16s" onclick="sel(this,'p2','c')">
       <div class="opt-ico">😤</div>
-      <div class="opt-body"><p>Entre R$800 e R$2.000/mês</p><span>Até R$24.000 jogados fora por ano</span></div>
+      <div class="opt-body"><p>R$800 a R$2.000/mês</p><span>Até R$24.000 jogados fora por ano</span></div>
       <div class="chk"></div>
     </button>
     <button class="opt" style="animation-delay:.22s" onclick="sel(this,'p2','d')">
@@ -400,17 +447,17 @@ html,body{
     </button>
     <button class="opt" style="animation-delay:.1s" onclick="sel(this,'p3','b')">
       <div class="opt-ico">🛵</div>
-      <div class="opt-body"><p>iFood ou Rappi</p><span>Pagando até 30% por pedido</span></div>
+      <div class="opt-body"><p>iFood ou Rappi</p><span>Pagando até 30% por pedido pra eles</span></div>
       <div class="chk"></div>
     </button>
     <button class="opt" style="animation-delay:.16s" onclick="sel(this,'p3','c')">
       <div class="opt-ico">🔗</div>
-      <div class="opt-body"><p>Site ou app próprio pago</p><span>Ainda custa mensalidade</span></div>
+      <div class="opt-body"><p>Site ou app próprio pago</p><span>Ainda custa mensalidade todo mês</span></div>
       <div class="chk"></div>
     </button>
     <button class="opt" style="animation-delay:.22s" onclick="sel(this,'p3','d')">
       <div class="opt-ico">🤷</div>
-      <div class="opt-body"><p>Tudo junto, sem controle</p><span>Pedidos espalhados, sem visão</span></div>
+      <div class="opt-body"><p>Tudo junto, sem controle</p><span>Pedidos espalhados, zero visão</span></div>
       <div class="chk"></div>
     </button>
   </div>
@@ -475,11 +522,11 @@ html,body{
 <div class="qbody">
   <div class="q-chip">🚀 Decisão</div>
   <h2 class="q-title">Se você pudesse reduzir<br><span class="r">esses custos hoje,</span><br>o que faria?</h2>
-  <p class="q-sub">Cardápio digital, pedidos online e gestão — tudo numa plataforma.</p>
+  <p class="q-sub">Cardápio digital, pedidos e gestão — tudo numa plataforma.</p>
   <div class="opts">
     <button class="opt" style="animation-delay:.04s" onclick="sel(this,'p4b','a')">
       <div class="opt-ico">🔥</div>
-      <div class="opt-body"><p>Começaria agora</p><span>Já perdi dinheiro demais esperando</span></div>
+      <div class="opt-body"><p>Começaria agora mesmo</p><span>Já perdi dinheiro demais esperando</span></div>
       <div class="chk"></div>
     </button>
     <button class="opt" style="animation-delay:.1s" onclick="sel(this,'p4b','b')">
@@ -517,15 +564,32 @@ html,body{
 <div class="r-body">
 
   <div class="saving-card">
-    <div class="sc-lbl">💰 Economia com PEDIWAY</div>
+    <div class="sc-lbl">💰 Sua economia com PEDIWAY</div>
     <div class="sc-val" id="scVal">R$14.400/ano</div>
-    <p class="sc-note" id="scNote">voltando pro seu caixa</p>
+    <p class="sc-note" id="scNote">voltando direto pro seu caixa</p>
   </div>
 
   <div class="diag-card">
     <div class="diag-badge">📋 Diagnóstico</div>
     <div class="diag-title" id="diagTitle"></div>
     <p class="diag-desc" id="diagDesc"></p>
+  </div>
+
+  <!-- Plano de ação personalizado -->
+  <div class="plan-card">
+    <div class="plan-lbl">⚡ Seu plano de ação</div>
+    <div class="plan-step">
+      <div class="plan-num">1</div>
+      <div class="plan-txt"><p>Criar conta no PEDIWAY</p><span>Leva menos de 5 minutos, sem cartão</span></div>
+    </div>
+    <div class="plan-step">
+      <div class="plan-num">2</div>
+      <div class="plan-txt" id="planStep2"><p>Cadastrar seu cardápio</p><span>Importamos do iFood se quiser</span></div>
+    </div>
+    <div class="plan-step">
+      <div class="plan-num">3</div>
+      <div class="plan-txt" id="planStep3"><p>Ativar pedidos online</p><span>Link próprio, zero comissão</span></div>
+    </div>
   </div>
 
   <div class="bens">
@@ -547,28 +611,43 @@ html,body{
     </div>
   </div>
 
-  <button class="btn-cta" onclick="window.open('https://pediway.com.br','_blank')">
-    🚀 Conhecer o PEDIWAY agora →
+  <button class="btn-cta" onclick="window.open('https://pediway.com.br','_blank')" style="font-size:16px;padding:20px">
+    🚀 Quero parar de perder dinheiro →
   </button>
+  <p class="cta-note" style="margin-top:-4px">Crie sua conta agora · Sem contrato</p>
 
   <div class="urgency">
     <div class="u-dot"></div>
-    <p>Cada mês sem agir é <strong>mais dinheiro perdido</strong> em taxas desnecessárias.</p>
+    <p>Cada mês que passa é <strong>mais dinheiro saindo do seu bolso</strong> desnecessariamente.</p>
   </div>
 
   <button class="btn-ghost" onclick="restart()">↺ Refazer o diagnóstico</button>
-
 </div>
 </section>
 
 <script>
 var A={};
+var tickerStart=Date.now();
+var tickerPerSec=1200*12/(365*24*3600); // R$1200/mes em reais por segundo
+
+// Ticker ao vivo
+setInterval(function(){
+  var elapsed=(Date.now()-tickerStart)/1000;
+  var val=elapsed*tickerPerSec;
+  var str='R$'+val.toFixed(2).replace('.',',');
+  var t1=document.getElementById('tickerVal');
+  var t2=document.getElementById('qTicker1');
+  if(t1)t1.textContent=str;
+  if(t2)t2.textContent=str;
+},100);
+
 function go(id){
   document.querySelectorAll('.scr').forEach(function(s){s.classList.add('off')});
   document.getElementById(id).classList.remove('off');
   window.scrollTo({top:0,behavior:'smooth'});
   if(id==='p5')buildResult();
 }
+
 function sel(btn,page,val){
   document.getElementById(page).querySelectorAll('.opt').forEach(function(o){
     o.classList.remove('sel');o.querySelector('.chk').textContent='';
@@ -578,21 +657,49 @@ function sel(btn,page,val){
   var m={p2:'bn2',p3:'bn3',p4:'bn4',p4b:'bn4b'};
   if(m[page])document.getElementById(m[page]).classList.add('on');
 }
+
+function fmtPhone(el){
+  var v=el.value.replace(/\D/g,'');
+  if(v.length>0)v='('+v;
+  if(v.length>3)v=v.slice(0,3)+') '+v.slice(3);
+  if(v.length>10)v=v.slice(0,10)+'-'+v.slice(10,14);
+  el.value=v;
+  var btn=document.getElementById('btnVerRes');
+  var raw=el.value.replace(/\D/g,'');
+  if(raw.length>=10){btn.style.opacity='1';btn.style.pointerEvents='all';}
+  else{btn.style.opacity='.3';btn.style.pointerEvents='none';}
+}
+
+function verResultado(){
+  var phone=document.getElementById('wppInput').value;
+  // Aqui futuramente integrar com CRM / webhook
+  console.log('Lead capturado:',phone,'Respostas:',A);
+  go('p5');
+}
+
 function buildResult(){
   var c=A['p2']||'b';
   var d={
     a:{val:'R$3.600/ano',note:'Cada real conta no fim do mês',
        title:'Você tem margem pra crescer',
-       desc:'Com o PEDIWAY você reduz custos e ganha ferramentas que seus concorrentes pagam caro pra ter.'},
+       desc:'Seus custos estão baixos mas com o PEDIWAY você elimina as taxas que ainda paga e ganha ferramentas que seus concorrentes pagam caro pra ter.',
+       s2:{t:'Reduzir dependência de terceiros',d:'Cardápio próprio em vez de pagar plataformas'},
+       s3:{t:'Automatizar pedidos',d:'WhatsApp e link próprio sem comissão'}},
     b:{val:'R$9.600/ano',note:'É o salário de um funcionário desperdiçado',
        title:'Você paga por algo que pode ter mais barato',
-       desc:'Com o PEDIWAY você corta a maior parte dessas taxas e ainda tem tudo num só lugar.'},
+       desc:'Com o PEDIWAY você corta a maior parte dessas taxas e centraliza tudo numa plataforma só.',
+       s2:{t:'Migrar cardápio para plataforma própria',d:'Importamos do iFood em minutos'},
+       s3:{t:'Ativar gestão de pedidos',d:'Controle total sem mensalidade cara'}},
     c:{val:'R$24.000/ano',note:'Dá pra reformar o restaurante com isso',
        title:'Você está sangrando dinheiro todo mês',
-       desc:'Mais de R$800/mês em taxas é inadmissível. O PEDIWAY reduz esse custo drasticamente.'},
-    d:{val:'+R$24.000/ano',note:'Nível crítico de desperdício',
-       title:'Emergência financeira no seu negócio',
-       desc:'Mais de R$2.000/mês em taxas é uma hemorragia. Com o PEDIWAY você vira esse jogo.'}
+       desc:'Mais de R$800/mês em taxas desnecessárias. O PEDIWAY resolve isso e ainda entrega mais funcionalidades.',
+       s2:{t:'Cortar taxas de plataformas externas',d:'Canal de venda próprio sem comissão'},
+       s3:{t:'Implementar gestão completa',d:'Relatórios, comanda e cardápio digital'}},
+    d:{val:'+R$24.000/ano',note:'Nível crítico — precisa resolver agora',
+       title:'Emergência no seu negócio',
+       desc:'Mais de R$2.000/mês em taxas é uma hemorragia. Com o PEDIWAY você vira esse jogo rapidamente.',
+       s2:{t:'Migração imediata do cardápio',d:'Suporte dedicado para migrar hoje'},
+       s3:{t:'Eliminar dependência de marketplace',d:'Canal próprio + gestão + comanda'}}
   };
   var r=d[c];
   document.getElementById('rBig').textContent=r.val;
@@ -600,11 +707,18 @@ function buildResult(){
   document.getElementById('scNote').textContent=r.note;
   document.getElementById('diagTitle').textContent=r.title;
   document.getElementById('diagDesc').textContent=r.desc;
+  document.getElementById('planStep2').innerHTML='<p>'+r.s2.t+'</p><span>'+r.s2.d+'</span>';
+  document.getElementById('planStep3').innerHTML='<p>'+r.s3.t+'</p><span>'+r.s3.d+'</span>';
 }
+
 function restart(){
   A={};
+  tickerStart=Date.now();
   ['bn2','bn3','bn4','bn4b'].forEach(function(id){document.getElementById(id).classList.remove('on')});
   document.querySelectorAll('.opt').forEach(function(o){o.classList.remove('sel');o.querySelector('.chk').textContent='';});
+  document.getElementById('wppInput').value='';
+  var btn=document.getElementById('btnVerRes');
+  btn.style.opacity='.3';btn.style.pointerEvents='none';
   go('p1');
 }
 </script>
