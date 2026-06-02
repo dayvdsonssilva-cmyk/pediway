@@ -213,98 +213,37 @@ html,body{
 .btn-next:active{transform:scale(.97)}
 
 /* ══ RESULTADO ══ */
-#p5{background:var(--BK)}
-.r-hero{
-  width:100%;background:var(--R);
-  padding:30px 24px 26px;
-  display:flex;flex-direction:column;align-items:center;gap:8px;
-  position:relative;overflow:hidden;
+#p5{
+  background:var(--BK);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
 }
-.r-hero::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse 120% 80% at 50% 120%,rgba(0,0,0,.4) 0%,transparent 65%);
-}
-.r-crown{font-size:42px;position:relative;z-index:1;animation:crDrop .5s cubic-bezier(.34,1.56,.64,1) both}
 @keyframes crDrop{from{opacity:0;transform:scale(.35)}to{opacity:1;transform:scale(1)}}
-.r-eye{font-size:10px;font-weight:800;letter-spacing:.2em;color:rgba(255,255,255,.5);text-transform:uppercase;position:relative;z-index:1}
-.r-title{
-  width:100%;font-size:clamp(20px,6vw,28px);font-weight:900;
-  letter-spacing:-.02em;line-height:1.1;text-align:center;
-  color:var(--W);position:relative;z-index:1;
+.r-wrap{
+  width:100%;flex:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 28px 52px;gap:0;
+  text-align:center;
 }
-.r-title .big{font-size:clamp(28px,8.5vw,40px);display:block;margin-top:6px;letter-spacing:-.03em}
-
-.r-body{width:100%;padding:20px 24px 56px;display:flex;flex-direction:column;gap:12px}
-
-/* SAVING */
-.saving-card{
-  background:var(--BK2);border:1px solid var(--BD);border-radius:16px;
-  padding:20px;position:relative;overflow:hidden;
+.r-losing-lbl{
+  font-size:11px;font-weight:800;letter-spacing:.18em;
+  color:var(--T3);text-transform:uppercase;margin-bottom:10px;
 }
-.saving-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--R)}
-.sc-lbl{font-size:10px;font-weight:800;letter-spacing:.12em;color:var(--T3);text-transform:uppercase;margin-bottom:12px}
-.sc-val{font-size:40px;font-weight:900;letter-spacing:-.04em;line-height:1;color:var(--R);margin-bottom:6px}
-.sc-note{font-size:12px;color:var(--T2);line-height:1.4}
-
-/* DIAGNÓSTICO */
-.diag-card{
-  background:var(--BK2);border:1px solid var(--BD);border-radius:16px;padding:18px;
+.r-amount{
+  font-size:clamp(52px,16vw,80px);font-weight:900;
+  line-height:.9;letter-spacing:-.04em;color:var(--R);
+  margin-bottom:28px;
+  animation:crDrop .5s cubic-bezier(.34,1.56,.64,1) both;
 }
-.diag-badge{
-  display:inline-flex;align-items:center;
-  background:rgba(232,0,28,.1);border:1px solid rgba(232,0,28,.2);
-  border-radius:5px;padding:3px 10px;
-  font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--R);
-  text-transform:uppercase;margin-bottom:10px;
+.r-impact{
+  font-size:clamp(26px,8vw,38px);font-weight:900;
+  line-height:1;letter-spacing:-.03em;color:var(--W);
+  margin-bottom:40px;
 }
-.diag-title{font-size:16px;font-weight:800;color:var(--W);margin-bottom:6px;line-height:1.25}
-.diag-desc{font-size:13px;color:var(--T2);line-height:1.6}
-
-/* PLANO */
-.plan-card{
-  background:var(--BK2);border:1px solid var(--BD);border-radius:16px;
-  padding:18px;display:flex;flex-direction:column;gap:10px;
-  position:relative;overflow:hidden;
-}
-.plan-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--R)}
-.plan-lbl{font-size:10px;font-weight:800;letter-spacing:.12em;color:var(--T3);text-transform:uppercase;padding-left:12px;margin-bottom:2px}
-.plan-step{display:flex;align-items:flex-start;gap:11px;padding-left:12px}
-.plan-num{
-  width:24px;height:24px;border-radius:6px;background:var(--R);
-  display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:800;color:var(--W);flex-shrink:0;
-}
-.plan-txt p{font-size:13px;font-weight:700;color:var(--W);line-height:1.2}
-.plan-txt span{font-size:12px;color:var(--T2);margin-top:2px;display:block}
-
-/* BENS */
-.bens{display:flex;flex-direction:column;gap:8px}
-.ben{
-  display:flex;align-items:center;gap:12px;
-  background:var(--BK2);border:1px solid var(--BD);
-  border-radius:12px;padding:13px 14px;
-}
-.ben-ico{
-  width:34px;height:34px;border-radius:8px;
-  background:rgba(232,0,28,.1);
-  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;
-}
-.ben-txt{font-size:13px;font-weight:600;color:var(--TXT);line-height:1.3}
-.ben-txt span{font-size:11px;color:var(--T2);font-weight:400;display:block;margin-top:1px}
-
-.urgency{
-  background:rgba(232,0,28,.06);border:1px solid rgba(232,0,28,.14);
-  border-radius:12px;padding:12px 14px;
-  display:flex;align-items:flex-start;gap:8px;
-}
-.u-dot{width:7px;height:7px;border-radius:50%;background:var(--R);flex-shrink:0;margin-top:4px;animation:blink 1.6s ease-in-out infinite}
-.urgency p{font-size:12px;color:var(--T2);line-height:1.55}
-.urgency strong{color:var(--R)}
-
+.r-impact em{font-style:normal;color:var(--R)}
 .btn-ghost{
   width:100%;padding:14px;background:transparent;border:1px solid var(--BD);
   border-radius:12px;color:var(--T3);font-family:'Inter',sans-serif;
-  font-size:13px;font-weight:600;cursor:pointer;
+  font-size:13px;font-weight:600;cursor:pointer;margin-top:12px;
 }
 .btn-ghost:active{background:var(--BK2)}
 </style>
@@ -315,10 +254,16 @@ html,body{
 <section class="scr" id="p1">
 <div class="p1-header">
   <div class="logo-wrap">
-    <!-- Logo SVG inline — não depende de servidor -->
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="36" height="36" rx="9" fill="rgba(255,255,255,0.22)"/>
-      <text x="18" y="25" font-family="Inter,Arial,sans-serif" font-weight="900" font-size="20" fill="white" text-anchor="middle">P</text>
+    <!-- Logo Pediway SVG inline -->
+    <svg width="36" height="36" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Spine/stem do P -->
+      <rect x="19" y="7" width="14" height="86" rx="7" fill="white"/>
+      <!-- Bowl: D preenchido sólido (cobre o topo arredondado do spine) -->
+      <path d="M19 7 C76 7 86 22 86 34 C86 46 76 61 19 61 Z" fill="white"/>
+      <!-- 3 linhas vermelhas dentro do bowl -->
+      <rect x="38" y="18" width="32" height="9" rx="4.5" fill="#E8001C"/>
+      <rect x="38" y="32" width="26" height="9" rx="4.5" fill="#E8001C"/>
+      <rect x="38" y="46" width="20" height="9" rx="4.5" fill="#E8001C"/>
     </svg>
     <div class="logo-name">PEDIWAY</div>
   </div>
@@ -550,74 +495,14 @@ html,body{
 <!-- ══════ RESULTADO ══════ -->
 <section class="scr off" id="p5">
 <div class="top-bar"></div>
-<div class="r-hero">
-  <div class="r-crown">💡</div>
-  <p class="r-eye">Diagnóstico completo</p>
-  <h2 class="r-title">
-    Você está perdendo
-    <span class="big" id="rBig">R$14.400/ano</span>
-  </h2>
-</div>
-
-<div class="r-body">
-
-  <div class="saving-card">
-    <div class="sc-lbl">💰 Sua economia com PEDIWAY</div>
-    <div class="sc-val" id="scVal">R$14.400/ano</div>
-    <p class="sc-note" id="scNote">voltando direto pro seu caixa</p>
-  </div>
-
-  <div class="diag-card">
-    <div class="diag-badge">📋 Diagnóstico</div>
-    <div class="diag-title" id="diagTitle"></div>
-    <p class="diag-desc" id="diagDesc"></p>
-  </div>
-
-  <div class="plan-card">
-    <div class="plan-lbl">⚡ Seu plano de ação</div>
-    <div class="plan-step">
-      <div class="plan-num">1</div>
-      <div class="plan-txt"><p>Criar conta no PEDIWAY</p><span>Leva menos de 5 minutos, sem cartão</span></div>
-    </div>
-    <div class="plan-step">
-      <div class="plan-num">2</div>
-      <div class="plan-txt" id="planStep2"><p>Cadastrar seu cardápio</p><span>Importamos do iFood se quiser</span></div>
-    </div>
-    <div class="plan-step">
-      <div class="plan-num">3</div>
-      <div class="plan-txt" id="planStep3"><p>Ativar pedidos online</p><span>Link próprio, zero comissão</span></div>
-    </div>
-  </div>
-
-  <div class="bens">
-    <div class="ben">
-      <div class="ben-ico">🛒</div>
-      <div class="ben-txt">Cardápio digital próprio<span>Sem taxa por pedido</span></div>
-    </div>
-    <div class="ben">
-      <div class="ben-ico">📊</div>
-      <div class="ben-txt">Gestão em tempo real<span>Vendas, produtos e horários de pico</span></div>
-    </div>
-    <div class="ben">
-      <div class="ben-ico">🖨️</div>
-      <div class="ben-txt">Comanda automática<span>Pedido direto na cozinha</span></div>
-    </div>
-    <div class="ben">
-      <div class="ben-ico">💳</div>
-      <div class="ben-txt">Pix e cartão integrados<span>Sem maquininha cara</span></div>
-    </div>
-  </div>
-
-  <button class="btn-cta" onclick="window.open('https://pediway.com.br','_blank')" style="font-size:16px;padding:20px">
-    🚀 Quero parar de perder dinheiro →
+<div class="r-wrap">
+  <p class="r-losing-lbl">você está perdendo por ano</p>
+  <div class="r-amount" id="rBig">R$14.400</div>
+  <h2 class="r-impact">PARE AGORA<br>DE PERDER<br><em>DINHEIRO.</em></h2>
+  <button class="btn-cta" onclick="window.open('https://pediway.com.br','_blank')" style="font-size:16px;padding:20px;width:100%">
+    Acessar a plataforma →
   </button>
-  <p class="cta-note" style="margin-top:-4px">Crie sua conta agora · Sem contrato · É gratuito</p>
-
-  <div class="urgency">
-    <div class="u-dot"></div>
-    <p>Cada mês que passa é <strong>mais dinheiro saindo do seu bolso</strong> sem necessidade.</p>
-  </div>
-
+  <p class="cta-note" style="margin-top:8px">Gratuito · Sem contrato · Começa em 5 min</p>
   <button class="btn-ghost" onclick="restart()">↺ Refazer o diagnóstico</button>
 </div>
 </section>
@@ -656,36 +541,8 @@ function sel(btn,page,val){
 
 function buildResult(){
   var c=A['p2']||'b';
-  var d={
-    a:{val:'R$3.600/ano',note:'Cada real conta no fim do mês',
-       title:'Você ainda tem margem pra crescer',
-       desc:'Seus custos estão baixos, mas com o PEDIWAY você elimina o que ainda paga e ganha ferramentas que seus concorrentes pagam caro pra ter.',
-       s2:{t:'Reduzir dependência de terceiros',d:'Cardápio próprio sem pagar plataformas'},
-       s3:{t:'Automatizar seus pedidos',d:'WhatsApp e link próprio sem comissão'}},
-    b:{val:'R$9.600/ano',note:'É o salário de um funcionário desperdiçado',
-       title:'Você paga por algo que pode custar menos',
-       desc:'Com o PEDIWAY você corta a maior parte dessas taxas e centraliza tudo num lugar só — mais barato e mais simples.',
-       s2:{t:'Migrar cardápio para plataforma própria',d:'Importamos do iFood em minutos'},
-       s3:{t:'Ativar gestão de pedidos',d:'Controle total sem mensalidade cara'}},
-    c:{val:'R$24.000/ano',note:'Dá pra reformar o restaurante com isso',
-       title:'Você está perdendo dinheiro todo mês',
-       desc:'Mais de R$800/mês em taxas que não precisam existir. O PEDIWAY resolve isso e ainda entrega muito mais do que você paga hoje.',
-       s2:{t:'Cortar taxas de plataformas externas',d:'Canal de venda próprio sem comissão'},
-       s3:{t:'Implementar gestão completa',d:'Relatórios, comanda e cardápio digital'}},
-    d:{val:'+R$24.000/ano',note:'Nível crítico — precisa resolver agora',
-       title:'Isso está sangrando o seu negócio',
-       desc:'Mais de R$2.000/mês em taxas é uma sangria. Com o PEDIWAY você vira esse jogo rapidamente e começa a recuperar esse dinheiro.',
-       s2:{t:'Migração imediata do cardápio',d:'Suporte dedicado para migrar hoje mesmo'},
-       s3:{t:'Eliminar dependência de marketplace',d:'Canal próprio + gestão + comanda'}}
-  };
-  var r=d[c];
-  document.getElementById('rBig').textContent=r.val;
-  document.getElementById('scVal').textContent=r.val;
-  document.getElementById('scNote').textContent=r.note;
-  document.getElementById('diagTitle').textContent=r.title;
-  document.getElementById('diagDesc').textContent=r.desc;
-  document.getElementById('planStep2').innerHTML='<p>'+r.s2.t+'</p><span>'+r.s2.d+'</span>';
-  document.getElementById('planStep3').innerHTML='<p>'+r.s3.t+'</p><span>'+r.s3.d+'</span>';
+  var vals={a:'R$3.600',b:'R$9.600',c:'R$24.000',d:'+R$24.000'};
+  document.getElementById('rBig').textContent=vals[c]+'/ano';
 }
 
 function restart(){
