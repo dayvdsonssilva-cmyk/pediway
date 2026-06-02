@@ -114,6 +114,10 @@
       "destination": "/splash.mp4"
     },
     {
+      "source": "/quiz",
+      "destination": "/quiz.html"
+    },
+    {
       "source": "/:slug",
       "destination": "/cliente.html"
     }
