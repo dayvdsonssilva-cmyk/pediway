@@ -37,9 +37,7 @@ html,body{
   background:var(--R);
 }
 .logo-wrap{display:flex;align-items:center;gap:10px}
-.logo-box{width:36px;height:36px;border-radius:8px;background:var(--R);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .logo-name{font-size:16px;font-weight:900;letter-spacing:.06em;color:var(--W)}
-.logo-name span{color:var(--W)}
 
 .p1-hero{width:100%;padding:32px 24px 0}
 .kicker{
@@ -81,7 +79,7 @@ html,body{
 .lc-total-lbl{font-size:12px;font-weight:600;color:var(--T2)}
 .lc-total-val{font-size:24px;font-weight:900;color:var(--R);letter-spacing:-.03em}
 
-/* TICKER — dinheiro escorrendo em tempo real */
+/* TICKER */
 .ticker{
   margin-top:12px;width:100%;
   background:rgba(232,0,28,.06);border:1px solid rgba(232,0,28,.15);
@@ -129,11 +127,11 @@ html,body{
   letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;
 }
 .prog-row em{font-style:normal;color:var(--R)}
-.prog-track{height:2px;background:var(--BD);border-radius:99px;overflow:hidden}
+.prog-track{height:4px;background:var(--BD);border-radius:99px;overflow:hidden}
 .prog-fill{height:100%;border-radius:99px;background:var(--R);transition:width .5s cubic-bezier(.4,0,.2,1)}
 
 /* ══ QUIZ ══ */
-.qbody{width:100%;padding:26px 24px 60px;display:flex;flex-direction:column;flex:1}
+.qbody{width:100%;padding:24px 24px 60px;display:flex;flex-direction:column;flex:1}
 .q-chip{
   display:inline-flex;align-items:center;gap:5px;
   background:rgba(232,0,28,.1);border:1px solid rgba(232,0,28,.2);
@@ -142,11 +140,18 @@ html,body{
   text-transform:uppercase;margin-bottom:14px;align-self:flex-start;
 }
 .q-title{
-  font-size:clamp(22px,6.5vw,30px);font-weight:900;
-  line-height:1.1;letter-spacing:-.02em;color:var(--W);margin-bottom:6px;
+  font-size:clamp(24px,7vw,32px);font-weight:900;
+  line-height:1.08;letter-spacing:-.025em;color:var(--W);margin-bottom:8px;
 }
 .q-title .r{color:var(--R)}
-.q-sub{font-size:13px;color:var(--T2);line-height:1.5;margin-bottom:22px}
+.q-sub{font-size:13px;color:var(--T2);line-height:1.5;margin-bottom:6px}
+
+/* Instrução de toque */
+.q-hint{
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:600;color:var(--T3);
+  margin-bottom:16px;
+}
 
 /* mini contador no quiz */
 .q-counter{
@@ -157,71 +162,55 @@ html,body{
 .q-counter-lbl{font-size:11px;color:var(--T2)}
 .q-counter-val{font-size:13px;font-weight:900;color:var(--R);margin-left:auto;font-variant-numeric:tabular-nums}
 
-.opts{display:flex;flex-direction:column;gap:8px}
+.opts{display:flex;flex-direction:column;gap:10px}
 .opt{
-  width:100%;background:var(--BK2);border:1.5px solid var(--BD);border-radius:13px;
-  padding:14px 15px;display:flex;align-items:center;gap:12px;
+  width:100%;background:var(--BK2);border:2px solid var(--BD);border-radius:14px;
+  padding:15px 15px;display:flex;align-items:center;gap:13px;
   cursor:pointer;text-align:left;font-family:'Inter',sans-serif;
-  transition:border-color .15s,background .15s,transform .1s;
+  transition:border-color .15s,background .15s,transform .12s,box-shadow .15s;
   animation:up .24s both;
 }
-@keyframes up{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
-.opt:active{transform:scale(.988)}
-.opt.sel{border-color:var(--R);background:rgba(232,0,28,.07)}
+@keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.opt:active{transform:scale(.985)}
+.opt.sel{
+  border-color:var(--R);
+  background:rgba(232,0,28,.08);
+  box-shadow:0 0 0 1px rgba(232,0,28,.2);
+  transform:scale(1.01);
+}
 .opt-ico{
-  width:40px;height:40px;border-radius:10px;background:var(--BK3);
-  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;
+  width:48px;height:48px;border-radius:12px;background:var(--BK3);
+  display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;
+  transition:background .15s;
 }
-.opt.sel .opt-ico{background:rgba(232,0,28,.15)}
+.opt.sel .opt-ico{background:rgba(232,0,28,.18)}
 .opt-body{flex:1}
-.opt-body p{font-size:14px;font-weight:700;line-height:1.2;color:var(--TXT)}
-.opt-body span{font-size:11px;color:var(--T2);margin-top:2px;display:block}
+.opt-body p{font-size:15px;font-weight:700;line-height:1.2;color:var(--TXT)}
+.opt-body span{font-size:12px;color:var(--T2);margin-top:3px;display:block;line-height:1.35}
 .chk{
-  width:20px;height:20px;border-radius:50%;border:1.5px solid var(--BD2);flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .15em;
+  width:24px;height:24px;border-radius:50%;border:2px solid var(--BD2);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:13px;
+  transition:all .15s;background:transparent;
 }
-.opt.sel .chk{background:var(--R);border-color:var(--R);color:var(--W)}
+.opt.sel .chk{
+  background:var(--R);border-color:var(--R);color:var(--W);
+  font-size:14px;font-weight:900;
+}
 
 .btn-next{
-  width:100%;padding:17px;background:var(--R);color:var(--W);
-  font-family:'Inter',sans-serif;font-size:15px;font-weight:800;
-  border:none;border-radius:13px;cursor:pointer;margin-top:20px;
-  opacity:.18;pointer-events:none;transition:opacity .25s,transform .12s;
+  width:100%;padding:18px;background:var(--R);color:var(--W);
+  font-family:'Inter',sans-serif;font-size:16px;font-weight:800;
+  border:none;border-radius:14px;cursor:pointer;margin-top:22px;
+  opacity:.18;pointer-events:none;
+  transition:opacity .3s,transform .12s,box-shadow .3s;
 }
-.btn-next.on{opacity:1;pointer-events:all}
+.btn-next.on{
+  opacity:1;pointer-events:all;
+  box-shadow:0 6px 20px rgba(232,0,28,.3);
+  animation:popIn .25s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn{from{transform:scale(.95)}to{transform:scale(1)}}
 .btn-next:active{transform:scale(.97)}
-
-/* ══ CAPTURA WHATSAPP ══ */
-#p_wpp{background:var(--BK)}
-.wpp-body{
-  width:100%;padding:32px 24px 60px;
-  display:flex;flex-direction:column;align-items:center;gap:16px;
-  flex:1;
-}
-.wpp-icon{font-size:48px;line-height:1;animation:crDrop .5s cubic-bezier(.34,1.56,.64,1) both}
-@keyframes crDrop{from{opacity:0;transform:scale(.35)}to{opacity:1;transform:scale(1)}}
-.wpp-title{font-size:clamp(22px,6.5vw,28px);font-weight:900;text-align:center;line-height:1.1;letter-spacing:-.02em}
-.wpp-title span{color:var(--R)}
-.wpp-sub{font-size:13px;color:var(--T2);text-align:center;line-height:1.55;max-width:300px}
-
-.wpp-input-wrap{width:100%;display:flex;flex-direction:column;gap:8px}
-.wpp-label{font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--T3);text-transform:uppercase}
-.wpp-input{
-  width:100%;background:var(--BK2);border:1.5px solid var(--BD);
-  border-radius:12px;color:var(--TXT);
-  font-family:'Inter',sans-serif;font-size:17px;font-weight:600;
-  padding:15px 16px;outline:none;
-  transition:border-color .2s,box-shadow .2s;
-  -webkit-appearance:none;
-}
-.wpp-input:focus{border-color:var(--R);box-shadow:0 0 0 3px rgba(232,0,28,.12)}
-.wpp-input::placeholder{color:var(--T3)}
-
-.privacy-note{
-  display:flex;align-items:center;gap:6px;
-  font-size:11px;color:var(--T3);
-}
-.privacy-note span{font-size:14px}
 
 /* ══ RESULTADO ══ */
 #p5{background:var(--BK)}
@@ -236,6 +225,7 @@ html,body{
   background:radial-gradient(ellipse 120% 80% at 50% 120%,rgba(0,0,0,.4) 0%,transparent 65%);
 }
 .r-crown{font-size:42px;position:relative;z-index:1;animation:crDrop .5s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes crDrop{from{opacity:0;transform:scale(.35)}to{opacity:1;transform:scale(1)}}
 .r-eye{font-size:10px;font-weight:800;letter-spacing:.2em;color:rgba(255,255,255,.5);text-transform:uppercase;position:relative;z-index:1}
 .r-title{
   width:100%;font-size:clamp(20px,6vw,28px);font-weight:900;
@@ -256,7 +246,7 @@ html,body{
 .sc-val{font-size:40px;font-weight:900;letter-spacing:-.04em;line-height:1;color:var(--R);margin-bottom:6px}
 .sc-note{font-size:12px;color:var(--T2);line-height:1.4}
 
-/* DIAGNÓSTICO personalizado */
+/* DIAGNÓSTICO */
 .diag-card{
   background:var(--BK2);border:1px solid var(--BD);border-radius:16px;padding:18px;
 }
@@ -270,7 +260,7 @@ html,body{
 .diag-title{font-size:16px;font-weight:800;color:var(--W);margin-bottom:6px;line-height:1.25}
 .diag-desc{font-size:13px;color:var(--T2);line-height:1.6}
 
-/* PLANO personalizado */
+/* PLANO */
 .plan-card{
   background:var(--BK2);border:1px solid var(--BD);border-radius:16px;
   padding:18px;display:flex;flex-direction:column;gap:10px;
@@ -325,7 +315,11 @@ html,body{
 <section class="scr" id="p1">
 <div class="p1-header">
   <div class="logo-wrap">
-    <img src="/publico/icons/icone-128.png" alt="PEDIWAY" style="width:36px;height:36px;object-fit:contain">
+    <!-- Logo SVG inline — não depende de servidor -->
+    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="36" height="36" rx="9" fill="rgba(255,255,255,0.22)"/>
+      <text x="18" y="25" font-family="Inter,Arial,sans-serif" font-weight="900" font-size="20" fill="white" text-anchor="middle">P</text>
+    </svg>
     <div class="logo-name">PEDIWAY</div>
   </div>
 </div>
@@ -360,7 +354,6 @@ html,body{
     </div>
   </div>
 
-  <!-- Ticker ao vivo -->
   <div class="ticker">
     <span class="ticker-lbl">⏱ Você perdeu hoje enquanto lê isso</span>
     <span class="ticker-val" id="tickerVal">R$0,00</span>
@@ -374,7 +367,7 @@ html,body{
 
 <div style="width:100%;padding:22px 24px 52px;display:flex;flex-direction:column;gap:8px">
   <button class="btn-cta" onclick="go('p2')">Fazer o diagnóstico gratuito →</button>
-  <p class="cta-note">4 perguntas · resultado imediato</p>
+  <p class="cta-note">4 perguntas · resultado imediato · é de graça</p>
 </div>
 </section>
 
@@ -392,34 +385,36 @@ html,body{
 </div>
 <div class="qbody">
   <div class="q-chip">💰 Custos</div>
-  <h2 class="q-title">Quanto você paga em<br><span class="r">taxas e plataformas</span> por mês?</h2>
+  <h2 class="q-title">Quanto você paga de<br><span class="r">taxas por mês?</span></h2>
+  <p class="q-sub">Inclua iFood, Rappi, sistema de gestão, cardápio digital…</p>
   <div class="q-counter">
-    <span class="q-counter-lbl">⏱ Perdendo agora</span>
+    <span class="q-counter-lbl">⏱ Você já perdeu hoje</span>
     <span class="q-counter-val" id="qTicker1">R$0,00</span>
   </div>
+  <div class="q-hint">👆 Toque na resposta que mais combina com você</div>
   <div class="opts">
     <button class="opt" style="animation-delay:.04s" onclick="sel(this,'p2','a')">
       <div class="opt-ico">😅</div>
-      <div class="opt-body"><p>Menos de R$300/mês</p><span>R$3.600 saindo do caixa por ano</span></div>
+      <div class="opt-body"><p>Menos de R$300 por mês</p><span>R$3.600 saindo do bolso por ano</span></div>
       <div class="chk"></div>
     </button>
     <button class="opt" style="animation-delay:.1s" onclick="sel(this,'p2','b')">
       <div class="opt-ico">😬</div>
-      <div class="opt-body"><p>R$300 a R$800/mês</p><span>Até R$9.600 por ano perdido</span></div>
+      <div class="opt-body"><p>Entre R$300 e R$800 por mês</p><span>Até R$9.600 perdido por ano</span></div>
       <div class="chk"></div>
     </button>
     <button class="opt" style="animation-delay:.16s" onclick="sel(this,'p2','c')">
       <div class="opt-ico">😤</div>
-      <div class="opt-body"><p>R$800 a R$2.000/mês</p><span>Até R$24.000 jogados fora por ano</span></div>
+      <div class="opt-body"><p>Entre R$800 e R$2.000 por mês</p><span>Até R$24.000 jogados fora por ano</span></div>
       <div class="chk"></div>
     </button>
     <button class="opt" style="animation-delay:.22s" onclick="sel(this,'p2','d')">
       <div class="opt-ico">🤯</div>
-      <div class="opt-body"><p>Mais de R$2.000/mês</p><span>+R$24k/ano — isso é lucro, não custo</span></div>
+      <div class="opt-body"><p>Mais de R$2.000 por mês</p><span>Isso é lucro, não custo — urge resolver</span></div>
       <div class="chk"></div>
     </button>
   </div>
-  <button class="btn-next" id="bn2" onclick="go('p3')">Próxima →</button>
+  <button class="btn-next" id="bn2" onclick="go('p3')">Próxima pergunta →</button>
 </div>
 </section>
 
@@ -437,31 +432,32 @@ html,body{
 </div>
 <div class="qbody">
   <div class="q-chip">📱 Pedidos</div>
-  <h2 class="q-title">Como seus clientes<br>fazem <span class="r">pedidos hoje?</span></h2>
-  <p class="q-sub">Cada canal tem um custo escondido.</p>
+  <h2 class="q-title">Como seus clientes<br>pedem <span class="r">hoje?</span></h2>
+  <p class="q-sub">Escolha o jeito mais comum no seu restaurante.</p>
+  <div class="q-hint">👆 Toque na resposta que mais combina com você</div>
   <div class="opts">
     <button class="opt" style="animation-delay:.04s" onclick="sel(this,'p3','a')">
       <div class="opt-ico">📞</div>
-      <div class="opt-body"><p>Telefone ou WhatsApp</p><span>Sem controle, sem automação</span></div>
+      <div class="opt-body"><p>Telefone ou WhatsApp</p><span>Sem controle, depende de alguém responder</span></div>
       <div class="chk"></div>
     </button>
     <button class="opt" style="animation-delay:.1s" onclick="sel(this,'p3','b')">
       <div class="opt-ico">🛵</div>
-      <div class="opt-body"><p>iFood ou Rappi</p><span>Pagando até 30% por pedido pra eles</span></div>
+      <div class="opt-body"><p>iFood ou Rappi</p><span>Pagando até 30% de comissão por pedido</span></div>
       <div class="chk"></div>
     </button>
     <button class="opt" style="animation-delay:.16s" onclick="sel(this,'p3','c')">
       <div class="opt-ico">🔗</div>
-      <div class="opt-body"><p>Site ou app próprio pago</p><span>Ainda custa mensalidade todo mês</span></div>
+      <div class="opt-body"><p>Site ou app próprio pago</p><span>Paga mensalidade todo mês por isso</span></div>
       <div class="chk"></div>
     </button>
     <button class="opt" style="animation-delay:.22s" onclick="sel(this,'p3','d')">
       <div class="opt-ico">🤷</div>
-      <div class="opt-body"><p>Tudo junto, sem controle</p><span>Pedidos espalhados, zero visão</span></div>
+      <div class="opt-body"><p>Mistura de tudo, sem organização</p><span>Pedidos espalhados, sem visão nenhuma</span></div>
       <div class="chk"></div>
     </button>
   </div>
-  <button class="btn-next" id="bn3" onclick="go('p4')">Próxima →</button>
+  <button class="btn-next" id="bn3" onclick="go('p4')">Próxima pergunta →</button>
 </div>
 </section>
 
@@ -479,31 +475,32 @@ html,body{
 </div>
 <div class="qbody">
   <div class="q-chip">📊 Gestão</div>
-  <h2 class="q-title">Você sabe o que vendeu<br><span class="r">ontem?</span></h2>
-  <p class="q-sub">Gestão cega é lucro perdido todo dia.</p>
+  <h2 class="q-title">Você sabe quanto<br>vendeu <span class="r">ontem?</span></h2>
+  <p class="q-sub">Ser honesto aqui te dá um diagnóstico mais preciso.</p>
+  <div class="q-hint">👆 Toque na resposta que mais combina com você</div>
   <div class="opts">
     <button class="opt" style="animation-delay:.04s" onclick="sel(this,'p4','a')">
       <div class="opt-ico">✅</div>
-      <div class="opt-body"><p>Sim, tenho sistema</p><span>Mas pago mensalidade por isso</span></div>
+      <div class="opt-body"><p>Sim, tenho sistema de controle</p><span>Mas pago mensalidade por ele</span></div>
       <div class="chk"></div>
     </button>
     <button class="opt" style="animation-delay:.1s" onclick="sel(this,'p4','b')">
       <div class="opt-ico">📝</div>
-      <div class="opt-body"><p>Caderno ou planilha</p><span>Manual e sujeito a erro</span></div>
+      <div class="opt-body"><p>Uso caderno ou planilha</p><span>Faço manual, mas pode ter erros</span></div>
       <div class="chk"></div>
     </button>
     <button class="opt" style="animation-delay:.16s" onclick="sel(this,'p4','c')">
       <div class="opt-ico">😶</div>
-      <div class="opt-body"><p>Mais ou menos, pelo caixa</p><span>Sem visão de produto ou horário</span></div>
+      <div class="opt-body"><p>Mais ou menos, olho o caixa</p><span>Não vejo produto por produto</span></div>
       <div class="chk"></div>
     </button>
     <button class="opt" style="animation-delay:.22s" onclick="sel(this,'p4','d')">
       <div class="opt-ico">❌</div>
-      <div class="opt-body"><p>Não tenho controle</p><span>Voando no escuro todo dia</span></div>
+      <div class="opt-body"><p>Não tenho controle nenhum</p><span>Vou no feeling todo dia</span></div>
       <div class="chk"></div>
     </button>
   </div>
-  <button class="btn-next" id="bn4" onclick="go('p4b')">Próxima →</button>
+  <button class="btn-next" id="bn4" onclick="go('p4b')">Última pergunta →</button>
 </div>
 </section>
 
@@ -521,27 +518,28 @@ html,body{
 </div>
 <div class="qbody">
   <div class="q-chip">🚀 Decisão</div>
-  <h2 class="q-title">Se você pudesse reduzir<br><span class="r">esses custos hoje,</span><br>o que faria?</h2>
-  <p class="q-sub">Cardápio digital, pedidos e gestão — tudo numa plataforma.</p>
+  <h2 class="q-title">Se tivesse uma solução<br>pra isso <span class="r">hoje,</span><br>o que faria?</h2>
+  <p class="q-sub">Cardápio digital, pedidos e gestão — tudo de graça.</p>
+  <div class="q-hint">👆 Seja honesto, isso define seu resultado</div>
   <div class="opts">
     <button class="opt" style="animation-delay:.04s" onclick="sel(this,'p4b','a')">
       <div class="opt-ico">🔥</div>
-      <div class="opt-body"><p>Começaria agora mesmo</p><span>Já perdi dinheiro demais esperando</span></div>
+      <div class="opt-body"><p>Começaria agora mesmo</p><span>Já perdi tempo demais esperando</span></div>
       <div class="chk"></div>
     </button>
     <button class="opt" style="animation-delay:.1s" onclick="sel(this,'p4b','b')">
       <div class="opt-ico">🤔</div>
-      <div class="opt-body"><p>Precisaria entender melhor</p><span>Quero ver como funciona</span></div>
+      <div class="opt-body"><p>Precisaria entender melhor primeiro</p><span>Quero ver como funciona na prática</span></div>
       <div class="chk"></div>
     </button>
     <button class="opt" style="animation-delay:.16s" onclick="sel(this,'p4b','c')">
       <div class="opt-ico">😌</div>
-      <div class="opt-body"><p>Já uso algo parecido</p><span>Mas aberto a comparar</span></div>
+      <div class="opt-body"><p>Já uso algo parecido</p><span>Mas aberto a comparar e economizar mais</span></div>
       <div class="chk"></div>
     </button>
     <button class="opt" style="animation-delay:.22s" onclick="sel(this,'p4b','d')">
       <div class="opt-ico">💭</div>
-      <div class="opt-body"><p>Ainda tenho dúvidas</p><span>Quero tirar perguntas antes</span></div>
+      <div class="opt-body"><p>Ainda tenho dúvidas</p><span>Quero tirar perguntas antes de decidir</span></div>
       <div class="chk"></div>
     </button>
   </div>
@@ -575,7 +573,6 @@ html,body{
     <p class="diag-desc" id="diagDesc"></p>
   </div>
 
-  <!-- Plano de ação personalizado -->
   <div class="plan-card">
     <div class="plan-lbl">⚡ Seu plano de ação</div>
     <div class="plan-step">
@@ -614,11 +611,11 @@ html,body{
   <button class="btn-cta" onclick="window.open('https://pediway.com.br','_blank')" style="font-size:16px;padding:20px">
     🚀 Quero parar de perder dinheiro →
   </button>
-  <p class="cta-note" style="margin-top:-4px">Crie sua conta agora · Sem contrato</p>
+  <p class="cta-note" style="margin-top:-4px">Crie sua conta agora · Sem contrato · É gratuito</p>
 
   <div class="urgency">
     <div class="u-dot"></div>
-    <p>Cada mês que passa é <strong>mais dinheiro saindo do seu bolso</strong> desnecessariamente.</p>
+    <p>Cada mês que passa é <strong>mais dinheiro saindo do seu bolso</strong> sem necessidade.</p>
   </div>
 
   <button class="btn-ghost" onclick="restart()">↺ Refazer o diagnóstico</button>
@@ -628,9 +625,8 @@ html,body{
 <script>
 var A={};
 var tickerStart=Date.now();
-var tickerPerSec=1200*12/(365*24*3600); // R$1200/mes em reais por segundo
+var tickerPerSec=1200*12/(365*24*3600);
 
-// Ticker ao vivo
 setInterval(function(){
   var elapsed=(Date.now()-tickerStart)/1000;
   var val=elapsed*tickerPerSec;
@@ -658,47 +654,28 @@ function sel(btn,page,val){
   if(m[page])document.getElementById(m[page]).classList.add('on');
 }
 
-function fmtPhone(el){
-  var v=el.value.replace(/\D/g,'');
-  if(v.length>0)v='('+v;
-  if(v.length>3)v=v.slice(0,3)+') '+v.slice(3);
-  if(v.length>10)v=v.slice(0,10)+'-'+v.slice(10,14);
-  el.value=v;
-  var btn=document.getElementById('btnVerRes');
-  var raw=el.value.replace(/\D/g,'');
-  if(raw.length>=10){btn.style.opacity='1';btn.style.pointerEvents='all';}
-  else{btn.style.opacity='.3';btn.style.pointerEvents='none';}
-}
-
-function verResultado(){
-  var phone=document.getElementById('wppInput').value;
-  // Aqui futuramente integrar com CRM / webhook
-  console.log('Lead capturado:',phone,'Respostas:',A);
-  go('p5');
-}
-
 function buildResult(){
   var c=A['p2']||'b';
   var d={
     a:{val:'R$3.600/ano',note:'Cada real conta no fim do mês',
-       title:'Você tem margem pra crescer',
-       desc:'Seus custos estão baixos mas com o PEDIWAY você elimina as taxas que ainda paga e ganha ferramentas que seus concorrentes pagam caro pra ter.',
-       s2:{t:'Reduzir dependência de terceiros',d:'Cardápio próprio em vez de pagar plataformas'},
-       s3:{t:'Automatizar pedidos',d:'WhatsApp e link próprio sem comissão'}},
+       title:'Você ainda tem margem pra crescer',
+       desc:'Seus custos estão baixos, mas com o PEDIWAY você elimina o que ainda paga e ganha ferramentas que seus concorrentes pagam caro pra ter.',
+       s2:{t:'Reduzir dependência de terceiros',d:'Cardápio próprio sem pagar plataformas'},
+       s3:{t:'Automatizar seus pedidos',d:'WhatsApp e link próprio sem comissão'}},
     b:{val:'R$9.600/ano',note:'É o salário de um funcionário desperdiçado',
-       title:'Você paga por algo que pode ter mais barato',
-       desc:'Com o PEDIWAY você corta a maior parte dessas taxas e centraliza tudo numa plataforma só.',
+       title:'Você paga por algo que pode custar menos',
+       desc:'Com o PEDIWAY você corta a maior parte dessas taxas e centraliza tudo num lugar só — mais barato e mais simples.',
        s2:{t:'Migrar cardápio para plataforma própria',d:'Importamos do iFood em minutos'},
        s3:{t:'Ativar gestão de pedidos',d:'Controle total sem mensalidade cara'}},
     c:{val:'R$24.000/ano',note:'Dá pra reformar o restaurante com isso',
-       title:'Você está sangrando dinheiro todo mês',
-       desc:'Mais de R$800/mês em taxas desnecessárias. O PEDIWAY resolve isso e ainda entrega mais funcionalidades.',
+       title:'Você está perdendo dinheiro todo mês',
+       desc:'Mais de R$800/mês em taxas que não precisam existir. O PEDIWAY resolve isso e ainda entrega muito mais do que você paga hoje.',
        s2:{t:'Cortar taxas de plataformas externas',d:'Canal de venda próprio sem comissão'},
        s3:{t:'Implementar gestão completa',d:'Relatórios, comanda e cardápio digital'}},
     d:{val:'+R$24.000/ano',note:'Nível crítico — precisa resolver agora',
-       title:'Emergência no seu negócio',
-       desc:'Mais de R$2.000/mês em taxas é uma hemorragia. Com o PEDIWAY você vira esse jogo rapidamente.',
-       s2:{t:'Migração imediata do cardápio',d:'Suporte dedicado para migrar hoje'},
+       title:'Isso está sangrando o seu negócio',
+       desc:'Mais de R$2.000/mês em taxas é uma sangria. Com o PEDIWAY você vira esse jogo rapidamente e começa a recuperar esse dinheiro.',
+       s2:{t:'Migração imediata do cardápio',d:'Suporte dedicado para migrar hoje mesmo'},
        s3:{t:'Eliminar dependência de marketplace',d:'Canal próprio + gestão + comanda'}}
   };
   var r=d[c];
@@ -714,11 +691,13 @@ function buildResult(){
 function restart(){
   A={};
   tickerStart=Date.now();
-  ['bn2','bn3','bn4','bn4b'].forEach(function(id){document.getElementById(id).classList.remove('on')});
-  document.querySelectorAll('.opt').forEach(function(o){o.classList.remove('sel');o.querySelector('.chk').textContent='';});
-  document.getElementById('wppInput').value='';
-  var btn=document.getElementById('btnVerRes');
-  btn.style.opacity='.3';btn.style.pointerEvents='none';
+  ['bn2','bn3','bn4','bn4b'].forEach(function(id){
+    var el=document.getElementById(id);
+    el.classList.remove('on');
+  });
+  document.querySelectorAll('.opt').forEach(function(o){
+    o.classList.remove('sel');o.querySelector('.chk').textContent='';
+  });
   go('p1');
 }
 </script>
