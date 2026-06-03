@@ -785,11 +785,19 @@ function wppLink(num, msg) {
 async function init() {
   // Carrega usuário (síncrono, instantâneo)
   try { const s = localStorage.getItem('pw_cliente'); if(s) _user = JSON.parse(s); } catch(e){}
-  if(_user?.nome) {
-    $('home-avatar').textContent = _user.nome[0].toUpperCase();
-    $('search-avatar').textContent = _user.nome[0].toUpperCase();
-    if(_user.cidade) { _cidade = _user.cidade; $('home-cidade').textContent = '📍 ' + _cidade; $('home-cidade').style.display='block'; }
+
+  // Requer cadastro com cidade para ver as lojas — evita compra entre cidades
+  if (!_user?.nome || !_user?.cidade) {
+    carregarEstados();
+    abrirPerfil(true);
+    return;
   }
+
+  $('home-avatar').textContent = _user.nome[0].toUpperCase();
+  $('search-avatar').textContent = _user.nome[0].toUpperCase();
+  _cidade = _user.cidade;
+  $('home-cidade').textContent = '📍 ' + _cidade;
+  $('home-cidade').style.display = 'block';
 
   // Estados IBGE em background — não bloqueia
   carregarEstados();
@@ -850,8 +858,7 @@ async function init() {
     }).catch(()=>{});
   }
 
-  // Modal primeira visita
-  if(!_user) setTimeout(() => abrirPerfil(true), 700);
+  // Pedidos salvos (só chega aqui se usuário logado)
 
   // Pedidos salvos
   renderOrders();
@@ -2781,12 +2788,15 @@ function abrirPerfil(primeiraVez=false) {
     </div>
     <button class="btn-primary" onclick="salvarPerfil()">${u.nome&&!primeiraVez?'💾 Salvar':'Entrar →'}</button>
     ${u.nome&&!primeiraVez?`<button class="btn-ghost" style="margin-top:8px;color:#EF4444;border-color:rgba(239,68,68,.2);" onclick="sair()">Sair da conta</button>`:''}
-    ${primeiraVez?`<button class="btn-ghost" style="margin-top:8px;" onclick="fecharPerfil()">Continuar sem cadastro</button>`:''}
   `;
   $('modal-perfil').classList.add('open');
 }
 
-function fecharPerfil() { $('modal-perfil').classList.remove('open'); }
+function fecharPerfil() {
+  // Bloqueia fechamento se ainda não tem cadastro com cidade
+  if (!_user?.nome || !_user?.cidade) return;
+  $('modal-perfil').classList.remove('open');
+}
 
 async function salvarPerfil() {
   const nome  = $('pf-nome')?.value.trim();
@@ -2818,24 +2828,28 @@ async function salvarPerfil() {
   $('home-cidade').style.display = 'block';
 
   fecharPerfil();
+  // Se lojas ainda não foram carregadas (primeiro cadastro), inicializa agora
+  if (!_lojas.length) {
+    await init();
+    return;
+  }
   // Volta para home e re-renderiza com nova cidade
   showScreen('home');
-  // Reseta categoria para "Todos" ao mudar cidade
   _catAtiva = 'all';
   renderHome();
-  renderBanner(); // ⭐ Atualiza promoções para a cidade selecionada
+  renderBanner();
   toast('✅ ' + cidade + ' selecionada!');
 }
 
 function sair() {
-  _user=null; _cidade='';
+  _user=null; _cidade=''; _lojas=[];
   localStorage.removeItem('pw_cliente');
   $('home-avatar').textContent='?';
   $('search-avatar').textContent='?';
   $('home-cidade').style.display='none';
-  fecharPerfil();
-  renderHome();
-  renderBanner(); // ⭐ Limpa promoções da cidade anterior
+  // Força volta para tela de cadastro
+  $('modal-perfil').classList.remove('open');
+  abrirPerfil(true);
   toast('Até logo! 👋');
 }
 
