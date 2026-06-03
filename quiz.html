@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#E8001C">
+<title>PEDIWAY — Diagnóstico Gratuito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --R:#E8001C;--RD:#B8000F;--RL:#FF2638;
+  --BK:#0A0A0A;--BK2:#111111;--BK3:#1C1C1C;
+  --BD:#252525;--BD2:#383838;
+  --TXT:#F2F2F2;--T2:#888;--T3:#484848;
+  --W:#fff;--GRN:#22C55E;
+}
+html,body{
+  background:var(--BK);color:var(--TXT);
+  font-family:'Inter',sans-serif;
+  min-height:100vh;overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+.scr{
+  display:flex;flex-direction:column;align-items:center;
+  width:100%;max-width:430px;margin:0 auto;min-height:100svh;
+}
+.scr.off{display:none!important}
+.top-bar{width:100%;height:3px;background:linear-gradient(90deg,var(--RD),var(--R),var(--RL));flex-shrink:0}
+
+/* ══ HOME ══ */
+.p1-header{
+  width:100%;padding:18px 24px;
+  display:flex;align-items:center;
+  background:var(--R);
+}
+.logo-wrap{display:flex;align-items:center;gap:10px}
+.logo-name{font-size:16px;font-weight:900;letter-spacing:.06em;color:var(--W)}
+
+.p1-hero{width:100%;padding:32px 24px 0}
+.kicker{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(232,0,28,.1);border:1px solid rgba(232,0,28,.2);
+  border-radius:5px;padding:5px 11px;
+  font-size:10px;font-weight:800;letter-spacing:.16em;color:var(--R);
+  text-transform:uppercase;margin-bottom:18px;
+}
+.p1-h1{
+  font-size:clamp(40px,12vw,56px);font-weight:900;
+  line-height:.9;letter-spacing:-.03em;color:var(--W);margin-bottom:16px;
+}
+.p1-h1 em{font-style:normal;color:var(--R);display:block}
+.p1-sub{font-size:14px;font-weight:500;line-height:1.6;color:var(--T2)}
+.p1-sub strong{color:var(--W)}
+.p1-sub em{font-style:normal;color:var(--R);font-weight:700}
+
+.live-counter{
+  margin-top:24px;width:100%;
+  background:var(--BK2);border:1px solid var(--BD);
+  border-radius:16px;padding:20px;
+  position:relative;overflow:hidden;
+}
+.live-counter::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--R)}
+.lc-top{display:flex;align-items:center;gap:8px;padding-left:12px;margin-bottom:14px}
+.lc-dot{width:7px;height:7px;border-radius:50%;background:var(--R);animation:blink 1s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.lc-top-lbl{font-size:10px;font-weight:800;letter-spacing:.14em;color:var(--T3);text-transform:uppercase}
+.lc-rows{display:flex;flex-direction:column;gap:9px;padding-left:12px}
+.lc-row{display:flex;align-items:center;justify-content:space-between}
+.lc-name{font-size:13px;font-weight:500;color:var(--T2)}
+.lc-val{font-size:13px;font-weight:800;color:var(--R);white-space:nowrap;margin-left:8px}
+.lc-total{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 0 0 12px;margin-top:12px;border-top:1px solid var(--BD);
+}
+.lc-total-lbl{font-size:12px;font-weight:600;color:var(--T2)}
+.lc-total-val{font-size:24px;font-weight:900;color:var(--R);letter-spacing:-.03em}
+
+.ticker{
+  margin-top:12px;width:100%;
+  background:rgba(232,0,28,.06);border:1px solid rgba(232,0,28,.15);
+  border-radius:10px;padding:10px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.ticker-lbl{font-size:11px;color:var(--T2);font-weight:500}
+.ticker-val{font-size:14px;font-weight:900;color:var(--R);font-variant-numeric:tabular-nums}
+
+.proof-bar{
+  margin-top:12px;width:100%;
+  display:flex;align-items:center;gap:8px;
+  background:var(--BK2);border:1px solid var(--BD);
+  border-radius:10px;padding:11px 14px;
+}
+.pdot{width:7px;height:7px;border-radius:50%;background:var(--GRN);flex-shrink:0;animation:blink 1.8s ease-in-out infinite}
+.proof-bar p{font-size:12px;color:var(--T2);font-weight:500}
+.proof-bar strong{color:var(--TXT)}
+
+.btn-cta{
+  width:100%;padding:18px 20px;background:var(--R);color:var(--W);
+  font-family:'Inter',sans-serif;font-size:15px;font-weight:800;
+  border:none;border-radius:13px;cursor:pointer;
+  box-shadow:0 6px 24px rgba(232,0,28,.32);
+  transition:transform .12s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn-cta:active{transform:scale(.97)}
+.cta-note{text-align:center;font-size:11px;color:var(--T3)}
+
+/* ══ NAV ══ */
+.pg-nav{width:100%;display:flex;flex-direction:column;flex-shrink:0}
+.nav-inner{display:flex;align-items:center;gap:12px;padding:16px 24px 0}
+.back-btn{
+  width:38px;height:38px;border-radius:9px;
+  background:var(--BK2);border:1px solid var(--BD);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:18px;color:var(--T2);flex-shrink:0;
+}
+.back-btn:active{background:var(--BD)}
+.prog-wrap{flex:1}
+.prog-row{
+  display:flex;justify-content:space-between;
+  font-size:10px;font-weight:700;color:var(--T3);
+  letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px;
+}
+.prog-row em{font-style:normal;color:var(--R)}
+.prog-track{height:4px;background:var(--BD);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;border-radius:99px;background:var(--R);transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+/* ══ QUIZ ══ */
+.qbody{width:100%;padding:24px 24px 48px;display:flex;flex-direction:column;flex:1}
+.q-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(232,0,28,.1);border:1px solid rgba(232,0,28,.2);
+  border-radius:5px;padding:4px 11px;
+  font-size:10px;font-weight:800;letter-spacing:.13em;color:var(--R);
+  text-transform:uppercase;margin-bottom:14px;align-self:flex-start;
+}
+.q-title{
+  font-size:clamp(24px,7vw,32px);font-weight:900;
+  line-height:1.08;letter-spacing:-.025em;color:var(--W);margin-bottom:8px;
+}
+.q-title .r{color:var(--R)}
+.q-sub{font-size:13px;color:var(--T2);line-height:1.5;margin-bottom:6px}
+.q-hint{
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:600;color:var(--T3);
+  margin-bottom:20px;
+}
+
+/* mini contador */
+.q-counter{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(232,0,28,.06);border:1px solid rgba(232,0,28,.14);
+  border-radius:9px;padding:9px 13px;margin-bottom:18px;
+}
+.q-counter-lbl{font-size:11px;color:var(--T2)}
+.q-counter-val{font-size:13px;font-weight:900;color:var(--R);margin-left:auto;font-variant-numeric:tabular-nums}
+
+/* Opções — agora 2 por pergunta, maiores */
+.opts{display:flex;flex-direction:column;gap:12px}
+.opt{
+  width:100%;background:var(--BK2);border:2px solid var(--BD);border-radius:16px;
+  padding:22px 18px;display:flex;align-items:center;gap:14px;
+  cursor:pointer;text-align:left;font-family:'Inter',sans-serif;
+  transition:border-color .15s,background .15s,transform .1s,box-shadow .15s;
+  animation:up .22s both;
+}
+@keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.opt:active{transform:scale(.985)}
+.opt.sel{
+  border-color:var(--R);
+  background:rgba(232,0,28,.09);
+  box-shadow:0 0 0 1px rgba(232,0,28,.2);
+}
+.opt-ico{
+  width:52px;height:52px;border-radius:13px;background:var(--BK3);
+  display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;
+  transition:background .15s;
+}
+.opt.sel .opt-ico{background:rgba(232,0,28,.18)}
+.opt-body{flex:1}
+.opt-body p{font-size:16px;font-weight:800;line-height:1.2;color:var(--TXT)}
+.opt-body span{font-size:12px;color:var(--T2);margin-top:4px;display:block;line-height:1.4}
+.chk{
+  width:26px;height:26px;border-radius:50%;border:2px solid var(--BD2);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+  transition:all .15s;
+}
+.opt.sel .chk{background:var(--R);border-color:var(--R);color:var(--W);font-weight:900}
+
+/* ══ RESULTADO ══ */
+#p5{background:var(--BK)}
+.r-wrap{
+  width:100%;flex:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 24px 52px;
+  text-align:center;
+}
+@keyframes crDrop{from{opacity:0;transform:scale(.35)}to{opacity:1;transform:scale(1)}}
+.r-losing-lbl{
+  font-size:11px;font-weight:800;letter-spacing:.18em;
+  color:var(--T3);text-transform:uppercase;margin-bottom:10px;
+}
+.r-amount{
+  font-size:clamp(44px,13.5vw,72px);font-weight:900;
+  line-height:.9;letter-spacing:-.04em;color:var(--R);
+  margin-bottom:4px;
+  animation:crDrop .5s cubic-bezier(.34,1.56,.64,1) both;
+  word-break:break-word;
+}
+.r-per-year{
+  font-size:16px;font-weight:700;color:var(--T2);
+  letter-spacing:.04em;margin-bottom:32px;
+}
+.r-impact{
+  font-size:clamp(26px,8vw,40px);font-weight:900;
+  line-height:1;letter-spacing:-.03em;color:var(--W);
+  margin-bottom:40px;
+}
+.r-impact em{font-style:normal;color:var(--R)}
+.btn-ghost{
+  width:100%;padding:14px;background:transparent;border:1px solid var(--BD);
+  border-radius:12px;color:var(--T3);font-family:'Inter',sans-serif;
+  font-size:13px;font-weight:600;cursor:pointer;margin-top:12px;
+}
+.btn-ghost:active{background:var(--BK2)}
+</style>
+</head>
+<body>
+
+<!-- ══════ HOME ══════ -->
+<section class="scr" id="p1">
+<div class="p1-header">
+  <div class="logo-wrap">
+    <svg width="36" height="36" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="19" y="7" width="14" height="86" rx="7" fill="white"/>
+      <path d="M19 7 C76 7 86 22 86 34 C86 46 76 61 19 61 Z" fill="white"/>
+      <rect x="38" y="18" width="32" height="9" rx="4.5" fill="#E8001C"/>
+      <rect x="38" y="32" width="26" height="9" rx="4.5" fill="#E8001C"/>
+      <rect x="38" y="46" width="20" height="9" rx="4.5" fill="#E8001C"/>
+    </svg>
+    <div class="logo-name">PEDIWAY</div>
+  </div>
+</div>
+
+<div class="p1-hero">
+  <div class="kicker">🔥 Para donos de restaurante</div>
+  <h1 class="p1-h1">PARE DE<br>PERDER<br><em>DINHEIRO.</em></h1>
+  <p class="p1-sub">Restaurantes pagam em média <em>R$1.200/mês</em> em taxas que <strong>podem ser eliminadas hoje.</strong></p>
+
+  <div class="live-counter">
+    <div class="lc-top">
+      <div class="lc-dot"></div>
+      <span class="lc-top-lbl">💸 O que você paga todo mês</span>
+    </div>
+    <div class="lc-rows">
+      <div class="lc-row">
+        <span class="lc-name">iFood / Rappi (até 30%)</span>
+        <span class="lc-val">−R$900</span>
+      </div>
+      <div class="lc-row">
+        <span class="lc-name">Sistema de gestão</span>
+        <span class="lc-val">−R$180</span>
+      </div>
+      <div class="lc-row">
+        <span class="lc-name">Cardápio digital</span>
+        <span class="lc-val">−R$120</span>
+      </div>
+    </div>
+    <div class="lc-total">
+      <span class="lc-total-lbl">Prejuízo estimado/ano</span>
+      <span class="lc-total-val">R$14.400</span>
+    </div>
+  </div>
+
+  <div class="ticker">
+    <span class="ticker-lbl">⏱ Você perdeu hoje enquanto lê isso</span>
+    <span class="ticker-val" id="tickerVal">R$0,00</span>
+  </div>
+
+  <div class="proof-bar">
+    <div class="pdot"></div>
+    <p><strong>+2.400 restaurantes</strong> já usam o PEDIWAY</p>
+  </div>
+</div>
+
+<div style="width:100%;padding:22px 24px 52px;display:flex;flex-direction:column;gap:8px">
+  <button class="btn-cta" onclick="go('p2')">Fazer o diagnóstico gratuito →</button>
+  <p class="cta-note">4 perguntas · resultado imediato · é de graça</p>
+</div>
+</section>
+
+<!-- ══════ Q1 ══════ -->
+<section class="scr off" id="p2">
+<div class="pg-nav">
+  <div class="top-bar"></div>
+  <div class="nav-inner">
+    <button class="back-btn" onclick="go('p1')">←</button>
+    <div class="prog-wrap">
+      <div class="prog-row"><span>Pergunta <em>1</em> de 4</span><em>25%</em></div>
+      <div class="prog-track"><div class="prog-fill" style="width:25%"></div></div>
+    </div>
+  </div>
+</div>
+<div class="qbody">
+  <div class="q-chip">💰 Custos</div>
+  <h2 class="q-title">Quanto você paga de<br><span class="r">taxas por mês?</span></h2>
+  <div class="q-counter">
+    <span class="q-counter-lbl">⏱ Você já perdeu hoje</span>
+    <span class="q-counter-val" id="qTicker1">R$0,00</span>
+  </div>
+  <div class="q-hint">👆 Toque na sua resposta</div>
+  <div class="opts">
+    <button class="opt" style="animation-delay:.04s" onclick="pick(this,'p2','a','p3')">
+      <div class="opt-ico">😅</div>
+      <div class="opt-body"><p>Menos de R$500/mês</p><span>Inclui iFood, sistemas, cardápio digital…</span></div>
+      <div class="chk"></div>
+    </button>
+    <button class="opt" style="animation-delay:.12s" onclick="pick(this,'p2','b','p3')">
+      <div class="opt-ico">😰</div>
+      <div class="opt-body"><p>Mais de R$500/mês</p><span>São mais de R$6.000 saindo por ano</span></div>
+      <div class="chk"></div>
+    </button>
+  </div>
+</div>
+</section>
+
+<!-- ══════ Q2 ══════ -->
+<section class="scr off" id="p3">
+<div class="pg-nav">
+  <div class="top-bar"></div>
+  <div class="nav-inner">
+    <button class="back-btn" onclick="go('p2')">←</button>
+    <div class="prog-wrap">
+      <div class="prog-row"><span>Pergunta <em>2</em> de 4</span><em>50%</em></div>
+      <div class="prog-track"><div class="prog-fill" style="width:50%"></div></div>
+    </div>
+  </div>
+</div>
+<div class="qbody">
+  <div class="q-chip">📱 Pedidos</div>
+  <h2 class="q-title">Você usa iFood ou<br><span class="r">Rappi hoje?</span></h2>
+  <div class="q-hint">👆 Toque na sua resposta</div>
+  <div class="opts">
+    <button class="opt" style="animation-delay:.04s" onclick="pick(this,'p3','a','p4')">
+      <div class="opt-ico">🛵</div>
+      <div class="opt-body"><p>Sim, uso</p><span>Pago comissão de até 30% por pedido</span></div>
+      <div class="chk"></div>
+    </button>
+    <button class="opt" style="animation-delay:.12s" onclick="pick(this,'p3','b','p4')">
+      <div class="opt-ico">📞</div>
+      <div class="opt-body"><p>Não, recebo pelo WhatsApp ou telefone</p><span>Sem controle e tudo manual</span></div>
+      <div class="chk"></div>
+    </button>
+  </div>
+</div>
+</section>
+
+<!-- ══════ Q3 ══════ -->
+<section class="scr off" id="p4">
+<div class="pg-nav">
+  <div class="top-bar"></div>
+  <div class="nav-inner">
+    <button class="back-btn" onclick="go('p3')">←</button>
+    <div class="prog-wrap">
+      <div class="prog-row"><span>Pergunta <em>3</em> de 4</span><em>75%</em></div>
+      <div class="prog-track"><div class="prog-fill" style="width:75%"></div></div>
+    </div>
+  </div>
+</div>
+<div class="qbody">
+  <div class="q-chip">📊 Gestão</div>
+  <h2 class="q-title">Você sabe quanto<br>vendeu <span class="r">ontem?</span></h2>
+  <div class="q-hint">👆 Seja honesto</div>
+  <div class="opts">
+    <button class="opt" style="animation-delay:.04s" onclick="pick(this,'p4','a','p4b')">
+      <div class="opt-ico">✅</div>
+      <div class="opt-body"><p>Sim, sei exatamente</p><span>Tenho controle, mas pago mensalidade por isso</span></div>
+      <div class="chk"></div>
+    </button>
+    <button class="opt" style="animation-delay:.12s" onclick="pick(this,'p4','b','p4b')">
+      <div class="opt-ico">❌</div>
+      <div class="opt-body"><p>Não tenho controle claro</p><span>Vou no feeling, caderno ou planilha</span></div>
+      <div class="chk"></div>
+    </button>
+  </div>
+</div>
+</section>
+
+<!-- ══════ Q4 ══════ -->
+<section class="scr off" id="p4b">
+<div class="pg-nav">
+  <div class="top-bar"></div>
+  <div class="nav-inner">
+    <button class="back-btn" onclick="go('p4')">←</button>
+    <div class="prog-wrap">
+      <div class="prog-row"><span>Pergunta <em>4</em> de 4</span><em>100%</em></div>
+      <div class="prog-track"><div class="prog-fill" style="width:100%"></div></div>
+    </div>
+  </div>
+</div>
+<div class="qbody">
+  <div class="q-chip">🚀 Decisão</div>
+  <h2 class="q-title">Se pudesse resolver<br>isso <span class="r">hoje de graça,</span><br>o que faria?</h2>
+  <div class="q-hint">👆 Seja honesto, isso define seu resultado</div>
+  <div class="opts">
+    <button class="opt" style="animation-delay:.04s" onclick="pick(this,'p4b','a','p5')">
+      <div class="opt-ico">🔥</div>
+      <div class="opt-body"><p>Começaria agora mesmo</p><span>Já perdi dinheiro demais esperando</span></div>
+      <div class="chk"></div>
+    </button>
+    <button class="opt" style="animation-delay:.12s" onclick="pick(this,'p4b','b','p5')">
+      <div class="opt-ico">🤔</div>
+      <div class="opt-body"><p>Precisaria entender melhor</p><span>Quero ver como funciona antes</span></div>
+      <div class="chk"></div>
+    </button>
+  </div>
+</div>
+</section>
+
+<!-- ══════ RESULTADO ══════ -->
+<section class="scr off" id="p5">
+<div class="top-bar"></div>
+<div class="r-wrap">
+  <p class="r-losing-lbl">você está perdendo por ano</p>
+  <div class="r-amount" id="rBig">R$14.400</div>
+  <p class="r-per-year">/ano</p>
+  <h2 class="r-impact">PARE AGORA<br>DE PERDER<br><em>DINHEIRO.</em></h2>
+  <button class="btn-cta" onclick="window.open('https://pediway.com.br','_blank')" style="font-size:16px;padding:20px;width:100%">
+    Acessar a plataforma →
+  </button>
+  <p class="cta-note" style="margin-top:10px">Gratuito · Sem contrato · Começa em 5 min</p>
+  <button class="btn-ghost" onclick="restart()">↺ Refazer o diagnóstico</button>
+</div>
+</section>
+
+<script>
+var A={};
+var tickerStart=Date.now();
+var tickerPerSec=1200*12/(365*24*3600);
+
+setInterval(function(){
+  var elapsed=(Date.now()-tickerStart)/1000;
+  var val=elapsed*tickerPerSec;
+  var str='R$'+val.toFixed(2).replace('.',',');
+  var t1=document.getElementById('tickerVal');
+  var t2=document.getElementById('qTicker1');
+  if(t1)t1.textContent=str;
+  if(t2)t2.textContent=str;
+},100);
+
+function go(id){
+  document.querySelectorAll('.scr').forEach(function(s){s.classList.add('off')});
+  document.getElementById(id).classList.remove('off');
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='p5')buildResult();
+}
+
+// Seleciona e avança automaticamente após 280ms
+function pick(btn,page,val,next){
+  document.getElementById(page).querySelectorAll('.opt').forEach(function(o){
+    o.classList.remove('sel');o.querySelector('.chk').textContent='';
+  });
+  btn.classList.add('sel');btn.querySelector('.chk').textContent='✓';
+  A[page]=val;
+  setTimeout(function(){go(next);},280);
+}
+
+function buildResult(){
+  var c=A['p2']||'b';
+  var vals={a:'R$6.000',b:'R$14.400'};
+  document.getElementById('rBig').textContent=vals[c]||'R$14.400';
+}
+
+function restart(){
+  A={};
+  tickerStart=Date.now();
+  document.querySelectorAll('.opt').forEach(function(o){
+    o.classList.remove('sel');o.querySelector('.chk').textContent='';
+  });
+  go('p1');
+}
+</script>
+</body>
+</html>

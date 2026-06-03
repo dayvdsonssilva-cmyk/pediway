@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assinar PEDIWAY</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Poppins',sans-serif;background:#f0e9e0;min-height:100vh;padding:32px 16px 60px}
+
+    .logo{font-size:1.4rem;font-weight:800;text-align:center;margin-bottom:28px;letter-spacing:-.5px}
+    .logo span{color:#C0392B}
+
+    /* ── PLANOS ── */
+    .plans-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:860px;margin:0 auto 0}
+    .plan-card{background:#fff;border-radius:20px;border:2.5px solid #e0dbd5;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+    .plan-card:hover{border-color:#C0392B;box-shadow:0 6px 24px rgba(192,57,43,.12)}
+    .plan-card.sel{border-color:#C0392B;box-shadow:0 6px 24px rgba(192,57,43,.18)}
+    .plan-card.prem-card{border-color:#1a1a1a}
+    .plan-card.prem-card.sel{border-color:#C0392B}
+
+    .chk{position:absolute;top:12px;right:12px;width:24px;height:24px;background:#C0392B;border-radius:50%;display:none;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:800}
+    .plan-card.sel .chk{display:flex}
+
+    .plan-head{padding:22px 22px 16px}
+    .plan-head.dark{background:#1a1a1a;color:#fff}
+    .plan-badge{display:inline-block;font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:50px;margin-bottom:8px}
+    .badge-pop{background:#fff3f0;color:#C0392B}
+    .badge-best{background:#fef3c7;color:#92400e}
+    .plan-name{font-size:1rem;font-weight:800;margin-bottom:6px}
+    .plan-price{display:flex;align-items:baseline;gap:3px}
+    .plan-cur{font-size:.82rem;color:#888;margin-top:2px}
+    .plan-val{font-size:2.2rem;font-weight:800;line-height:1}
+    .plan-per{font-size:.74rem;color:#888;font-weight:500}
+    .plan-desc{font-size:.72rem;color:#888;margin-top:4px}
+
+    .plan-feats{padding:16px 22px 0}
+    .feat{display:flex;align-items:flex-start;gap:8px;padding:6px 0;font-size:.8rem;border-bottom:1px solid #f5f0eb}
+    .feat:last-child{border-bottom:none;padding-bottom:0}
+    .feat-ok{width:17px;height:17px;border-radius:50%;background:#d1fae5;color:#059669;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:800;flex-shrink:0;margin-top:1px}
+
+    .plan-btn{width:calc(100% - 44px);margin:16px 22px 20px;padding:12px;border:none;border-radius:11px;font-family:'Poppins',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;transition:all .15s}
+    .plan-btn-red{background:#C0392B;color:#fff}
+    .plan-btn-dark{background:#1a1a1a;color:#fff}
+    .plan-card.sel .plan-btn{background:#C0392B !important;color:#fff !important}
+
+    /* ── CHECKOUT ── */
+    .checkout-box{background:#fff;border-radius:20px;max-width:860px;margin:16px auto 40px;box-shadow:0 6px 28px rgba(0,0,0,.1);overflow:hidden}
+
+    .sum-bar{padding:18px 22px;background:#faf8f5;border-bottom:1px solid #f0e9e0;display:flex;justify-content:space-between;align-items:center}
+    .sum-bar-label{font-size:.78rem;font-weight:700;color:#555}
+    .sum-bar-plano{font-size:.95rem;font-weight:800}
+    .sum-bar-val{font-size:1.05rem;font-weight:800;color:#C0392B}
+
+    /* Loading */
+    #loading-mp{padding:44px;text-align:center}
+    .spinner{width:34px;height:34px;border:3px solid #f0e9e0;border-top-color:#C0392B;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Body pagamento */
+    .pay-body{padding:22px;display:none}
+
+    .sec-label{font-size:.65rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+
+    /* Método */
+    .methods{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+    .method{border:2px solid #e0dbd5;border-radius:14px;padding:16px 12px;text-align:center;cursor:pointer;transition:all .18s;background:#faf8f5;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:80px;justify-content:center;font-weight:700}
+    .method:hover{border-color:#C0392B;background:#fff5f5;transform:translateY(-1px)}
+    .method.on{border-color:#C0392B;background:#fff5f5;box-shadow:0 0 0 3px rgba(192,57,43,.12)}
+    .method-icon{font-size:1.8rem;line-height:1}
+    .method-lbl{font-size:.78rem;font-weight:700;color:#555}
+
+    /* Campos genéricos */
+    .fgroup{margin-bottom:13px}
+    .fgroup label{font-size:.74rem;font-weight:700;color:#555;display:block;margin-bottom:5px}
+    .finput{width:100%;border:1.5px solid #e0dbd5;border-radius:10px;padding:11px 13px;font-family:'Poppins',sans-serif;font-size:.86rem;outline:none;transition:border-color .2s;background:#faf8f5}
+    .finput:focus{border-color:#C0392B;background:#fff}
+
+    /* MP Bricks container — MP renderiza o form aqui com o botão dele */
+    #mp-card-container{margin-bottom:4px}
+
+    /* PIX */
+    .pix-info{background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:11px;padding:14px;text-align:center;margin-bottom:14px}
+    .pix-info p{font-size:.78rem;color:#166534}
+
+    /* Boleto */
+    .bol-info{background:#fef9ef;border:1.5px solid #fde68a;border-radius:10px;padding:11px;font-size:.74rem;color:#92400e;margin-bottom:13px}
+
+    /* Botão pagar (PIX/Boleto) */
+    .btn-pay{width:100%;background:#C0392B;color:#fff;border:none;border-radius:14px;padding:18px;font-family:'Poppins',sans-serif;font-weight:800;font-size:1rem;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:8px;min-height:56px;letter-spacing:.01em}
+    .btn-pay:hover{background:#922B21}
+    .btn-pay:disabled{background:#ccc;cursor:not-allowed}
+    .safe{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:10px;font-size:.68rem;color:#bbb}
+
+    /* ── TELAS PÓS PAGAMENTO ── */
+    .pix-screen{display:none;padding:28px 22px;text-align:center}
+    .pix-screen.show{display:block}
+    .pix-code-box{background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:14px;margin:12px 0;text-align:left}
+    .pix-code{font-size:.72rem;word-break:break-all;color:#166534;margin-bottom:8px;line-height:1.5}
+    .btn-copy{background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-family:'Poppins',sans-serif;font-weight:700;font-size:.78rem;cursor:pointer}
+    .btn-back{background:#C0392B;color:#fff;border:none;border-radius:12px;padding:13px 28px;font-family:'Poppins',sans-serif;font-weight:700;font-size:.88rem;cursor:pointer}
+    .pix-timer{font-size:.82rem;color:#f59e0b;font-weight:700;margin:8px 0;display:flex;align-items:center;justify-content:center;gap:6px}
+    .pix-aprovado{display:none;padding:20px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:14px;margin:12px 0}
+
+    .suc-screen{display:none;padding:40px 22px;text-align:center}
+    .suc-screen.show{display:block}
+    .suc-icon{font-size:3.5rem;margin-bottom:12px}
+    .suc-title{font-size:1.15rem;font-weight:800;margin-bottom:8px}
+    .suc-sub{font-size:.83rem;color:#888;line-height:1.6;margin-bottom:20px}
+
+    @media(max-width:580px){
+      .plans-row{grid-template-columns:1fr;border-radius:0}
+      body{padding:20px 12px 50px}
+    }
+  </style>
+</head>
+<body>
+
+<div class="logo">PEDI<span>WAY</span></div>
+
+<!-- ── COMPARAÇÃO DE PLANOS ── -->
+<div class="plans-row" id="plans-section">
+
+  <!-- PRO -->
+  <div class="plan-card sel" id="card-pro" onclick="selPlano('pro')" style="display:flex;flex-direction:column">
+    <div class="chk">✓</div>
+    <div class="plan-head">
+      <div class="plan-badge badge-pop">⭐ Mais popular</div>
+      <div class="plan-name">Plano Pro</div>
+      <div class="plan-price">
+        <span class="plan-cur">R$</span>
+        <span class="plan-val" id="preco-pro">49</span>
+        <span class="plan-per">/mês</span>
+      </div>
+      <div class="plan-desc">Tudo que você precisa para vender mais</div>
+    </div>
+    <div class="plan-feats" style="flex:1">
+      <div class="feat feat-on"><div class="feat-ok">✓</div><span>Cardápio digital completo</span></div>
+      <div class="feat feat-on"><div class="feat-ok">✓</div><span>Pedidos em tempo real</span></div>
+      <div class="feat feat-on"><div class="feat-ok">✓</div><span>Suporte prioritário</span></div>
+      <div class="feat feat-on"><div class="feat-ok">✓</div><span>Fresquinho (stories)</span></div>
+      <div class="feat feat-on"><div class="feat-ok">✓</div><span>Controle de Caixa</span></div>
+      <div class="feat feat-off"><div class="feat-no">✕</div><span>Relatório de Vendas</span></div>
+      <div class="feat feat-off"><div class="feat-no">✕</div><span>Exportar CSV/PDF</span></div>
+      <div class="feat feat-off"><div class="feat-no">✕</div><span>Comandas digitais</span></div>
+      <div class="feat feat-off"><div class="feat-no">✕</div><span>Onboarding dedicado</span></div>
+    </div>
+    <button class="plan-btn plan-btn-red" onclick="selPlano('pro');event.stopPropagation()">Escolher Pro</button>
+  </div>
+
+  <!-- PREMIUM -->
+  <div class="plan-card prem-card" id="card-premium" onclick="selPlano('premium')" style="display:flex;flex-direction:column">
+    <div class="chk">✓</div>
+    <div class="plan-head dark">
+      <div class="plan-badge badge-best">🏆 Melhor valor</div>
+      <div class="plan-name">Plano Premium</div>
+      <div class="plan-price">
+        <span class="plan-cur" style="color:#aaa">R$</span>
+        <span class="plan-val" id="preco-premium">99</span>
+        <span class="plan-per">/ mês</span>
+      </div>
+      <div class="plan-desc" style="color:#888">Para quem quer o máximo</div>
+    </div>
+    <div class="plan-feats" style="flex:1">
+      <div class="feat feat-on"><div class="feat-ok">✓</div><span>Cardápio digital completo</span></div>
+      <div class="feat feat-on"><div class="feat-ok">✓</div><span>Pedidos em tempo real</span></div>
+      <div class="feat feat-on"><div class="feat-ok">✓</div><span>Suporte prioritário</span></div>
+      <div class="feat feat-on"><div class="feat-ok">✓</div><span>Fresquinho (stories)</span></div>
+      <div class="feat feat-on"><div class="feat-ok">✓</div><span>Controle de Caixa</span></div>
+      <div class="feat feat-on"><div class="feat-ok">✓</div><span>Relatório de Vendas</span></div>
+      <div class="feat feat-on"><div class="feat-ok">✓</div><span>Exportar CSV/PDF</span></div>
+      <div class="feat feat-on"><div class="feat-ok">✓</div><span>Comandas digitais</span></div>
+      <div class="feat feat-on"><div class="feat-ok">✓</div><span>Onboarding dedicado</span></div>
+    </div>
+    <button class="plan-btn plan-btn-dark" onclick="selPlano('premium');event.stopPropagation()">Escolher Premium</button>
+  </div>
+
+</div>
+
+<!-- ── FORMULÁRIO DE PAGAMENTO ── -->
+<div class="checkout-box">
+
+  <!-- Barra do plano selecionado -->
+  <div id="sum-bar-wrap" style="padding:18px 28px;background:#fff;border-bottom:2px solid #f0e9e0;display:flex;align-items:center;justify-content:space-between;gap:12px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:40px;height:40px;border-radius:10px;background:#fdf0ee;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0" id="sum-icon">⭐</div>
+      <div>
+        <div style="font-size:.6rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.08em">Plano selecionado</div>
+        <div style="font-size:1rem;font-weight:800;color:#1a1a1a" id="sum-plano">Pro</div>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:.6rem;color:#aaa;text-transform:uppercase;letter-spacing:.06em">Total mensal</div>
+      <div style="font-size:1.4rem;font-weight:800;color:#C0392B" id="sum-val">R$ 49,00</div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading-mp">
+    <div class="spinner"></div>
+    <div style="font-size:.8rem;color:#aaa">Carregando checkout seguro...</div>
+  </div>
+
+  <!-- Body pagamento -->
+  <div class="pay-body" id="pay-body" style="padding:24px">
+
+    <div class="sec-label">Forma de pagamento</div>
+    <div class="methods">
+      <div class="method on" data-m="card" onclick="setMetodo('card')">
+        <div class="method-icon">💳</div>
+        <div class="method-lbl">Cartão</div>
+      </div>
+      <div class="method" data-m="pix" onclick="setMetodo('pix')">
+        <div class="method-icon">📱</div>
+        <div class="method-lbl">PIX</div>
+      </div>
+
+    </div>
+
+    <!-- CARTÃO: MP Bricks renderiza o form + botão aqui -->
+    <div id="form-card">
+      <div id="aviso-teste" style="display:none;background:#fef9c3;border:1.5px solid #fde047;border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:.78rem;line-height:1.6">
+        <div style="font-weight:800;color:#854d0e;margin-bottom:4px">⚠️ Ambiente de teste — use cartão de teste</div>
+        <div style="color:#713f12">
+          N°: <strong>5031 4332 1540 6351</strong> &nbsp;|&nbsp; Venc: <strong>11/25</strong> &nbsp;|&nbsp; CVV: <strong>123</strong><br>
+          Nome: <strong>APRO</strong> &nbsp;|&nbsp; CPF: <strong>123.456.789-09</strong><br>
+          <span style="font-size:.7rem;color:#a16207">Cartões reais são bloqueados em modo de teste.</span>
+        </div>
+      </div>
+      <div id="mp-card-container"></div>
+      <!-- Nota: o botão de pagamento é o do próprio MP Bricks -->
+    </div>
+
+    <!-- PIX -->
+    <div id="form-pix" style="display:none">
+      <div class="pix-info">
+        <p>Após confirmar você verá o QR Code PIX para pagar.</p>
+        <p style="margin-top:4px;font-size:.7rem;opacity:.8">Aprovação automática em até 5 minutos.</p>
+      </div>
+      <div class="fgroup">
+        <label>CPF ou CNPJ</label>
+        <input class="finput" id="pix-doc" placeholder="000.000.000-00">
+      </div>
+      <div class="fgroup">
+        <label>E-mail</label>
+        <input class="finput" id="pix-email" type="email" placeholder="seu@email.com">
+      </div>
+      <button class="btn-pay" id="btn-pix">🔒 Gerar QR Code PIX</button>
+    </div>
+
+    <!-- BOLETO -->
+    
+
+    <div class="safe">🔒 Pagamento seguro via Mercado Pago</div>
+  </div>
+
+  <!-- PIX gerado -->
+  <div class="pix-screen" id="pix-screen">
+    <!-- Estado: aguardando pagamento -->
+    <div id="pix-aguardando">
+      <div style="font-size:2.2rem;margin-bottom:8px">📱</div>
+      <div style="font-size:1.05rem;font-weight:800;margin-bottom:4px">Aguardando pagamento</div>
+      <div style="font-size:.76rem;color:#888;margin-bottom:4px">Escaneie o QR Code ou copie o código abaixo</div>
+      <div class="pix-timer" id="pix-timer">⏱ Código expira em <span id="pix-countdown">05:00</span></div>
+      <img id="pix-qr-img" src="" alt="QR PIX" style="width:190px;height:190px;border-radius:14px;margin:12px auto;display:none;box-shadow:0 4px 16px rgba(0,0,0,.1)">
+      <div class="pix-code-box">
+        <div style="font-size:.68rem;color:#555;margin-bottom:5px;font-weight:600">Código copia e cola:</div>
+        <div class="pix-code" id="pix-code-txt"></div>
+        <button class="btn-copy" id="btn-copy-pix">📋 Copiar código PIX</button>
+      </div>
+      <div style="font-size:.72rem;color:#aaa;margin-top:10px">Após pagar, a confirmação aparece automaticamente aqui.</div>
+    </div>
+    <!-- Estado: aprovado -->
+    <div id="pix-aprovado" style="display:none">
+      <div style="font-size:3rem;margin-bottom:12px">✅</div>
+      <div style="font-size:1.2rem;font-weight:800;color:#16a34a;margin-bottom:6px">Pagamento aprovado!</div>
+      <div style="font-size:.82rem;color:#555;margin-bottom:20px">Seu plano foi ativado com sucesso.<br>Bem-vindo ao PEDIWAY Premium!</div>
+      <button class="btn-back" onclick="window.location.href='/'">Ir para o painel →</button>
+    </div>
+  </div>
+
+  <!-- Sucesso (cartão) -->
+  <div class="suc-screen" id="suc-screen">
+    <div class="suc-icon">🎉</div>
+    <div class="suc-title" id="suc-title">Pagamento confirmado!</div>
+    <div class="suc-sub"  id="suc-sub">Seu plano foi ativado com sucesso.</div>
+    <button class="btn-back" onclick="window.location.href='/'">Voltar ao painel</button>
+  </div>
+
+</div>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────────────────────────────────
+const MP_PUBLIC_KEY = 'APP_USR-0553d16b-7c51-4121-8cf3-aebcd8436a73';
+  const IS_TESTE = MP_PUBLIC_KEY.startsWith('TEST-');
+
+const params  = new URLSearchParams(location.search);
+const estabId = params.get('estab') || '';
+let planoSel  = params.get('plano') || 'pro';
+let metodo    = 'card';
+
+// Preços carregados do Supabase (fonte única de verdade)
+// Só aceita planos conhecidos — ignora valor da URL
+const PLANOS_VALIDOS = ['pro', 'premium'];
+if (!PLANOS_VALIDOS.includes(planoSel)) planoSel = 'pro';
+
+let PRECOS = { pro: 49, premium: 99 }; // fallback — sempre sobrescrito pelo servidor
+
+// ── Lê token JWT do Supabase sem precisar importar o SDK ────────────────────
+function getSupaToken() {
+  try {
+    const PROJECT_REF = 'nmttkjmfazcipefeakkx';
+    const raw = localStorage.getItem('sb-' + PROJECT_REF + '-auth-token');
+    if (!raw) return null;
+    const session = JSON.parse(raw);
+    // Verifica se o token ainda é válido (exp em segundos)
+    const exp = session?.expires_at || 0;
+    if (Date.now() / 1000 > exp) return null;
+    return session?.access_token || null;
+  } catch { return null; }
+}
+
+async function carregarPrecos() {
+  try {
+    const SURL = 'https://nmttkjmfazcipefeakkx.supabase.co';
+    const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tdHRram1mYXpjaXBlZmVha2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTM3NjQsImV4cCI6MjA5MDI4OTc2NH0.MMTX_6iQJk7Uv3HPSk0m32_BihvqsWhHJ_qiRkw0WYo';
+    const res = await fetch(SURL + '/rest/v1/pediway_config?id=eq.global&select=preco_pro,preco_prem', {
+      headers: { apikey: SKEY, Authorization: 'Bearer ' + SKEY }
+    });
+    if (res.ok) {
+      const [cfg] = await res.json();
+      if (cfg) {
+        PRECOS.pro     = Number(cfg.preco_pro  || PRECOS.pro);
+        PRECOS.premium = Number(cfg.preco_prem || PRECOS.premium);
+      }
+    }
+  } catch(e) { console.warn('[checkout] preços do Supabase:', e); }
+  // Atualiza UI com preços carregados
+  const ep = document.getElementById('preco-pro');
+  const em = document.getElementById('preco-premium');
+  const sv = document.getElementById('sum-val');
+  if (ep) ep.textContent = PRECOS.pro.toFixed(2).replace('.',',');
+  if (em) em.textContent = PRECOS.premium.toFixed(2).replace('.',',');
+  if (sv) sv.textContent = 'R$ ' + PRECOS[planoSel].toFixed(2).replace('.',',');
+  const bp = document.getElementById('btn-pix');
+  if (bp) bp.textContent = '🔒 Gerar QR Code PIX — R$ ' + PRECOS[planoSel].toFixed(2).replace('.',',');
+}
+
+let brickController = null; // guarda o controller para destruir antes de recriar
+
+// ── INIT ────────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Valida estabId — deve ser UUID válido
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!estabId || !UUID_REGEX.test(estabId)) {
+    document.body.innerHTML = '<div style="text-align:center;padding:60px;font-family:sans-serif;color:#C0392B"><h2>Link inválido</h2><p>Acesse o checkout pelo painel do PEDIWAY.</p></div>';
+    return;
+  }
+
+  // Verifica se usuário está logado
+  if (!getSupaToken()) {
+    document.body.innerHTML = '<div style="text-align:center;padding:60px;font-family:sans-serif;color:#C0392B"><h2>Sessão expirada</h2><p>Faça login novamente para acessar o checkout.</p></div>';
+    return;
+  }
+
+  selPlano(planoSel, true);
+  carregarPrecos(); // busca preços atualizados do Supabase
+  // Botão PIX com valor inicial
+  const btnPix = document.getElementById('btn-pix');
+  if (btnPix) btnPix.textContent = '🔒 Gerar QR Code PIX — R$ ' + PRECOS[planoSel].toFixed(2).replace('.',',');
+
+  const s = document.createElement('script');
+  s.src = 'https://sdk.mercadopago.com/js/v2';
+  s.onload  = iniciarBrick;
+  s.onerror = () => {
+    document.getElementById('loading-mp').innerHTML =
+      '<p style="color:#C0392B;padding:24px;text-align:center">Erro ao carregar sistema de pagamento. Recarregue a página.</p>';
+  };
+  document.head.appendChild(s);
+
+  document.getElementById('btn-pix').addEventListener('click', pagarPix);
+  document.getElementById('btn-copy-pix').addEventListener('click', () => {
+    navigator.clipboard.writeText(document.getElementById('pix-code-txt').textContent)
+      .then(() => { document.getElementById('btn-copy-pix').textContent = '✅ Copiado!'; });
+  });
+});
+
+// ── SELECIONAR PLANO ────────────────────────────────────────────────────────────
+function selPlano(p, skip) {
+  planoSel = p;
+  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('sel'));
+  document.getElementById('card-' + p).classList.add('sel');
+  const nome  = p === 'pro' ? 'Pro' : 'Premium';
+  const preco = PRECOS[p];
+  const icon = p === 'pro' ? '⭐' : '🏆';
+  const snEl = document.getElementById('sum-plano');
+  const svEl = document.getElementById('sum-val');
+  const siEl = document.getElementById('sum-icon');
+  if (snEl) snEl.textContent = 'Plano ' + nome;
+  if (svEl) svEl.textContent = 'R$ ' + preco.toFixed(2).replace('.',',');
+  if (siEl) siEl.textContent = icon;
+  // Atualiza valor no botão do PIX também
+  const btnPix = document.getElementById('btn-pix');
+  if (btnPix) btnPix.textContent = '🔒 Gerar QR Code PIX — R$ ' + preco.toFixed(2).replace('.',',');
+  if (!skip && metodo === 'card') recriarBrick();
+  // Se estiver no PIX e mudar de plano, reativa o form para gerar novo QR
+  if (!skip && metodo === 'pix') {
+    const ps = document.getElementById('pix-screen');
+    const pb = document.getElementById('pay-body');
+    if (ps && ps.classList.contains('show')) {
+      ps.classList.remove('show');
+      if (pb) pb.style.display = 'block';
+    }
+  }
+}
+
+// ── BRICK ─────────────────────────────────────────────────────────────────────
+async function recriarBrick() {
+  // Destrói o brick anterior corretamente
+  if (brickController) {
+    try { brickController.unmount(); } catch(e) {}
+    brickController = null;
+  }
+  document.getElementById('mp-card-container').innerHTML = '';
+  document.getElementById('loading-mp').style.display  = 'block';
+  document.getElementById('pay-body').style.display    = 'none';
+  await iniciarBrick();
+}
+
+async function iniciarBrick() {
+  try {
+    const mp     = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
+    const bricks = mp.bricks();
+
+    brickController = await bricks.create('cardPayment', 'mp-card-container', {
+      initialization: { amount: PRECOS[planoSel] },
+      customization: {
+        visual: {
+          style: {
+            theme: 'default',
+            customVariables: {
+              baseColor:            '#C0392B',
+              borderRadius:         '10px',
+              inputBackgroundColor: '#faf8f5',
+              outlinePrimaryColor:  '#C0392B',
+            },
+          },
+          hideFormTitle:     true,
+          hidePaymentButton: false, // Usa o botão do próprio MP
+        },
+        paymentMethods: { maxInstallments: 1 }, // Assinatura mensal — sem parcelamento
+      },
+      callbacks: {
+        onReady: () => {
+          document.getElementById('loading-mp').style.display = 'none';
+          document.getElementById('pay-body').style.display   = 'block';
+          // Aviso de modo teste
+          if (IS_TESTE) {
+            const aviso = document.getElementById('aviso-teste');
+            if (aviso) aviso.style.display = 'block';
+          }
+        },
+        onSubmit: async (data) => {
+          // Extrai campos explicitamente (compatível com diferentes versões do Brick)
+          const fd = data?.formData || data || {};
+          const sm = data?.selectedPaymentMethod || {};
+
+          const cardData = {
+            token:             fd.token             || sm.token             || null,
+            payment_method_id: fd.payment_method_id || sm.payment_method_id || null,
+            issuer_id:         fd.issuer_id         || sm.issuer_id         || null,
+            installments:      fd.installments      || sm.installments      || 1,
+            transaction_amount:fd.transaction_amount|| PRECOS[planoSel],
+            payer:             fd.payer             || sm.payer             || {},
+          };
+
+          await enviar({ type: 'card', cardData });
+        },
+        onError: (err) => {
+          // Não loga detalhes do erro de cartão em produção
+          mostrarErroCheckout('Erro ao processar cartão. Verifique os dados e tente novamente.');
+        },
+      },
+    });
+  } catch (e) {
+    console.error('[iniciarBrick] Erro:', e);
+    document.getElementById('loading-mp').style.display = 'none';
+    document.getElementById('pay-body').style.display   = 'block';
+  }
+}
+
+// ── Controle de intervalos — evita múltiplos timers rodando em paralelo ─────────
+let _timerInt = null;
+let _pollInt  = null;
+
+function limparIntervals() {
+  if (_timerInt) { clearInterval(_timerInt); _timerInt = null; }
+  if (_pollInt)  { clearInterval(_pollInt);  _pollInt  = null; }
+}
+
+// ── MÉTODO ───────────────────────────────────────────────────────────────────────
+function setMetodo(m) {
+  metodo = m;
+  document.querySelectorAll('.method').forEach(el => el.classList.remove('on'));
+  document.querySelector('[data-m="' + m + '"]').classList.add('on');
+  document.getElementById('form-card').style.display = m === 'card' ? 'block' : 'none';
+  document.getElementById('form-pix').style.display  = m === 'pix'  ? 'block' : 'none';
+}
+
+// ── PIX / BOLETO ─────────────────────────────────────────────────────────────────
+async function pagarPix() {
+  const doc   = document.getElementById('pix-doc').value.replace(/\D/g,'');
+  const email = document.getElementById('pix-email').value.trim();
+  if (!doc || doc.length < 11) return alert('CPF/CNPJ inválido.');
+  if (!email)                  return alert('E-mail obrigatório.');
+  setBtnLoad('btn-pix', true);
+  await enviar({ type:'pix', doc, email });
+  setBtnLoad('btn-pix', false);
+}
+function setBtnLoad(id, on) {
+  const b = document.getElementById(id);
+  if (!b) return;
+  b.disabled    = on;
+  b.textContent = on ? 'Processando...' : (id==='btn-pix'?'🔒 Gerar QR Code PIX':'🔒 Gerar Boleto');
+}
+
+// ── ENVIAR ────────────────────────────────────────────────────────────────────────
+async function enviar(payload) {
+  try {
+    payload.plano   = planoSel;
+    payload.estabId = estabId;
+    // Não envia valor — servidor sempre usa o preço definido internamente
+
+    // ── Adiciona token JWT para autenticação na API ──────────────────────────
+    const token = getSupaToken();
+    if (!token) {
+      mostrarErroCheckout('Sessão expirada. Faça login novamente para continuar.');
+      return;
+    }
+
+    const res  = await fetch('/api/criar-pagamento', {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': 'Bearer ' + token,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      mostrarErroCheckout(data.error || 'Erro ao processar. Tente novamente.');
+      if (payload.type === 'card') recriarBrick();
+      return;
+    }
+
+    if (data.qr_code)                                        mostrarPix(data);
+    else if (data.status === 'approved')                     mostrarSucesso('card');
+    else if (['pending','in_process'].includes(data.status))           mostrarSucesso('pending');
+    else mostrarErroCheckout('Status inesperado. Entre em contato com o suporte.');
+
+  } catch (e) {
+    mostrarErroCheckout('Erro de conexão. Verifique sua internet e tente novamente.');
+    if (payload.type === 'card') recriarBrick();
+  }
+}
+
+function mostrarErroCheckout(msg) {
+  let el = document.getElementById('checkout-erro-box');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'checkout-erro-box';
+    el.style.cssText = 'background:#fff5f5;border:1.5px solid #fecaca;border-radius:10px;padding:12px 16px;margin:12px 0;font-size:.82rem;line-height:1.6;display:flex;align-items:flex-start;gap:10px';
+    const payBody = document.getElementById('pay-body');
+    if (payBody) payBody.prepend(el);
+  }
+  // Sanitiza msg para evitar XSS (só usa textContent para conteúdo dinâmico)
+  const msgSegura = String(msg || '').slice(0, 300);
+  const sugerirPix = msgSegura.includes('PIX') || msgSegura.includes('outro cartão');
+
+  const iconEl = document.createElement('span');
+  iconEl.style.cssText = 'font-size:1.2rem;flex-shrink:0';
+  iconEl.textContent = '❌';
+
+  const tituloEl = document.createElement('div');
+  tituloEl.style.cssText = 'font-weight:700;color:#C0392B;margin-bottom:2px';
+  tituloEl.textContent = 'Pagamento recusado';
+
+  const msgEl = document.createElement('div');
+  msgEl.style.color = '#7f1d1d';
+  msgEl.textContent = msgSegura; // textContent — nunca innerHTML com dado externo
+
+  const wrapEl = document.createElement('div');
+  wrapEl.appendChild(tituloEl);
+  wrapEl.appendChild(msgEl);
+
+  if (sugerirPix) {
+    const btnEl = document.createElement('button');
+    btnEl.style.cssText = 'background:none;border:1.5px solid #C0392B;color:#C0392B;border-radius:8px;padding:4px 12px;font-family:inherit;font-size:.78rem;font-weight:700;cursor:pointer;margin-top:6px';
+    btnEl.textContent = 'Pagar com PIX →';
+    btnEl.onclick = () => setMetodo('pix');
+    const btnWrap = document.createElement('div');
+    btnWrap.appendChild(btnEl);
+    wrapEl.appendChild(btnWrap);
+  }
+
+  el.innerHTML = ''; // limpa antes de adicionar
+  el.appendChild(iconEl);
+  el.appendChild(wrapEl);
+  el.style.display = 'flex';
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  // Fecha automaticamente após 12s
+  setTimeout(() => { if (el) el.style.display = 'none'; }, 12000);
+}
+
+
+
+// ── PÓS PAGAMENTO ─────────────────────────────────────────────────────────────────
+function mostrarPix(data) {
+  document.getElementById('pay-body').style.display = 'none';
+  document.getElementById('pix-screen').classList.add('show');
+  if (data.qr_code_base64) {
+    const img = document.getElementById('pix-qr-img');
+    img.src = 'data:image/png;base64,' + data.qr_code_base64;
+    img.style.display = 'block';
+  }
+  document.getElementById('pix-code-txt').textContent = data.qr_code || '';
+  const copyBtn = document.getElementById('btn-copy-pix');
+  if (copyBtn) copyBtn.onclick = () => {
+    navigator.clipboard.writeText(data.qr_code || '').then(() => {
+      copyBtn.textContent = '✓ Copiado!';
+      setTimeout(() => { copyBtn.textContent = '📋 Copiar código PIX'; }, 2000);
+    });
+  };
+
+  // ── Limpa intervalos anteriores antes de criar novos ──────────────────────────
+  limparIntervals();
+
+  // Countdown 5min
+  let secsLeft = 5 * 60;
+  const timerEl   = document.getElementById('pix-countdown');
+  const timerWrap = document.getElementById('pix-timer');
+
+  // Reseta o display do timer
+  if (timerEl) timerEl.textContent = '05:00';
+
+  _timerInt = setInterval(() => {
+    secsLeft--;
+    if (secsLeft <= 0) {
+      limparIntervals();
+      if (timerWrap) timerWrap.textContent = '⚠️ Código expirado. Gere um novo pagamento.';
+      return;
+    }
+    const mm = String(Math.floor(secsLeft / 60)).padStart(2, '0');
+    const ss = String(secsLeft % 60).padStart(2, '0');
+    if (timerEl) timerEl.textContent = mm + ':' + ss;
+  }, 1000);
+
+  // Polling verificar aprovação a cada 4s
+  if (data.id) {
+    let pollCount = 0;
+    _pollInt = setInterval(async () => {
+      pollCount++;
+      // Para de verificar após 10 minutos (150 tentativas)
+      if (pollCount > 150) { limparIntervals(); return; }
+      try {
+        const tkn = getSupaToken();
+        const res = await fetch('/api/verificar-pagamento?id=' + data.id, {
+          headers: tkn ? { 'Authorization': 'Bearer ' + tkn } : {},
+        });
+        if (!res.ok) return;
+        const d = await res.json();
+        if (d.status === 'approved') {
+          limparIntervals();
+          const aw = document.getElementById('pix-aguardando');
+          const ap = document.getElementById('pix-aprovado');
+          if (aw) aw.style.display = 'none';
+          if (ap) { ap.style.display = 'block'; ap.scrollIntoView({behavior:'smooth'}); }
+        }
+      } catch(e) { /* falha silenciosa no poll — tenta novamente no próximo ciclo */ }
+    }, 4000);
+  }
+}
+
+</script>
+</body>
+</html>
