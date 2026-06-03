@@ -324,7 +324,7 @@ function getSupaToken() {
 async function carregarPrecos() {
   try {
     const SURL = 'https://nmttkjmfazcipefeakkx.supabase.co';
-    const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tdHRram1mYXpjaXBlZmFra3giLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc0NDA0OTQ0NiwiZXhwIjoyMDU5NjI1NDQ2fQ.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
+    const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tdHRram1mYXpjaXBlZmVha2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTM3NjQsImV4cCI6MjA5MDI4OTc2NH0.MMTX_6iQJk7Uv3HPSk0m32_BihvqsWhHJ_qiRkw0WYo';
     const res = await fetch(SURL + '/rest/v1/pediway_config?id=eq.global&select=preco_pro,preco_prem', {
       headers: { apikey: SKEY, Authorization: 'Bearer ' + SKEY }
     });
@@ -379,8 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   document.head.appendChild(s);
 
-  document.getElementById('btn-pix').addEventListener('click',    pagarPix);
-  document.getElementById('btn-boleto').addEventListener('click', pagarBoleto);
+  document.getElementById('btn-pix').addEventListener('click', pagarPix);
   document.getElementById('btn-copy-pix').addEventListener('click', () => {
     navigator.clipboard.writeText(document.getElementById('pix-code-txt').textContent)
       .then(() => { document.getElementById('btn-copy-pix').textContent = '✅ Copiado!'; });
@@ -505,9 +504,8 @@ function setMetodo(m) {
   metodo = m;
   document.querySelectorAll('.method').forEach(el => el.classList.remove('on'));
   document.querySelector('[data-m="' + m + '"]').classList.add('on');
-  document.getElementById('form-card').style.display   = m === 'card'   ? 'block' : 'none';
-  document.getElementById('form-pix').style.display    = m === 'pix'    ? 'block' : 'none';
-  document.getElementById('form-boleto').style.display = m === 'boleto' ? 'block' : 'none';
+  document.getElementById('form-card').style.display = m === 'card' ? 'block' : 'none';
+  document.getElementById('form-pix').style.display  = m === 'pix'  ? 'block' : 'none';
 }
 
 // ── PIX / BOLETO ─────────────────────────────────────────────────────────────────
@@ -557,9 +555,8 @@ async function enviar(payload) {
       return;
     }
 
-    if (data.qr_code)        mostrarPix(data);
-    else if (data.boleto_url){ window.open(data.boleto_url,'_blank'); mostrarSucesso('boleto'); }
-    else if (data.status === 'approved')                               mostrarSucesso('card');
+    if (data.qr_code)                                        mostrarPix(data);
+    else if (data.status === 'approved')                     mostrarSucesso('card');
     else if (['pending','in_process'].includes(data.status))           mostrarSucesso('pending');
     else mostrarErroCheckout('Status inesperado. Entre em contato com o suporte.');
 

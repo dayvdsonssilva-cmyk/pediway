@@ -72,12 +72,10 @@
     .kds-card{background:var(--card);border:2px solid var(--b);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;contain:layout style;transition:border-color .2s,opacity .2s}
     .kds-card.new-card{animation:cardIn .22s ease}
     @keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-    .kds-card.s-pendente{border-color:var(--red)}
-    .kds-card.s-aceito{border-color:var(--ylw)}
-    .kds-card.s-preparando{border-color:var(--blu)}
-    .kds-card.s-pronto{border-color:#1a3320;opacity:.45;filter:grayscale(.4)}
-    .kds-card.s-preparando{border-color:var(--blu);box-shadow:0 0 0 1px rgba(59,130,246,.25)}
     .kds-card.s-pendente{border-color:var(--red);box-shadow:0 0 0 1px rgba(232,0,28,.2)}
+    .kds-card.s-aceito{border-color:var(--ylw)}
+    .kds-card.s-preparando{border-color:var(--blu);box-shadow:0 0 0 1px rgba(59,130,246,.25)}
+    .kds-card.s-pronto{border-color:#1a3320;opacity:.45;filter:grayscale(.4)}
 
     .ck-hdr{padding:10px 13px;display:flex;align-items:center;justify-content:space-between;border-bottom:1.5px solid var(--b)}
     .ck-num{font-size:1.2rem;font-weight:900;letter-spacing:-.04em}
@@ -140,7 +138,6 @@ let ESTAB=null,SETOR_URL='',SETOR_ATIVO='geral',SETORES=[],PEDIDOS=[],_canal=nul
 let _renderPending=false; // evita múltiplos renders simultâneos
 
 // BIP
-let _ctx=null;
 function beep(){if(window.PediwayNotif){window.PediwayNotif.bip('novo');}else{try{const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.type='square';o.frequency.setValueAtTime(1200,c.currentTime);g.gain.setValueAtTime(.75,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.35);o.start(c.currentTime);o.stop(c.currentTime+.35);}catch(e){}}}
 
 // TOAST
@@ -278,9 +275,6 @@ function cardHTML(p,setor){
   const timerHTML=st==='pronto'?`<div class="ck-timer" style="color:var(--grn)">${hora}</div>`:`<div class="ck-timer${min>=8?' urg':''}" id="tm-${p.id}">${tempo(p.created_at)}</div>`;
   return `<div class="kds-card s-${st}" id="kc-${p.id}"><div class="ck-hdr"><div style="display:flex;align-items:center;min-width:0"><div class="ck-num">#${num}</div><div class="ck-meta"><div class="ck-cli">${p.cliente_nome||'Cliente'}</div><div class="ck-loc">${local}</div></div></div><div class="ck-hdr-r"><div class="ck-badge ${BC[st]||'bp'}">${BL[st]||'🔴 Novo'}</div>${timerHTML}</div></div><div class="ck-items">${itensHTML}</div>${p.observacao?`<div class="ck-obs-g">${p.observacao}</div>`:''}<div class="ck-ftr">${btns}</div></div>`;
 }
-
-// ACEITAR
-window.aceitar=async function(id){await atualizarSt(id,'aceito');imprimir(id);};
 
 // IMPRESSÃO — padrão exato do print (igual garcom.html)
 window.imprimir=function(id){

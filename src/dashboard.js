@@ -224,7 +224,7 @@ export async function initDashboard() {
           localStorage.setItem('pw_num_mesas_' + fresh.id, String(fresh.num_mesas));
         }
       }
-    } catch(e) { console.log('Sync estab:', e); }
+    } catch(e) { console.warn('Sync estab:', e); }
   }
 
   // Textos do header
@@ -5107,7 +5107,6 @@ function comprimirImagem(file, cb) {
       const compressed = canvas.toDataURL('image/jpeg', 0.78);
       const b64 = compressed.split(',')[1];
       const kb = Math.round(b64.length * 0.75 / 1024);
-      console.log('Foto comprimida:', kb + 'KB', w + 'x' + h);
       cb({ base64: b64, mimeType: 'image/jpeg', preview: compressed, kb });
     };
     img.src = e.target.result;

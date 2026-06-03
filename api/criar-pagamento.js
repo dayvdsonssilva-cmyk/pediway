@@ -6,8 +6,8 @@ const SUPA_URL  = process.env.SUPA_URL;
 const SUPA_SVC  = process.env.SUPA_SERVICE_KEY;
 const SITE_URL  = process.env.SITE_URL || 'https://pediway.vercel.app';
 
-// ── Preços SEMPRE definidos no servidor — nunca aceita valor do cliente ────────
-const PRECOS = { pro: 49, premium: 99 };
+// Planos válidos — preços são lidos do banco em tempo real
+const PLANOS_VALIDOS = ['pro', 'premium'];
 
 // ── CORS restrito ao domínio da aplicação ─────────────────────────────────────
 const ORIGENS_PERMITIDAS = [
@@ -63,7 +63,7 @@ export default async function handler(req, res) {
   const { type, plano, estabId, doc, email, nome } = req.body || {};
 
   // ── Validações básicas ────────────────────────────────────────────────────────
-  if (!plano || !PRECOS[plano]) return res.status(400).json({ error: 'Plano inválido.' });
+  if (!plano || !PLANOS_VALIDOS.includes(plano)) return res.status(400).json({ error: 'Plano inválido.' });
   if (!estabId)                  return res.status(400).json({ error: 'Estabelecimento não identificado.' });
 
   // Valida formato UUID do estabId
@@ -86,8 +86,20 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: 'Acesso negado.' });
   }
 
+  // ── Preços lidos do banco em tempo real — reflete o que o admin configurou ────
+  const { data: cfgPrecos } = await supa
+    .from('pediway_config')
+    .select('preco_pro, preco_prem')
+    .eq('id', 'global')
+    .maybeSingle();
+
+  const PRECOS = {
+    pro:     Number(cfgPrecos?.preco_pro  || 49),
+    premium: Number(cfgPrecos?.preco_prem || 99),
+  };
+
   // ── Valor SEMPRE vem do servidor — ignora qualquer valor do frontend ──────────
-  const valor  = PRECOS[plano];
+  const valor = PRECOS[plano];
   const extRef = `${estabId}__${plano}__${Date.now()}`;
   const notifUrl = `${SITE_URL}/api/webhook-mp`;
 
