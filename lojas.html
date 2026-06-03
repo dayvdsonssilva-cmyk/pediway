@@ -788,7 +788,7 @@ async function init() {
 
   // Requer cadastro com cidade para ver as lojas — evita compra entre cidades
   if (!_user?.nome || !_user?.cidade) {
-    await carregarEstados(); // aguarda estados carregarem antes de abrir o modal
+    await carregarLocaisPediway(); // carrega só cidades com Pediway
     abrirPerfil(true);
     return;
   }
@@ -799,8 +799,8 @@ async function init() {
   $('home-cidade').textContent = '📍 ' + _cidade;
   $('home-cidade').style.display = 'block';
 
-  // Estados IBGE em background — não bloqueia
-  carregarEstados();
+  // Locais Pediway em background (para edição de perfil futura)
+  carregarLocaisPediway();
 
   // ── PARALELO: promos + lojas ao mesmo tempo (economiza ~400ms) ──
   const [promosRes, lojasRes] = await Promise.allSettled([
@@ -2736,24 +2736,37 @@ window.fecharStory=function(){clearTimeout(_storyTimer);$('story-viewer').classL
 // ═══════════════════════════════════════════════════════
 // PERFIL MODAL
 // ═══════════════════════════════════════════════════════
-let _estados=[], _cidades=[];
+// Estados e cidades carregados direto do banco — só aparecem onde tem Pediway
+let _estadosPW=[], _cidadesPorEstadoPW={};
 
-async function carregarEstados() {
+async function carregarLocaisPediway() {
   try {
-    const r=await fetch(IBGE+'/estados?orderBy=nome');
-    _estados=await r.json();
+    const {data} = await db.from('estabelecimentos')
+      .select('cidade,estado')
+      .not('cidade','is',null)
+      .order('cidade');
+    const estMap={};
+    (data||[]).forEach(e=>{
+      if(!e.cidade) return;
+      const est=e.estado||'';
+      if(!estMap[est]) estMap[est]=new Set();
+      estMap[est].add(e.cidade);
+    });
+    _estadosPW=[...new Set(Object.keys(estMap))].filter(Boolean).sort();
+    _cidadesPorEstadoPW={};
+    Object.entries(estMap).forEach(([est,cids])=>{_cidadesPorEstadoPW[est]=[...cids].sort();});
   } catch(e){}
 }
 
-async function carregarCidadesIBGE(uf, selId) {
+function carregarCidadesPediway(estado, selId) {
   const sel=$(selId); if(!sel) return;
-  sel.disabled=true; sel.innerHTML='<option>Carregando...</option>';
-  try {
-    const r=await fetch(`${IBGE}/estados/${uf}/municipios?orderBy=nome`);
-    const cs=await r.json(); _cidades=cs.map(c=>c.nome);
-    sel.innerHTML='<option value="">Selecione a cidade...</option>'+_cidades.map(c=>`<option value="${c}">${c}</option>`).join('');
-    sel.disabled=false;
-  } catch(e){sel.innerHTML='<option>Erro ao carregar</option>';sel.disabled=false;}
+  const cidades=_cidadesPorEstadoPW[estado]||[];
+  if(!cidades.length){
+    sel.innerHTML='<option value="">Nenhuma cidade disponível</option>';
+  } else {
+    sel.innerHTML='<option value="">Selecione a cidade...</option>'+
+      cidades.map(c=>`<option value="${c}">${c}</option>`).join('');
+  }
 }
 
 function abrirPerfil(primeiraVez=false) {
@@ -2776,12 +2789,12 @@ function abrirPerfil(primeiraVez=false) {
     <div class="form-field"><label class="form-label">WhatsApp</label><input class="form-input" id="pf-tel" value="${u.tel||''}" placeholder="(11) 99999-9999" oninput="mskTel(this)" type="tel"></div>
     <div class="form-field"><label class="form-label">E-mail</label><input class="form-input" id="pf-email" value="${u.email||''}" placeholder="seu@email.com" type="email"></div>
     <div class="form-field"><label class="form-label">Estado</label>
-      <select class="form-input" id="pf-estado" onchange="carregarCidadesIBGE(this.value,'pf-cidade')">
+      <select class="form-input" id="pf-estado" onchange="carregarCidadesPediway(this.value,'pf-cidade')">
         <option value="">Selecione...</option>
-        ${_estados.map(e=>`<option value="${e.sigla}" ${(u.estadoSigla||'')===(e.sigla)?'selected':''}>${e.nome}</option>`).join('')}
+        ${_estadosPW.map(e=>`<option value="${e}" ${(u.estado||'')===(e)?'selected':''}>${e}</option>`).join('')}
       </select>
     </div>
-    <div class="form-field"><label class="form-label">Cidade</label>
+    <div class="form-field"><label class="form-label">Cidade — onde você está?</label>
       <select class="form-input" id="pf-cidade">
         ${u.cidade?`<option value="${u.cidade}" selected>${u.cidade}</option>`:'<option value="">Selecione o estado primeiro</option>'}
       </select>
@@ -2802,21 +2815,19 @@ async function salvarPerfil() {
   const nome  = $('pf-nome')?.value.trim();
   const tel   = $('pf-tel')?.value.trim();
   const email = $('pf-email')?.value.trim();
-  const estSel= $('pf-estado');
-  const uf    = estSel?.value;
-  const estadoNome=estSel?.options[estSel.selectedIndex]?.text||uf;
+  const estado=$('pf-estado')?.value;
   const cidade=$('pf-cidade')?.value;
 
-  if(!nome) return toast('Digite seu nome');
+  if(!nome)   return toast('Digite seu nome');
   if(!tel||tel.replace(/\D/g,'').length<10) return toast('WhatsApp inválido');
-  if(!uf)    return toast('Selecione o estado');
+  if(!estado) return toast('Selecione o estado');
   if(!cidade) return toast('Selecione a cidade');
 
-  _user={nome,tel,email,estado:estadoNome,estadoSigla:uf,cidade};
+  _user={nome,tel,email,estado,cidade};
   localStorage.setItem('pw_cliente',JSON.stringify(_user));
 
   // Salva no Supabase
-  try { await db.from('clientes').upsert({nome,telefone:tel.replace(/\D/g,''),email,estado:estadoNome,cidade},{onConflict:'email'}); } catch(e){}
+  try { await db.from('clientes').upsert({nome,telefone:tel.replace(/\D/g,''),email,estado,cidade},{onConflict:'email'}); } catch(e){}
 
   // Atualiza avatar
   $('home-avatar').textContent=nome[0].toUpperCase();
