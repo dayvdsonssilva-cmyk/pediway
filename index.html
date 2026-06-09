@@ -258,6 +258,36 @@ h3 { font-size:1.2rem; font-weight:700; color:#1a1a1a; }
 /* AUTH */
 .auth-container { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:100px 20px 40px; }
 .auth-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:40px; width:100%; max-width:440px; }
+
+/* REGISTER SPLIT LAYOUT (desktop) */
+.register-layout { display:flex; min-height:100vh; }
+.register-panel-esq { display:none; }
+.register-panel-dir { flex:1; display:flex; flex-direction:column; overflow-y:auto; }
+.register-panel-dir .auth-container { padding:40px 20px 60px; align-items:flex-start; padding-top:80px; }
+@media(min-width:820px){
+  .register-panel-esq {
+    display:flex; flex-direction:column; justify-content:center;
+    flex:0 0 380px; background:linear-gradient(160deg,#0d0d0d 0%,#1c0808 100%);
+    border-right:1px solid rgba(255,255,255,.07);
+    padding:60px 44px; position:sticky; top:0; height:100vh;
+  }
+  .reg-logo { font-family:'Poppins',sans-serif; font-weight:900; font-size:1.8rem; color:#fff; letter-spacing:-.02em; margin-bottom:28px; }
+  .reg-logo span { color:#C0392B; }
+  .reg-tagline { font-size:1.4rem; font-weight:800; color:#fff; line-height:1.3; margin-bottom:10px; }
+  .reg-sub { font-size:.82rem; color:#888; margin-bottom:36px; line-height:1.6; }
+  .reg-benefits { list-style:none; padding:0; margin:0 0 40px; display:flex; flex-direction:column; gap:14px; }
+  .reg-benefits li { display:flex; align-items:center; gap:12px; font-size:.84rem; color:#ccc; }
+  .reg-benefits li .ico { width:28px; height:28px; background:rgba(192,57,43,.15); border:1px solid rgba(192,57,43,.3); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:.9rem; flex-shrink:0; }
+  .reg-trial-badge { background:rgba(192,57,43,.12); border:1px solid rgba(192,57,43,.25); border-radius:12px; padding:14px 18px; }
+  .reg-trial-badge strong { display:block; font-size:.88rem; color:#fff; font-weight:700; }
+  .reg-trial-badge span { font-size:.74rem; color:#888; }
+  .register-panel-dir .auth-container { padding:60px 48px 60px; align-items:center; justify-content:flex-start; min-height:auto; }
+  .register-panel-dir .auth-card { max-width:500px; }
+  .register-header-mobile { display:none !important; }
+  /* 2-col grid for paired fields */
+  .reg-row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .reg-row2 .form-group { margin-bottom:0; }
+}
 .auth-sub { color:rgba(255,255,255,0.45); font-size:0.88rem; margin-bottom:28px; }
 .form-group { margin-bottom:16px; }
 .form-group label { display:block; font-size:0.82rem; font-weight:600; color:rgba(255,255,255,0.6); margin-bottom:6px; }
@@ -1933,64 +1963,118 @@ canvas, [data-touch="free"] { touch-action: none !important; }
 
 <!-- REGISTER -->
 <div data-screen="s-register" class="screen">
-  <header class="header-dark">
-    <div class="logo-dark" onclick="goTo('s-login')" style="cursor:pointer" translate="no">PEDI<span>WAY</span></div>
-    <button onclick="goTo('s-login')" style="background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.2);color:#fff;width:36px;height:36px;border-radius:50%;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
-  </header>
-  <div class="auth-container">
-    <div class="auth-card">
-      <h2>Criar conta</h2>
-      <p class="auth-sub">Grátis por 14 dias, sem cartão.</p>
-      <div class="form-group"><label>Seu nome completo</label><input type="text" id="rnome" placeholder="João Silva"></div>
-      <div class="form-group"><label>WhatsApp (com DDD)</label><input type="tel" id="rtel" placeholder="(99) 99999-9999" maxlength="15" oninput="mascaraTel(this)"></div>
-      <div class="form-group"><label>Nome do estabelecimento</label><input type="text" id="rn" placeholder="Ex: Burguer do Ze"></div>
-      <div class="form-group">
-        <label>Tipo do estabelecimento</label>
-        <div id="rtipo-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px">
-          <!-- gerado via JS abaixo -->
-        </div>
-        <input type="hidden" id="rtipo" value="">
+  <div class="register-layout">
+
+    <!-- PAINEL ESQUERDO (só desktop) -->
+    <div class="register-panel-esq">
+      <div class="reg-logo" onclick="goTo('s-login')" style="cursor:pointer">PEDI<span>WAY</span></div>
+      <div class="reg-tagline">Comece a vender online hoje mesmo</div>
+      <p class="reg-sub">A plataforma completa para restaurantes e lanchonetes venderem mais pelo delivery.</p>
+      <ul class="reg-benefits">
+        <li><span class="ico">📦</span>Pedidos em tempo real</li>
+        <li><span class="ico">🍽️</span>Cardápio digital profissional</li>
+        <li><span class="ico">📊</span>Painel completo de gestão</li>
+        <li><span class="ico">👨‍🍳</span>KDS para cozinha integrado</li>
+        <li><span class="ico">💬</span>Suporte via WhatsApp</li>
+        <li><span class="ico">💳</span>PIX e cartão automáticos</li>
+      </ul>
+      <div class="reg-trial-badge">
+        <strong>🎁 14 dias grátis</strong>
+        <span>Sem cartão de crédito. Cancele quando quiser.</span>
       </div>
-      <div class="form-group">
-        <label>Estado</label>
-        <div style="position:relative">
-          <select id="restado" onchange="carregarCidadesCadastro(this.value)">
-            <option value="">Carregando estados...</option>
-          </select>
-          <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Cidade</label>
-        <div style="position:relative">
-          <select id="rcidade" disabled>
-            <option value="">Selecione o estado primeiro</option>
-          </select>
-          <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-      </div>
-      <div class="form-group"><label>CPF ou CNPJ</label><input type="text" id="rdoc" placeholder="000.000.000-00" maxlength="18" oninput="mascaraDoc(this)"></div>
-      <div class="form-group"><label>E-mail</label><input type="email" id="re" placeholder="seu@email.com"></div>
-      <div class="form-group">
-        <label>Senha</label>
-        <div style="position:relative">
-          <input type="password" id="rp" placeholder="Minimo 6 caracteres" style="padding-right:42px">
-          <button type="button" onclick="toggleSenha('rp','olho-rp')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#aaa;font-size:1rem;padding:0;line-height:1" id="olho-rp">&#128065;</button>
-        </div>
-      </div>
-      <div style="display:flex;align-items:flex-start;gap:10px;margin-top:4px">
-        <input type="checkbox" id="r-aceita-termos"
-          style="width:18px;height:18px;min-width:18px;margin-top:2px;accent-color:var(--red);cursor:pointer;">
-        <label for="r-aceita-termos" style="font-size:.78rem;color:#aaa;line-height:1.5;cursor:pointer">
-          Li e aceito os
-          <span onclick="abrirTermos()" style="color:var(--red);font-weight:700;text-decoration:underline;cursor:pointer">Termos de Serviço</span>
-          da PEDIWAY
-        </label>
-      </div>
-      <button class="btn-primary full" onclick="doRegister()">Criar conta grátis</button>
-      <div class="auth-footer">Já tem conta? <a onclick="goTo('s-login')">Entrar</a></div>
     </div>
-  </div>
+
+    <!-- PAINEL DIREITO: header mobile + formulário -->
+    <div class="register-panel-dir">
+      <header class="header-dark register-header-mobile">
+        <div class="logo-dark" onclick="goTo('s-login')" style="cursor:pointer" translate="no">PEDI<span>WAY</span></div>
+        <button onclick="goTo('s-login')" style="background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.2);color:#fff;width:36px;height:36px;border-radius:50%;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
+      </header>
+      <div class="auth-container">
+        <div class="auth-card">
+          <h2>Criar conta</h2>
+          <p class="auth-sub">Grátis por 14 dias, sem cartão.</p>
+
+          <!-- Nome + Tel lado a lado no desktop -->
+          <div class="reg-row2">
+            <div class="form-group"><label>Seu nome completo</label><input type="text" id="rnome" placeholder="João Silva"></div>
+            <div class="form-group"><label>WhatsApp (com DDD)</label><input type="tel" id="rtel" placeholder="(99) 99999-9999" maxlength="15" oninput="mascaraTel(this)"></div>
+          </div>
+
+          <div class="form-group" style="margin-top:16px"><label>Nome do estabelecimento</label><input type="text" id="rn" placeholder="Ex: Burguer do Ze"></div>
+
+          <div class="form-group">
+            <label>Tipo do estabelecimento</label>
+            <div id="rtipo-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px">
+              <!-- gerado via JS abaixo -->
+            </div>
+            <input type="hidden" id="rtipo" value="">
+          </div>
+
+          <!-- Estado + Cidade lado a lado no desktop -->
+          <div class="reg-row2">
+            <div class="form-group">
+              <label>Estado</label>
+              <div style="position:relative">
+                <select id="restado" onchange="carregarCidadesCadastro(this.value)">
+                  <option value="">Carregando estados...</option>
+                </select>
+                <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Cidade</label>
+              <div style="position:relative">
+                <select id="rcidade" disabled>
+                  <option value="">Selecione o estado primeiro</option>
+                </select>
+                <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- CPF + Email lado a lado no desktop -->
+          <div class="reg-row2">
+            <div class="form-group"><label>CPF ou CNPJ</label><input type="text" id="rdoc" placeholder="000.000.000-00" maxlength="18" oninput="mascaraDoc(this)"></div>
+            <div class="form-group"><label>E-mail</label><input type="email" id="re" placeholder="seu@email.com"></div>
+          </div>
+
+          <div class="form-group" style="margin-top:16px">
+            <label>Senha</label>
+            <div style="position:relative">
+              <input type="password" id="rp" placeholder="Minimo 6 caracteres" style="padding-right:42px">
+              <button type="button" onclick="toggleSenha('rp','olho-rp')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#aaa;font-size:1rem;padding:0;line-height:1" id="olho-rp">&#128065;</button>
+            </div>
+          </div>
+
+          <!-- Checkboxes de termos -->
+          <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 16px;margin-top:8px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <input type="checkbox" id="r-aceita-termos"
+                style="width:18px;height:18px;min-width:18px;margin-top:2px;accent-color:var(--red);cursor:pointer;">
+              <label for="r-aceita-termos" style="font-size:.78rem;color:#aaa;line-height:1.5;cursor:pointer">
+                Li e aceito os
+                <span onclick="abrirTermos()" style="color:var(--red);font-weight:700;text-decoration:underline;cursor:pointer">Termos de Serviço</span>
+                da PEDIWAY
+              </label>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <input type="checkbox" id="r-aceita-responsabilidade"
+                style="width:18px;height:18px;min-width:18px;margin-top:2px;accent-color:var(--red);cursor:pointer;">
+              <label for="r-aceita-responsabilidade" style="font-size:.78rem;color:#aaa;line-height:1.5;cursor:pointer">
+                Li e aceito a
+                <span onclick="abrirResponsabilidade()" style="color:var(--red);font-weight:700;text-decoration:underline;cursor:pointer">Política de Responsabilidade e Privacidade (LGPD)</span>
+              </label>
+            </div>
+          </div>
+
+          <button class="btn-primary full" onclick="doRegister()" style="margin-top:18px">Criar conta grátis →</button>
+          <div class="auth-footer">Já tem conta? <a onclick="goTo('s-login')">Entrar</a></div>
+        </div>
+      </div>
+    </div><!-- /register-panel-dir -->
+
+  </div><!-- /register-layout -->
 </div>
 
 <!-- RECUPERAR SENHA — tema escuro -->
@@ -4190,6 +4274,14 @@ window.fecharTermos = function() {
   document.getElementById('modal-termos').style.display = 'none';
 };
 
+// ─── Modal de Responsabilidade e Privacidade (LGPD) ──────────────────────────
+window.abrirResponsabilidade = function() {
+  document.getElementById('modal-responsabilidade').style.display = 'flex';
+};
+window.fecharResponsabilidade = function() {
+  document.getElementById('modal-responsabilidade').style.display = 'none';
+};
+
 // Wrapper que normaliza o WhatsApp antes de comparar (fix: máscara vs sem máscara)
 document.addEventListener('DOMContentLoaded', function() {
   setTimeout(function() {
@@ -4231,28 +4323,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // ── Validação de termos no registro ──────────────────────────────────────
     const _originalDoRegister = window.doRegister;
     window.doRegister = function() {
-      const checkbox = document.getElementById('r-aceita-termos');
-      if (!checkbox?.checked) {
-        // Pulsa o checkbox pra chamar atenção
-        const label = checkbox?.closest('div') || checkbox?.parentElement;
-        if (label) {
-          label.style.transition = 'opacity .15s';
-          label.style.opacity = '.4';
-          setTimeout(() => { label.style.opacity = '1'; }, 150);
-          setTimeout(() => { label.style.opacity = '.4'; }, 300);
-          setTimeout(() => { label.style.opacity = '1'; }, 450);
-        }
-        let aviso = document.getElementById('aviso-termos');
-        if (!aviso) {
-          aviso = document.createElement('div');
-          aviso.id = 'aviso-termos';
-          aviso.style.cssText = 'font-size:.75rem;color:#C0392B;font-weight:600;margin-top:-8px;margin-bottom:4px';
-          aviso.textContent = '⚠️ Você precisa aceitar os Termos de Serviço para continuar.';
-          const btn = document.querySelector('#r-aceita-termos')?.closest('div')?.parentElement;
-          if (btn) btn.insertBefore(aviso, btn.querySelector('button'));
-        }
-        aviso.style.display = 'block';
-        setTimeout(() => { if(aviso) aviso.style.display = 'none'; }, 4000);
+      const cbTermos = document.getElementById('r-aceita-termos');
+      const cbResp   = document.getElementById('r-aceita-responsabilidade');
+      function pulsaCheckbox(el) {
+        const wrap = el?.closest('div');
+        if (!wrap) return;
+        wrap.style.transition = 'opacity .15s';
+        ['.4','1','.4','1'].forEach((v,i) => setTimeout(() => wrap.style.opacity=v, i*150));
+      }
+      if (!cbTermos?.checked) {
+        pulsaCheckbox(cbTermos);
+        showToast?.('⚠️ Aceite os Termos de Serviço para continuar.');
+        abrirTermos();
+        return;
+      }
+      if (!cbResp?.checked) {
+        pulsaCheckbox(cbResp);
+        showToast?.('⚠️ Aceite a Política de Responsabilidade e Privacidade para continuar.');
+        abrirResponsabilidade();
         return;
       }
       // Valida tipo de estabelecimento
@@ -4279,44 +4367,130 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- MODAL TERMOS DE SERVIÇO -->
-<div id="modal-termos" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:99999;align-items:center;justify-content:center;padding:20px">
-  <div style="background:#1a1a1a;border:1px solid rgba(255,255,255,.12);border-radius:18px;width:100%;max-width:520px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden">
+<!-- MODAL: TERMOS DE SERVIÇO -->
+<div id="modal-termos" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:99999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#1a1a1a;border:1px solid rgba(255,255,255,.12);border-radius:18px;width:100%;max-width:560px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
     <div style="padding:20px 24px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between">
       <div>
         <div style="font-size:1rem;font-weight:900;color:#fff">📄 Termos de Serviço</div>
-        <div style="font-size:.72rem;color:#888;margin-top:2px">PEDIWAY — Plataforma de Delivery Independente</div>
+        <div style="font-size:.72rem;color:#888;margin-top:2px">PEDIWAY Tecnologia LTDA — Versão 2.0 — Jun/2025</div>
       </div>
       <button onclick="fecharTermos()" style="background:rgba(255,255,255,.08);border:none;border-radius:8px;width:32px;height:32px;color:#aaa;font-size:1.1rem;cursor:pointer">×</button>
     </div>
     <div style="overflow-y:auto;padding:20px 24px;flex:1;font-size:.82rem;color:#ccc;line-height:1.8">
 
-      <p style="color:#aaa;margin-bottom:16px">Ao criar uma conta na PEDIWAY, você concorda com os termos abaixo. Leia com atenção.</p>
+      <p style="color:#aaa;margin-bottom:16px">Ao criar uma conta na PEDIWAY, você (doravante "Estabelecimento" ou "Usuário") concorda integralmente com os termos abaixo. Leia com atenção antes de prosseguir.</p>
 
-      <div style="font-weight:800;color:#fff;margin-bottom:6px">1. Serviço prestado</div>
-      <p style="margin-bottom:14px">A PEDIWAY oferece uma plataforma de gestão de pedidos, cardápio digital e delivery para estabelecimentos comerciais. O acesso é mediante assinatura mensal após o período de teste gratuito de 14 dias.</p>
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">1. Objeto do Serviço</div>
+      <p style="margin-bottom:14px">A PEDIWAY oferece uma plataforma SaaS (Software como Serviço) de gestão de pedidos, cardápio digital, KDS para cozinha e ferramentas de delivery para estabelecimentos comerciais do setor alimentício. O acesso ocorre mediante assinatura mensal após período de teste gratuito de 14 (quatorze) dias.</p>
 
-      <div style="font-weight:800;color:#fff;margin-bottom:6px">2. Responsabilidades do estabelecimento</div>
-      <p style="margin-bottom:14px">O estabelecimento é responsável pela veracidade das informações cadastradas, pela gestão dos pedidos recebidos, pelo atendimento ao cliente final e pelo cumprimento das legislações aplicáveis ao seu negócio.</p>
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">2. Obrigações do Estabelecimento</div>
+      <p style="margin-bottom:14px">O Estabelecimento é inteiramente responsável por: (a) veracidade e atualização de todas as informações cadastradas; (b) qualidade, higiene e segurança alimentar dos produtos oferecidos; (c) cumprimento de prazos de entrega prometidos ao consumidor; (d) atendimento e resolução de reclamações junto aos clientes finais; (e) emissão das notas fiscais devidas conforme legislação vigente; (f) obtenção de todas as licenças e alvarás exigidos pela legislação municipal, estadual e federal.</p>
 
-      <div style="font-weight:800;color:#fff;margin-bottom:6px">3. Dados e privacidade</div>
-      <p style="margin-bottom:14px">Os dados cadastrados são utilizados exclusivamente para operação da plataforma. A PEDIWAY não compartilha informações com terceiros sem consentimento, exceto quando exigido por lei.</p>
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">3. Limitação de Responsabilidade da PEDIWAY</div>
+      <p style="margin-bottom:14px">A PEDIWAY é exclusivamente fornecedora de tecnologia e não é parte nas relações de consumo estabelecidas entre o Estabelecimento e seus clientes. A PEDIWAY não se responsabiliza por: atrasos ou não-entrega de pedidos; qualidade ou segurança dos alimentos comercializados; prejuízos decorrentes de falha de conexão à internet do Estabelecimento; perdas financeiras resultantes de erros operacionais do Estabelecimento; chargebacks ou estornos de pagamento originados por fraude do consumidor.</p>
 
-      <div style="font-weight:800;color:#fff;margin-bottom:6px">4. Pagamento e cancelamento</div>
-      <p style="margin-bottom:14px">O plano gratuito tem duração de 14 dias. Após esse período, é necessário assinar um plano pago para continuar usando. O cancelamento pode ser feito a qualquer momento dentro do painel.</p>
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">4. Pagamento, Inadimplência e Cancelamento</div>
+      <p style="margin-bottom:14px">O trial gratuito tem duração de 14 dias corridos. Após esse período, a continuidade do acesso exige assinatura de plano pago (mensal ou anual). O não pagamento na data de vencimento resultará em suspensão automática do acesso. A reativação ocorre após regularização do débito. O cancelamento pode ser solicitado a qualquer tempo pelo painel do Estabelecimento, sendo efetivado ao final do ciclo vigente, sem reembolso proporcional de valores já pagos, salvo disposição legal em contrário.</p>
 
-      <div style="font-weight:800;color:#fff;margin-bottom:6px">5. Disponibilidade</div>
-      <p style="margin-bottom:14px">A PEDIWAY se compromete a manter o serviço disponível, mas não garante disponibilidade ininterrupta. Manutenções programadas serão comunicadas com antecedência.</p>
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">5. Propriedade Intelectual</div>
+      <p style="margin-bottom:14px">Todo o software, design, marca, logotipos e conteúdo da plataforma PEDIWAY são propriedade exclusiva da PEDIWAY Tecnologia LTDA, protegidos pela Lei nº 9.279/96 (Propriedade Industrial) e Lei nº 9.610/98 (Direitos Autorais). É vedada qualquer reprodução, cópia, engenharia reversa ou uso não autorizado.</p>
 
-      <div style="font-weight:800;color:#fff;margin-bottom:6px">6. Uso aceitável</div>
-      <p style="margin-bottom:14px">É proibido utilizar a plataforma para fins ilegais, divulgar conteúdo ofensivo ou tentar comprometer a segurança do sistema. O descumprimento pode resultar no cancelamento da conta.</p>
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">6. Disponibilidade e SLA</div>
+      <p style="margin-bottom:14px">A PEDIWAY envidará melhores esforços para manter o serviço disponível com uptime mínimo de 99% mensais, excluídas manutenções programadas. Manutenções serão comunicadas com mínimo de 12 horas de antecedência por e-mail ou WhatsApp. A PEDIWAY não garante disponibilidade ininterrupta e não será responsável por danos decorrentes de indisponibilidade eventual.</p>
 
-      <div style="font-weight:800;color:#fff;margin-bottom:6px">7. Alterações nos termos</div>
-      <p>A PEDIWAY pode atualizar estes termos a qualquer momento. Os usuários serão notificados por e-mail em caso de mudanças relevantes.</p>
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">7. Uso Aceitável e Vedações</div>
+      <p style="margin-bottom:14px">É expressamente proibido: utilizar a plataforma para fins ilícitos; cadastrar produtos adulterados, proibidos ou sem registro sanitário; praticar spam ou assédio a consumidores; tentar comprometer a segurança, integridade ou disponibilidade da plataforma; ceder, sublicenciar ou revender o acesso a terceiros; utilizar robôs, scripts ou automações não autorizadas. O descumprimento implica rescisão imediata sem direito a reembolso.</p>
+
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">8. Comunicações e Notificações</div>
+      <p style="margin-bottom:14px">O Estabelecimento autoriza o envio de comunicações operacionais, comerciais e de suporte por e-mail e WhatsApp. O descadastramento pode ser feito a qualquer momento, ressalvadas as comunicações obrigatórias de natureza contratual.</p>
+
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">9. Alterações nos Termos</div>
+      <p style="margin-bottom:14px">A PEDIWAY pode atualizar estes Termos a qualquer momento, notificando os usuários por e-mail com mínimo de 15 dias de antecedência. A continuidade de uso após a data de vigência das alterações implica aceitação dos novos termos.</p>
+
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">10. Foro e Jurisdição</div>
+      <p>Estes Termos são regidos pelas leis da República Federativa do Brasil. Fica eleito o foro da comarca do domicílio do Estabelecimento para dirimir quaisquer controvérsias, com renúncia a qualquer outro, por mais privilegiado que seja.</p>
 
     </div>
-    <div style="padding:16px 24px;border-top:1px solid rgba(255,255,255,.08)">
-      <button onclick="fecharTermos()" style="width:100%;background:var(--red);color:#fff;border:none;border-radius:10px;padding:13px;font-family:'Poppins',sans-serif;font-weight:700;font-size:.9rem;cursor:pointer">
-        Entendi ✓
+    <div style="padding:16px 24px;border-top:1px solid rgba(255,255,255,.08);display:flex;gap:10px">
+      <button onclick="fecharTermos()" style="flex:1;background:#2a2a2a;color:#aaa;border:none;border-radius:10px;padding:13px;font-family:'Poppins',sans-serif;font-weight:600;font-size:.85rem;cursor:pointer">
+        Fechar
+      </button>
+      <button onclick="document.getElementById('r-aceita-termos').checked=true;fecharTermos()" style="flex:2;background:var(--red);color:#fff;border:none;border-radius:10px;padding:13px;font-family:'Poppins',sans-serif;font-weight:700;font-size:.9rem;cursor:pointer">
+        Li e aceito os Termos ✓
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: POLÍTICA DE RESPONSABILIDADE E PRIVACIDADE (LGPD) -->
+<div id="modal-responsabilidade" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:99999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#1a1a1a;border:1px solid rgba(255,255,255,.12);border-radius:18px;width:100%;max-width:560px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="padding:20px 24px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:1rem;font-weight:900;color:#fff">🔐 Política de Responsabilidade e Privacidade</div>
+        <div style="font-size:.72rem;color:#888;margin-top:2px">PEDIWAY — Conformidade com a LGPD (Lei nº 13.709/2018)</div>
+      </div>
+      <button onclick="fecharResponsabilidade()" style="background:rgba(255,255,255,.08);border:none;border-radius:8px;width:32px;height:32px;color:#aaa;font-size:1.1rem;cursor:pointer">×</button>
+    </div>
+    <div style="overflow-y:auto;padding:20px 24px;flex:1;font-size:.82rem;color:#ccc;line-height:1.8">
+
+      <p style="color:#aaa;margin-bottom:16px">Esta Política descreve como a PEDIWAY coleta, usa, armazena e protege os dados pessoais em conformidade com a Lei Geral de Proteção de Dados Pessoais (LGPD — Lei nº 13.709/2018).</p>
+
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">1. Controlador dos Dados</div>
+      <p style="margin-bottom:14px">A PEDIWAY Tecnologia LTDA é a controladora dos dados pessoais coletados nesta plataforma, responsável pelas decisões sobre tratamento de dados nos termos do Art. 5º, VI da LGPD. Canais de contato com o Encarregado (DPO): <strong style="color:#fff">dpo@pediway.com.br</strong></p>
+
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">2. Dados Coletados e Finalidades</div>
+      <p style="margin-bottom:8px">Coletamos os seguintes dados para as finalidades indicadas:</p>
+      <ul style="margin:0 0 14px 18px;padding:0;display:flex;flex-direction:column;gap:6px">
+        <li><strong style="color:#fff">Nome, e-mail e telefone:</strong> identificação, comunicação e suporte.</li>
+        <li><strong style="color:#fff">CPF/CNPJ:</strong> verificação de identidade e conformidade fiscal.</li>
+        <li><strong style="color:#fff">Dados de pedidos e cardápio:</strong> operação da plataforma e relatórios ao Estabelecimento.</li>
+        <li><strong style="color:#fff">Dados de pagamento:</strong> processados exclusivamente pelo Mercado Pago S.A. — não armazenamos dados de cartão.</li>
+        <li><strong style="color:#fff">Dados de acesso (IP, device):</strong> segurança, antifraude e melhoria do serviço.</li>
+      </ul>
+
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">3. Base Legal do Tratamento</div>
+      <p style="margin-bottom:14px">O tratamento dos dados é realizado com base em: (a) execução de contrato (Art. 7º, V — LGPD), para prestação dos serviços contratados; (b) cumprimento de obrigação legal (Art. 7º, II), para atendimento de requisitos fiscais e regulatórios; (c) legítimo interesse (Art. 7º, IX), para melhoria do serviço e prevenção a fraudes; (d) consentimento (Art. 7º, I), para envio de comunicações de marketing, revogável a qualquer tempo.</p>
+
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">4. Compartilhamento de Dados</div>
+      <p style="margin-bottom:14px">Os dados são compartilhados apenas com: (a) <strong style="color:#fff">Supabase Inc.</strong> — infraestrutura de banco de dados em conformidade com GDPR/LGPD; (b) <strong style="color:#fff">Mercado Pago S.A.</strong> — processamento de pagamentos sob regulação do Banco Central do Brasil; (c) <strong style="color:#fff">Autoridades competentes</strong> — quando exigido por ordem judicial ou obrigação legal. Não vendemos, alugamos ou cedemos dados pessoais a terceiros para fins comerciais.</p>
+
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">5. Retenção e Exclusão de Dados</div>
+      <p style="margin-bottom:14px">Os dados são mantidos pelo período necessário à prestação dos serviços e por até 5 (cinco) anos após o encerramento do contrato para cumprimento de obrigações legais e tributárias, conforme exigido pela legislação fiscal brasileira (Lei nº 9.430/96 e Código Tributário Nacional).</p>
+
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">6. Direitos do Titular</div>
+      <p style="margin-bottom:8px">Nos termos dos Arts. 18 e 20 da LGPD, você tem direito a:</p>
+      <ul style="margin:0 0 14px 18px;padding:0;display:flex;flex-direction:column;gap:4px">
+        <li>Confirmar a existência de tratamento dos seus dados</li>
+        <li>Acessar os dados que possuímos sobre você</li>
+        <li>Corrigir dados incompletos, inexatos ou desatualizados</li>
+        <li>Solicitar anonimização, bloqueio ou eliminação de dados desnecessários</li>
+        <li>Portabilidade dos dados a outro fornecedor</li>
+        <li>Revogar o consentimento a qualquer momento</li>
+        <li>Peticionar perante a ANPD (Autoridade Nacional de Proteção de Dados)</li>
+      </ul>
+      <p style="margin-bottom:14px">Para exercer seus direitos, envie solicitação para <strong style="color:#fff">privacidade@pediway.com.br</strong>. Respondemos em até 15 dias úteis.</p>
+
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">7. Segurança dos Dados</div>
+      <p style="margin-bottom:14px">Adotamos medidas técnicas e organizacionais adequadas para proteger os dados contra acesso não autorizado, destruição, perda ou alteração, incluindo: criptografia em trânsito (TLS 1.3), controle de acesso baseado em função (RBAC), autenticação JWT com tokens de curta duração e backups automáticos criptografados.</p>
+
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">8. Incidentes de Segurança</div>
+      <p style="margin-bottom:14px">Em caso de incidente de segurança com risco relevante aos titulares, a PEDIWAY notificará a ANPD e os titulares afetados no prazo de até 72 horas da ciência do incidente, conforme Art. 48 da LGPD.</p>
+
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">9. Cookies e Rastreamento</div>
+      <p style="margin-bottom:14px">A plataforma utiliza armazenamento local (localStorage) para manter sessões autenticadas. Não utilizamos cookies de rastreamento publicitário de terceiros.</p>
+
+      <div style="font-weight:800;color:#fff;margin-bottom:6px">10. Alterações nesta Política</div>
+      <p>Esta Política pode ser atualizada a qualquer momento. Usuários serão notificados por e-mail com antecedência mínima de 15 dias. A versão mais recente sempre estará disponível na plataforma.</p>
+
+    </div>
+    <div style="padding:16px 24px;border-top:1px solid rgba(255,255,255,.08);display:flex;gap:10px">
+      <button onclick="fecharResponsabilidade()" style="flex:1;background:#2a2a2a;color:#aaa;border:none;border-radius:10px;padding:13px;font-family:'Poppins',sans-serif;font-weight:600;font-size:.85rem;cursor:pointer">
+        Fechar
+      </button>
+      <button onclick="document.getElementById('r-aceita-responsabilidade').checked=true;fecharResponsabilidade()" style="flex:2;background:var(--red);color:#fff;border:none;border-radius:10px;padding:13px;font-family:'Poppins',sans-serif;font-weight:700;font-size:.9rem;cursor:pointer">
+        Li e aceito a Política ✓
       </button>
     </div>
   </div>
