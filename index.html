@@ -306,11 +306,11 @@ h3 { font-size:1.2rem; font-weight:700; color:#1a1a1a; }
     min-height:100vh;
   }
   .register-panel-dir .auth-card {
-    background:transparent;
-    border:none;
-    border-radius:0;
-    padding:0;
-    max-width:100%;
+    background:rgba(255,255,255,.025);
+    border:1px solid rgba(255,255,255,.07);
+    border-radius:18px;
+    padding:40px 48px;
+    max-width:580px;
     width:100%;
   }
   .register-panel-dir h2 { font-size:1.6rem; margin-bottom:4px; }
@@ -350,7 +350,38 @@ h3 { font-size:1.2rem; font-weight:700; color:#1a1a1a; }
 .auth-footer a { color:var(--red); cursor:pointer; font-weight:600; }
 .s-req { font-size:.7rem; color:#555; transition:color .2s; }
 .s-req.ok { color:#4caf7d; }
-.s-req.ok::first-letter { content:''; }
+
+/* ── WIZARD MULTI-STEP ── */
+.wiz-progress { margin-bottom:28px; }
+.wiz-bar-track { height:3px; background:rgba(255,255,255,.08); border-radius:4px; margin-bottom:16px; overflow:hidden; }
+.wiz-bar-fill  { height:100%; background:var(--red); border-radius:4px; transition:width .4s ease; width:25%; }
+.wiz-steps { display:flex; justify-content:space-between; }
+.wiz-step { display:flex; align-items:center; gap:7px; opacity:.35; transition:opacity .3s; }
+.wiz-step.on  { opacity:1; }
+.wiz-step.done { opacity:.7; }
+.ws-num { width:24px; height:24px; border-radius:50%; background:rgba(255,255,255,.1); border:1.5px solid rgba(255,255,255,.15); color:#fff; font-size:.68rem; font-weight:800; display:flex; align-items:center; justify-content:center; transition:all .3s; flex-shrink:0; }
+.wiz-step.on  .ws-num { background:var(--red); border-color:var(--red); }
+.wiz-step.done .ws-num { background:rgba(76,175,112,.2); border-color:#4caf7d; color:#4caf7d; }
+.ws-label { font-size:.7rem; font-weight:600; color:#aaa; }
+.wiz-step.on .ws-label { color:#fff; }
+
+.wiz-wrapper { overflow:hidden; }
+
+.wiz-etapa { animation:wiz-in .28s ease; }
+@keyframes wiz-in { from { opacity:0; transform:translateX(18px); } to { opacity:1; transform:translateX(0); } }
+.wiz-etapa-back { animation:wiz-back .28s ease; }
+@keyframes wiz-back { from { opacity:0; transform:translateX(-18px); } to { opacity:1; transform:translateX(0); } }
+
+.wiz-etapa-header { display:flex; align-items:center; gap:14px; margin-bottom:24px; }
+.wiz-etapa-icon { font-size:2rem; line-height:1; }
+.wiz-etapa-titulo { font-size:1.15rem; font-weight:800; color:#fff; line-height:1.2; }
+.wiz-etapa-sub { font-size:.74rem; color:#666; margin-top:2px; }
+
+.wiz-nav { display:flex; align-items:center; justify-content:space-between; margin-top:24px; gap:12px; }
+.wiz-btn-back { background:transparent; border:1.5px solid rgba(255,255,255,.12); color:#888; border-radius:10px; padding:11px 20px; font-family:'Poppins',sans-serif; font-size:.82rem; font-weight:600; cursor:pointer; transition:all .15s; }
+.wiz-btn-back:hover { border-color:rgba(255,255,255,.25); color:#ccc; }
+.wiz-btn-next { background:var(--red); color:#fff; border:none; border-radius:10px; padding:12px 28px; font-family:'Poppins',sans-serif; font-size:.88rem; font-weight:700; cursor:pointer; transition:background .15s; }
+.wiz-btn-next:hover { background:#a82820; }
 
 /* DASHBOARD HEADER */
 .header-light {
@@ -2035,109 +2066,154 @@ canvas, [data-touch="free"] { touch-action: none !important; }
       </div>
     </div>
 
-    <!-- PAINEL DIREITO: header mobile + formulário -->
+    <!-- PAINEL DIREITO: header mobile + wizard -->
     <div class="register-panel-dir">
       <header class="header-dark register-header-mobile">
         <div class="logo-dark" onclick="goTo('s-login')" style="cursor:pointer" translate="no">PEDI<span>WAY</span></div>
         <button onclick="goTo('s-login')" style="background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.2);color:#fff;width:36px;height:36px;border-radius:50%;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
       </header>
+
       <div class="auth-container">
         <div class="auth-card">
-          <h2>Criar conta</h2>
-          <p class="auth-sub">Grátis por 14 dias, sem cartão.</p>
 
-          <!-- Linha 1: Nome + Tel + Nome do estabelecimento -->
-          <div class="reg-row3">
-            <div class="form-group"><label>Seu nome completo</label><input type="text" id="rnome" placeholder="João Silva"></div>
-            <div class="form-group"><label>WhatsApp (com DDD)</label><input type="tel" id="rtel" placeholder="(99) 99999-9999" maxlength="15" oninput="mascaraTel(this)"></div>
-            <div class="form-group"><label>Nome do estabelecimento</label><input type="text" id="rn" placeholder="Ex: Burguer do Ze"></div>
-          </div>
-
-          <!-- Tipo do estabelecimento -->
-          <div class="form-group" style="margin-top:18px">
-            <label>Tipo do estabelecimento</label>
-            <div id="rtipo-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px">
-              <!-- gerado via JS abaixo -->
-            </div>
-            <input type="hidden" id="rtipo" value="">
-          </div>
-
-          <!-- Linha 3: Estado + Cidade + CPF + Email (4 colunas) -->
-          <div class="reg-row2" style="margin-top:4px">
-            <div class="form-group">
-              <label>Estado</label>
-              <div style="position:relative">
-                <select id="restado" onchange="carregarCidadesCadastro(this.value)">
-                  <option value="">Carregando estados...</option>
-                </select>
-                <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Cidade</label>
-              <div style="position:relative">
-                <select id="rcidade" disabled>
-                  <option value="">Selecione o estado primeiro</option>
-                </select>
-                <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-              </div>
+          <!-- BARRA DE PROGRESSO -->
+          <div class="wiz-progress">
+            <div class="wiz-bar-track"><div class="wiz-bar-fill" id="wiz-bar-fill"></div></div>
+            <div class="wiz-steps">
+              <div class="wiz-step on"  id="ws1"><span class="ws-num">1</span><span class="ws-label">Você</span></div>
+              <div class="wiz-step"     id="ws2"><span class="ws-num">2</span><span class="ws-label">Negócio</span></div>
+              <div class="wiz-step"     id="ws3"><span class="ws-num">3</span><span class="ws-label">Localização</span></div>
+              <div class="wiz-step"     id="ws4"><span class="ws-num">4</span><span class="ws-label">Acesso</span></div>
             </div>
           </div>
 
-          <!-- Linha 4: CPF + Email -->
-          <div class="reg-row2">
-            <div class="form-group"><label>CPF ou CNPJ</label><input type="text" id="rdoc" placeholder="000.000.000-00" maxlength="18" oninput="mascaraDoc(this)"></div>
-            <div class="form-group"><label>E-mail</label><input type="email" id="re" placeholder="seu@email.com"></div>
-          </div>
+          <!-- WRAPPER DAS ETAPAS (overflow hidden para animação) -->
+          <div class="wiz-wrapper" id="wiz-wrapper">
 
-          <!-- Linha 5: Senha + Termos lado a lado -->
-          <div class="reg-senha-termos" style="margin-top:4px">
-            <div class="form-group" style="margin-bottom:0">
-              <label>Senha</label>
-              <div style="position:relative">
-                <input type="password" id="rp" placeholder="Ex: Minha@Senha123" style="padding-right:42px" oninput="avaliarSenha(this.value)">
-                <button type="button" onclick="toggleSenha('rp','olho-rp')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#aaa;font-size:1rem;padding:0;line-height:1" id="olho-rp">&#128065;</button>
+            <!-- ETAPA 1: VOCÊ -->
+            <div class="wiz-etapa" id="wet1">
+              <div class="wiz-etapa-header">
+                <div class="wiz-etapa-icon">👤</div>
+                <div>
+                  <div class="wiz-etapa-titulo">Vamos nos conhecer!</div>
+                  <div class="wiz-etapa-sub">Etapa 1 de 4 · Seus dados pessoais</div>
+                </div>
               </div>
-              <!-- Barra de força -->
-              <div style="display:flex;gap:4px;margin-top:8px" id="senha-barras">
-                <div class="s-bar" style="height:4px;flex:1;border-radius:4px;background:rgba(255,255,255,.1);transition:background .25s"></div>
-                <div class="s-bar" style="height:4px;flex:1;border-radius:4px;background:rgba(255,255,255,.1);transition:background .25s"></div>
-                <div class="s-bar" style="height:4px;flex:1;border-radius:4px;background:rgba(255,255,255,.1);transition:background .25s"></div>
-                <div class="s-bar" style="height:4px;flex:1;border-radius:4px;background:rgba(255,255,255,.1);transition:background .25s"></div>
-              </div>
-              <div id="senha-dica" style="font-size:.7rem;color:#666;margin-top:5px;line-height:1.5;min-height:1.2em"></div>
-              <!-- Requisitos visuais -->
-              <div id="senha-reqs" style="margin-top:8px;display:flex;flex-direction:column;gap:3px;display:none">
-                <div id="req-len"  class="s-req">✗ Mínimo 8 caracteres</div>
-                <div id="req-mai"  class="s-req">✗ Uma letra maiúscula</div>
-                <div id="req-num"  class="s-req">✗ Um número</div>
-                <div id="req-esp"  class="s-req">✗ Um caractere especial (!@#$...)</div>
+              <div class="form-group"><label>Seu nome completo</label><input type="text" id="rnome" placeholder="João Silva" autocomplete="name"></div>
+              <div class="form-group"><label>WhatsApp (com DDD)</label><input type="tel" id="rtel" placeholder="(99) 99999-9999" maxlength="15" oninput="mascaraTel(this)" autocomplete="tel"></div>
+              <div class="form-group"><label>E-mail</label><input type="email" id="re" placeholder="seu@email.com" autocomplete="email"></div>
+              <div class="wiz-nav">
+                <div></div>
+                <button class="wiz-btn-next" onclick="wizAvancar(1)">Próximo →</button>
               </div>
             </div>
-            <!-- Checkboxes de termos -->
-            <div class="reg-termos-box" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 16px;margin-top:8px;display:flex;flex-direction:column;gap:12px">
-              <div style="display:flex;align-items:flex-start;gap:10px">
-                <input type="checkbox" id="r-aceita-termos"
-                  style="width:18px;height:18px;min-width:18px;margin-top:2px;accent-color:var(--red);cursor:pointer;">
-                <label for="r-aceita-termos" style="font-size:.75rem;color:#aaa;line-height:1.5;cursor:pointer">
-                  Li e aceito os
-                  <span onclick="abrirTermos()" style="color:var(--red);font-weight:700;text-decoration:underline;cursor:pointer">Termos de Serviço</span>
-                  da PEDIWAY
-                </label>
+
+            <!-- ETAPA 2: NEGÓCIO -->
+            <div class="wiz-etapa" id="wet2" style="display:none">
+              <div class="wiz-etapa-header">
+                <div class="wiz-etapa-icon">🍔</div>
+                <div>
+                  <div class="wiz-etapa-titulo">Seu estabelecimento</div>
+                  <div class="wiz-etapa-sub">Etapa 2 de 4 · Como se chama e o que você serve?</div>
+                </div>
               </div>
-              <div style="display:flex;align-items:flex-start;gap:10px">
-                <input type="checkbox" id="r-aceita-responsabilidade"
-                  style="width:18px;height:18px;min-width:18px;margin-top:2px;accent-color:var(--red);cursor:pointer;">
-                <label for="r-aceita-responsabilidade" style="font-size:.75rem;color:#aaa;line-height:1.5;cursor:pointer">
-                  Li e aceito a
-                  <span onclick="abrirResponsabilidade()" style="color:var(--red);font-weight:700;text-decoration:underline;cursor:pointer">Política de Responsabilidade e Privacidade (LGPD)</span>
-                </label>
+              <div class="form-group"><label>Nome do estabelecimento</label><input type="text" id="rn" placeholder="Ex: Burguer do Ze"></div>
+              <div class="form-group">
+                <label>Tipo do estabelecimento</label>
+                <div id="rtipo-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px">
+                  <!-- gerado via JS -->
+                </div>
+                <input type="hidden" id="rtipo" value="">
+              </div>
+              <div class="wiz-nav">
+                <button class="wiz-btn-back" onclick="wizVoltar(2)">← Voltar</button>
+                <button class="wiz-btn-next" onclick="wizAvancar(2)">Próximo →</button>
               </div>
             </div>
-          </div>
 
-          <button class="btn-primary full" onclick="doRegister()" style="margin-top:20px">Criar conta grátis →</button>
-          <div class="auth-footer">Já tem conta? <a onclick="goTo('s-login')">Entrar</a></div>
+            <!-- ETAPA 3: LOCALIZAÇÃO -->
+            <div class="wiz-etapa" id="wet3" style="display:none">
+              <div class="wiz-etapa-header">
+                <div class="wiz-etapa-icon">📍</div>
+                <div>
+                  <div class="wiz-etapa-titulo">Onde você fica?</div>
+                  <div class="wiz-etapa-sub">Etapa 3 de 4 · Estado e cidade do seu negócio</div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Estado</label>
+                <div style="position:relative">
+                  <select id="restado" onchange="carregarCidadesCadastro(this.value)">
+                    <option value="">Carregando estados...</option>
+                  </select>
+                  <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Cidade</label>
+                <div style="position:relative">
+                  <select id="rcidade" disabled>
+                    <option value="">Selecione o estado primeiro</option>
+                  </select>
+                  <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+              </div>
+              <div class="wiz-nav">
+                <button class="wiz-btn-back" onclick="wizVoltar(3)">← Voltar</button>
+                <button class="wiz-btn-next" onclick="wizAvancar(3)">Próximo →</button>
+              </div>
+            </div>
+
+            <!-- ETAPA 4: ACESSO -->
+            <div class="wiz-etapa" id="wet4" style="display:none">
+              <div class="wiz-etapa-header">
+                <div class="wiz-etapa-icon">🔐</div>
+                <div>
+                  <div class="wiz-etapa-titulo">Quase lá!</div>
+                  <div class="wiz-etapa-sub">Etapa 4 de 4 · Só falta criar seu acesso</div>
+                </div>
+              </div>
+              <div class="form-group"><label>CPF ou CNPJ</label><input type="text" id="rdoc" placeholder="000.000.000-00" maxlength="18" oninput="mascaraDoc(this)"></div>
+              <div class="form-group">
+                <label>Senha</label>
+                <div style="position:relative">
+                  <input type="password" id="rp" placeholder="Ex: Minha@Senha123" style="padding-right:42px" oninput="avaliarSenha(this.value)" autocomplete="new-password">
+                  <button type="button" onclick="toggleSenha('rp','olho-rp')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#aaa;font-size:1rem;padding:0;line-height:1" id="olho-rp">&#128065;</button>
+                </div>
+                <div style="display:flex;gap:4px;margin-top:8px" id="senha-barras">
+                  <div class="s-bar" style="height:4px;flex:1;border-radius:4px;background:rgba(255,255,255,.1);transition:background .25s"></div>
+                  <div class="s-bar" style="height:4px;flex:1;border-radius:4px;background:rgba(255,255,255,.1);transition:background .25s"></div>
+                  <div class="s-bar" style="height:4px;flex:1;border-radius:4px;background:rgba(255,255,255,.1);transition:background .25s"></div>
+                  <div class="s-bar" style="height:4px;flex:1;border-radius:4px;background:rgba(255,255,255,.1);transition:background .25s"></div>
+                </div>
+                <div id="senha-dica" style="font-size:.7rem;margin-top:5px;min-height:1.1em"></div>
+                <div id="senha-reqs" style="margin-top:6px;display:none;flex-direction:column;gap:3px">
+                  <div id="req-len" class="s-req">✗ Mínimo 8 caracteres</div>
+                  <div id="req-mai" class="s-req">✗ Uma letra maiúscula</div>
+                  <div id="req-num" class="s-req">✗ Um número</div>
+                  <div id="req-esp" class="s-req">✗ Um caractere especial (!@#$...)</div>
+                </div>
+              </div>
+              <!-- Termos -->
+              <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;margin-bottom:4px">
+                <div style="display:flex;align-items:flex-start;gap:10px">
+                  <input type="checkbox" id="r-aceita-termos" style="width:18px;height:18px;min-width:18px;margin-top:2px;accent-color:var(--red);cursor:pointer;">
+                  <label for="r-aceita-termos" style="font-size:.78rem;color:#aaa;line-height:1.5;cursor:pointer">Li e aceito os <span onclick="abrirTermos()" style="color:var(--red);font-weight:700;text-decoration:underline;cursor:pointer">Termos de Serviço</span> da PEDIWAY</label>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:10px">
+                  <input type="checkbox" id="r-aceita-responsabilidade" style="width:18px;height:18px;min-width:18px;margin-top:2px;accent-color:var(--red);cursor:pointer;">
+                  <label for="r-aceita-responsabilidade" style="font-size:.78rem;color:#aaa;line-height:1.5;cursor:pointer">Li e aceito a <span onclick="abrirResponsabilidade()" style="color:var(--red);font-weight:700;text-decoration:underline;cursor:pointer">Política de Responsabilidade e Privacidade (LGPD)</span></label>
+                </div>
+              </div>
+              <div class="wiz-nav">
+                <button class="wiz-btn-back" onclick="wizVoltar(4)">← Voltar</button>
+                <button class="btn-primary" id="btn-criar-conta" onclick="doRegister()" style="padding:13px 28px;font-size:.9rem;border-radius:10px">Criar conta grátis 🎉</button>
+              </div>
+            </div>
+
+          </div><!-- /wiz-wrapper -->
+
+          <div class="auth-footer" style="margin-top:24px">Já tem conta? <a onclick="goTo('s-login')">Entrar</a></div>
         </div>
       </div>
     </div><!-- /register-panel-dir -->
@@ -4333,6 +4409,115 @@ document.addEventListener('DOMContentLoaded', function() {
   renderTiposEstab();
   window.carregarEstadosCadastro();
 });
+
+// ─── WIZARD MULTI-STEP ────────────────────────────────────────────────────────
+(function() {
+  const TOTAL = 4;
+  let _etapaAtual = 1;
+
+  function setEtapa(n, direcao) {
+    // Esconde atual
+    const atual = document.getElementById('wet' + _etapaAtual);
+    if (atual) atual.style.display = 'none';
+
+    _etapaAtual = n;
+
+    // Mostra nova com animação
+    const nova = document.getElementById('wet' + n);
+    if (nova) {
+      nova.style.display = 'block';
+      nova.classList.remove('wiz-etapa-back');
+      void nova.offsetWidth; // reflow
+      nova.classList.add(direcao === 'back' ? 'wiz-etapa-back' : 'wiz-etapa');
+    }
+
+    // Barra de progresso
+    const fill = document.getElementById('wiz-bar-fill');
+    if (fill) fill.style.width = (n / TOTAL * 100) + '%';
+
+    // Steps indicator
+    for (let i = 1; i <= TOTAL; i++) {
+      const s = document.getElementById('ws' + i);
+      if (!s) continue;
+      s.classList.remove('on', 'done');
+      if (i < n)  s.classList.add('done');
+      if (i === n) s.classList.add('on');
+      // Troca número por ✓ nas etapas concluídas
+      const num = s.querySelector('.ws-num');
+      if (num) num.textContent = i < n ? '✓' : i;
+    }
+
+    // Scroll topo no mobile
+    const cont = document.querySelector('.register-panel-dir');
+    if (cont) cont.scrollTop = 0;
+  }
+
+  function validarEtapa(n) {
+    if (n === 1) {
+      const nome  = document.getElementById('rnome')?.value.trim();
+      const tel   = document.getElementById('rtel')?.value.trim();
+      const email = document.getElementById('re')?.value.trim();
+      if (!nome)  { focar('rnome');  showToast?.('Digite seu nome completo.', 'error'); return false; }
+      if (!tel || tel.replace(/\D/g,'').length < 10) { focar('rtel'); showToast?.('Digite um WhatsApp válido com DDD.', 'error'); return false; }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { focar('re'); showToast?.('Digite um e-mail válido.', 'error'); return false; }
+    }
+    if (n === 2) {
+      const nome = document.getElementById('rn')?.value.trim();
+      const tipo = document.getElementById('rtipo')?.value;
+      if (!nome) { focar('rn'); showToast?.('Digite o nome do estabelecimento.', 'error'); return false; }
+      if (!tipo) {
+        const grid = document.getElementById('rtipo-grid');
+        if (grid) { grid.style.outline='2px solid #e74c3c'; grid.style.borderRadius='12px'; setTimeout(()=>grid.style.outline='',2000); }
+        showToast?.('Selecione o tipo do estabelecimento.', 'error'); return false;
+      }
+    }
+    if (n === 3) {
+      const estado = document.getElementById('restado')?.value;
+      const cidade = document.getElementById('rcidade')?.value;
+      if (!estado) { showToast?.('Selecione o estado.', 'error'); return false; }
+      if (!cidade) { showToast?.('Selecione a cidade.', 'error'); return false; }
+    }
+    return true;
+  }
+
+  function focar(id) {
+    const el = document.getElementById(id);
+    if (el) { el.focus(); el.style.borderColor='#e74c3c'; setTimeout(()=>el.style.borderColor='',2000); }
+  }
+
+  window.wizAvancar = function(de) {
+    if (!validarEtapa(de)) return;
+    setEtapa(de + 1, 'next');
+  };
+
+  window.wizVoltar = function(de) {
+    setEtapa(de - 1, 'back');
+  };
+
+  // Reseta wizard ao abrir a tela de registro
+  const _origGoTo = window.goTo;
+  window.goTo = function(tela) {
+    if (tela === 's-register' && _etapaAtual !== 1) {
+      // reseta sem animação
+      for (let i = 1; i <= TOTAL; i++) {
+        const el = document.getElementById('wet' + i);
+        if (el) el.style.display = i === 1 ? 'block' : 'none';
+      }
+      _etapaAtual = 1;
+      const fill = document.getElementById('wiz-bar-fill');
+      if (fill) fill.style.width = '25%';
+      for (let i = 1; i <= TOTAL; i++) {
+        const s = document.getElementById('ws' + i);
+        if (!s) continue;
+        s.classList.remove('on','done');
+        if (i === 1) s.classList.add('on');
+        const num = s.querySelector('.ws-num');
+        if (num) num.textContent = i;
+      }
+    }
+    if (typeof _origGoTo === 'function') _origGoTo(tela);
+  };
+})();
 
 // ─── Força da senha ───────────────────────────────────────────────────────────
 window.avaliarSenha = function(v) {
