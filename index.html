@@ -2146,7 +2146,15 @@ canvas, [data-touch="free"] { touch-action: none !important; }
               </div>
               <div class="form-group"><label>Seu nome completo</label><input type="text" id="rnome" placeholder="João Silva" autocomplete="name"></div>
               <div class="form-group"><label>WhatsApp (com DDD)</label><input type="tel" id="rtel" placeholder="(99) 99999-9999" maxlength="15" oninput="mascaraTel(this)" autocomplete="tel"></div>
-              <div class="form-group"><label>E-mail</label><input type="email" id="re" placeholder="seu@email.com" autocomplete="email"></div>
+              <div class="form-group">
+                <label>E-mail</label>
+                <input type="email" id="re" placeholder="seu@email.com" autocomplete="email" oninput="validarEmailMatch()">
+              </div>
+              <div class="form-group">
+                <label>Confirme o e-mail</label>
+                <input type="email" id="re2" placeholder="Digite o e-mail novamente" autocomplete="off" onpaste="return false" oncopy="return false" oninput="validarEmailMatch()">
+                <div id="re-match-msg" style="font-size:.72rem;margin-top:5px;min-height:1em"></div>
+              </div>
               <div class="wiz-nav">
                 <div></div>
                 <button class="wiz-btn-next" onclick="wizAvancar(1)">Próximo →</button>
@@ -4455,6 +4463,24 @@ document.addEventListener('DOMContentLoaded', function() {
   window.carregarEstadosCadastro();
 });
 
+// ─── Validação de e-mail em tempo real ────────────────────────────────────────
+window.validarEmailMatch = function() {
+  const v1  = document.getElementById('re')?.value.trim().toLowerCase();
+  const v2  = document.getElementById('re2')?.value.trim().toLowerCase();
+  const msg = document.getElementById('re-match-msg');
+  const inp2 = document.getElementById('re2');
+  if (!msg || !v2) return;
+  if (v1 === v2) {
+    msg.textContent = '✓ E-mails conferem';
+    msg.style.color = '#4caf7d';
+    if (inp2) inp2.style.borderColor = '#4caf7d';
+  } else {
+    msg.textContent = '✗ Os e-mails não são iguais';
+    msg.style.color = '#e74c3c';
+    if (inp2) inp2.style.borderColor = '#e74c3c';
+  }
+};
+
 // ─── WIZARD MULTI-STEP ────────────────────────────────────────────────────────
 (function() {
   const TOTAL = 4;
@@ -4499,12 +4525,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function validarEtapa(n) {
     if (n === 1) {
-      const nome  = document.getElementById('rnome')?.value.trim();
-      const tel   = document.getElementById('rtel')?.value.trim();
-      const email = document.getElementById('re')?.value.trim();
-      if (!nome)  { focar('rnome');  showToast?.('Digite seu nome completo.', 'error'); return false; }
-      if (!tel || tel.replace(/\D/g,'').length < 10) { focar('rtel'); showToast?.('Digite um WhatsApp válido com DDD.', 'error'); return false; }
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { focar('re'); showToast?.('Digite um e-mail válido.', 'error'); return false; }
+      const nome   = document.getElementById('rnome')?.value.trim();
+      const tel    = document.getElementById('rtel')?.value.trim();
+      const email  = document.getElementById('re')?.value.trim().toLowerCase();
+      const email2 = document.getElementById('re2')?.value.trim().toLowerCase();
+      const reEmail = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+      if (!nome)  { focar('rnome'); showToast?.('Digite seu nome completo.', 'error'); return false; }
+      if (!tel || tel.replace(/\D/g,'').length < 10) { focar('rtel'); showToast?.('WhatsApp inválido. Inclua o DDD.', 'error'); return false; }
+      if (!email || !reEmail.test(email)) { focar('re'); showToast?.('Digite um e-mail válido.', 'error'); return false; }
+      if (!email2) { focar('re2'); showToast?.('Confirme seu e-mail.', 'error'); return false; }
+      if (email !== email2) { focar('re2'); showToast?.('Os e-mails não conferem.', 'error'); return false; }
+      // Normaliza para minúsculo antes de avançar
+      document.getElementById('re').value = email;
     }
     if (n === 2) {
       const nome = document.getElementById('rn')?.value.trim();
