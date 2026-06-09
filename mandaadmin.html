@@ -184,6 +184,7 @@
     <button class="ntab"     data-pg="pedidos">📋 Pedidos</button>
     <button class="ntab"     data-pg="financeiro">💰 Financeiro</button>
     <button class="ntab"     data-pg="assinaturas">💳 Assinaturas</button>
+    <button class="ntab"     data-pg="termos">📜 Aceites</button>
     <button class="ntab"     data-pg="avaliacoes">⭐ Avaliações</button>
     <button class="ntab"     data-pg="cancelamentos">❌ Cancelamentos <span class="badge-dot" id="cancel-dot" style="display:none"></span></button>
     <button class="ntab"     data-pg="config">⚙️ Config</button>
@@ -374,6 +375,53 @@
       <table><thead><tr><th>Loja</th><th>Motivo</th><th>Mensagem</th><th>Data</th><th></th></tr></thead>
       <tbody id="tbody-cancelamentos"><tr><td colspan="5" class="empty-row">Carregando...</td></tr></tbody></table>
     </div>
+  </div>
+
+  <!-- ACEITES DE TERMOS -->
+  <div class="pg" id="pg-termos">
+    <div class="sechdr">
+      <div>
+        <div class="sectitle">📜 Aceites de Termos</div>
+        <div style="font-size:.72rem;color:var(--text3);margin-top:2px">Registro legal de cada usuário que aceitou os Termos de Serviço e a Política de Privacidade/LGPD</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="termos-busca" type="text" placeholder="Buscar por nome, e-mail ou CPF/CNPJ..."
+          style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;color:var(--text);font-family:'Poppins',sans-serif;font-size:.75rem;width:260px;outline:none"
+          oninput="filtrarTermos(this.value)">
+        <button onclick="exportarTermosCSV()" class="hbtn" style="border-color:var(--green);color:var(--green)">⬇ Exportar CSV</button>
+        <button onclick="carregarTermos()" class="hbtn">↺ Atualizar</button>
+      </div>
+    </div>
+
+    <!-- Stats rápidos -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+      <div class="sc"><div class="slbl">Total de aceites</div><div class="sval" id="t-total">—</div></div>
+      <div class="sc"><div class="slbl">Hoje</div><div class="sval g" id="t-hoje">—</div></div>
+      <div class="sc"><div class="slbl">Esta semana</div><div class="sval b" id="t-semana">—</div></div>
+      <div class="sc"><div class="slbl">Este mês</div><div class="sval y" id="t-mes">—</div></div>
+    </div>
+
+    <div class="tbox">
+      <table id="termos-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Data / Hora</th>
+            <th>Nome</th>
+            <th>E-mail</th>
+            <th>CPF / CNPJ</th>
+            <th>Estabelecimento</th>
+            <th>Termos v.</th>
+            <th>Privacidade v.</th>
+            <th>User-Agent</th>
+          </tr>
+        </thead>
+        <tbody id="termos-tbody">
+          <tr><td colspan="9" class="empty-row">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="termos-rodape" style="font-size:.7rem;color:var(--text3);text-align:right;margin-top:-8px"></div>
   </div>
 
   <!-- CONFIG CEO -->
@@ -839,6 +887,7 @@ document.addEventListener('click', e => {
     gel('pg-' + btn.dataset.pg).classList.add('on');
     if (btn.dataset.pg === 'avaliacoes') renderAvaliacoes();
     if (btn.dataset.pg === 'cancelamentos') carregarCancelamentos();
+    if (btn.dataset.pg === 'termos') carregarTermos();
     return;
   }
   const fp = e.target.closest('.ntab[data-fp]');
@@ -1432,6 +1481,102 @@ gel('salvar-plano').addEventListener('click', async() => {
     btn.disabled = false; btn.textContent = '💾 Salvar';
   }
 });
+
+// ── ACEITES DE TERMOS ─────────────────────────────────────────────────────────
+let _termosCache = [];
+
+async function carregarTermos() {
+  const tbody = gel('termos-tbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="empty-row">Carregando...</td></tr>';
+
+  const { data, error } = await adminRest('GET', 'aceites_termos', null,
+    'order=aceito_em.desc&limit=1000');
+
+  if (error || !data) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="empty-row" style="color:#e74c3c">Erro ao carregar. Verifique se a tabela existe.</td></tr>';
+    return;
+  }
+
+  _termosCache = data;
+  renderTermos(data);
+
+  // Stats
+  const agora = new Date();
+  const hoje    = d => new Date(d).toDateString() === agora.toDateString();
+  const semana  = d => (agora - new Date(d)) < 7  * 86400000;
+  const mes     = d => (agora - new Date(d)) < 30 * 86400000;
+  gel('t-total')  && (gel('t-total').textContent  = data.length);
+  gel('t-hoje')   && (gel('t-hoje').textContent   = data.filter(r => hoje(r.aceito_em)).length);
+  gel('t-semana') && (gel('t-semana').textContent = data.filter(r => semana(r.aceito_em)).length);
+  gel('t-mes')    && (gel('t-mes').textContent    = data.filter(r => mes(r.aceito_em)).length);
+}
+
+function renderTermos(lista) {
+  const tbody  = gel('termos-tbody');
+  const rodape = gel('termos-rodape');
+  if (!tbody) return;
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-row">Nenhum aceite registrado ainda.</td></tr>';
+    if (rodape) rodape.textContent = '';
+    return;
+  }
+  tbody.innerHTML = lista.map((r, i) => {
+    const dt = r.aceito_em ? new Date(r.aceito_em).toLocaleString('pt-BR') : '—';
+    const doc = r.cpf_cnpj
+      ? (r.cpf_cnpj.length === 11
+          ? r.cpf_cnpj.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+          : r.cpf_cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5'))
+      : '—';
+    const ua = r.user_agent ? (r.user_agent.length > 40 ? r.user_agent.slice(0,40)+'…' : r.user_agent) : '—';
+    return `<tr>
+      <td style="color:var(--text3)">${i+1}</td>
+      <td style="white-space:nowrap">${esc(dt)}</td>
+      <td>${esc(r.nome_responsavel||'—')}</td>
+      <td style="color:var(--text2)">${esc(r.email||'—')}</td>
+      <td style="font-family:monospace;font-size:.72rem">${esc(doc)}</td>
+      <td>${esc(r.estabelecimento||'—')}</td>
+      <td style="text-align:center"><span style="background:rgba(34,197,94,.12);color:#22c55e;border-radius:6px;padding:2px 8px;font-size:.68rem;font-weight:700">v${esc(r.versao_termos||'?')}</span></td>
+      <td style="text-align:center"><span style="background:rgba(59,130,246,.12);color:#3b82f6;border-radius:6px;padding:2px 8px;font-size:.68rem;font-weight:700">v${esc(r.versao_privacidade||'?')}</span></td>
+      <td style="color:var(--text3);font-size:.68rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.user_agent||'')}">${esc(ua)}</td>
+    </tr>`;
+  }).join('');
+  if (rodape) rodape.textContent = `${lista.length} registro${lista.length!==1?'s':''} encontrado${lista.length!==1?'s':''}`;
+}
+
+function filtrarTermos(q) {
+  if (!q) { renderTermos(_termosCache); return; }
+  const t = q.toLowerCase();
+  renderTermos(_termosCache.filter(r =>
+    (r.nome_responsavel||'').toLowerCase().includes(t) ||
+    (r.email||'').toLowerCase().includes(t) ||
+    (r.cpf_cnpj||'').includes(t.replace(/\D/g,'')) ||
+    (r.estabelecimento||'').toLowerCase().includes(t)
+  ));
+}
+
+function exportarTermosCSV() {
+  if (!_termosCache.length) { alert('Nenhum dado para exportar.'); return; }
+  const cols = ['#','Data/Hora','Nome','Email','CPF_CNPJ','Estabelecimento','Versao_Termos','Versao_Privacidade','User_Agent'];
+  const rows = _termosCache.map((r, i) => [
+    i+1,
+    r.aceito_em ? new Date(r.aceito_em).toLocaleString('pt-BR') : '',
+    r.nome_responsavel||'',
+    r.email||'',
+    r.cpf_cnpj||'',
+    r.estabelecimento||'',
+    r.versao_termos||'',
+    r.versao_privacidade||'',
+    (r.user_agent||'').replace(/"/g,"'"),
+  ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+  const csv = [cols.join(','), ...rows].join('\r\n');
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `pediway_aceites_termos_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 // ── AVALIAÇÕES ────────────────────────────────────────────────────────────────
 function renderAvaliacoes() {
