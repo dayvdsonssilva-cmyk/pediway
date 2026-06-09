@@ -4917,19 +4917,6 @@ function setMobileNav(id) {
     });
   };
 })();
-// Show mobile nav only when dashboard is active
-function checkMobileNav() {
-  var dash = document.querySelector('[data-screen="s-dash"]');
-  var nav  = document.getElementById('dash-mobile-nav');
-  if (!nav) return;
-  nav.style.display = (dash && dash.classList.contains('active')) ? 'block' : 'none';
-}
-// Hook into goTo
-var _origGoTo = window.goTo;
-window.goTo = function(screen) {
-  if (_origGoTo) _origGoTo(screen);
-  setTimeout(checkMobileNav, 50);
-};
 </script>
   <script src="/pediway-notif.js" defer></script>
 </body>
