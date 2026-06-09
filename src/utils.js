@@ -91,14 +91,43 @@ export function openDemoCliente() {
 
 export function showToast(msg, type = 'success') {
   document.querySelector('.pw-toast')?.remove();
+
+  // No mobile (< 520px) resume a mensagem se for muito longa
+  const isMobile = window.innerWidth < 520;
+  const MAX_MOBILE = 48; // caracteres
+  let texto = msg;
+  if (isMobile && texto.length > MAX_MOBILE) {
+    // Remove emojis e prefixos comuns, depois trunca
+    texto = texto.replace(/^[⚠️🔒✅❌📍🍔👤🎉]+\s*/u, '');
+    if (texto.length > MAX_MOBILE) {
+      texto = texto.slice(0, MAX_MOBILE - 1) + '…';
+    }
+  }
+
   const t = document.createElement('div');
   t.className = 'pw-toast';
-  t.style.cssText = `position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
-    background:${type === 'error' ? '#dc2626' : 'var(--red)'};color:#fff;padding:13px 28px;
-    border-radius:50px;font-family:'Poppins',sans-serif;font-weight:600;font-size:0.88rem;
-    z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,0.2);white-space:nowrap;
-    animation:toastIn 0.25s ease;`;
-  t.textContent = msg;
+  t.style.cssText = `
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%);
+    background:${type === 'error' ? '#dc2626' : 'var(--red)'};
+    color:#fff;
+    padding:12px 22px;
+    border-radius:50px;
+    font-family:'Poppins',sans-serif;
+    font-weight:600;
+    font-size:0.84rem;
+    z-index:99999;
+    box-shadow:0 6px 24px rgba(0,0,0,0.3);
+    white-space:nowrap;
+    max-width:calc(100vw - 32px);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    animation:toastIn 0.25s ease;
+    box-sizing:border-box;
+  `;
+  t.textContent = texto;
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 3200);
 }
