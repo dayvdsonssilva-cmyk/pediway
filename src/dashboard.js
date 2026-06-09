@@ -5787,14 +5787,8 @@ var _obTipos  = [
 ];
 
 function verificarOnboarding(estab) {
-  // Aparece UMA ÚNICA VEZ — verifica APENAS o localStorage (não o banco)
-  // Isso garante que qualquer conta nova vai ver o popup
-  const chave = 'pw_ob_' + estab.id;
-  if (localStorage.getItem(chave)) return; // já viu antes neste browser
-  // Marca como visto IMEDIATAMENTE para não repetir
-  localStorage.setItem(chave, '1');
-  // Mostra após o dashboard carregar completamente
-  setTimeout(function() { mostrarOnboarding(estab); }, 1200);
+  // Onboarding desativado — não exibir mais o wizard de primeiro acesso
+  return;
 }
 
 function mostrarOnboarding(estab) {
