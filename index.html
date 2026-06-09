@@ -262,31 +262,79 @@ h3 { font-size:1.2rem; font-weight:700; color:#1a1a1a; }
 /* REGISTER SPLIT LAYOUT (desktop) */
 .register-layout { display:flex; min-height:100vh; }
 .register-panel-esq { display:none; }
-.register-panel-dir { flex:1; display:flex; flex-direction:column; overflow-y:auto; }
-.register-panel-dir .auth-container { padding:40px 20px 60px; align-items:flex-start; padding-top:80px; }
-@media(min-width:820px){
+.register-panel-dir { flex:1; display:flex; flex-direction:column; }
+.register-panel-dir .auth-container { padding:80px 20px 60px; align-items:flex-start; min-height:unset; }
+/* painel esq mobile: só o header aparece */
+.reg-logo { display:none; }
+.reg-tagline,.reg-sub,.reg-benefits,.reg-trial-badge { display:none; }
+
+@media(min-width:860px){
+  /* === PAINEL ESQUERDO === */
   .register-panel-esq {
     display:flex; flex-direction:column; justify-content:center;
-    flex:0 0 380px; background:linear-gradient(160deg,#0d0d0d 0%,#1c0808 100%);
-    border-right:1px solid rgba(255,255,255,.07);
-    padding:60px 44px; position:sticky; top:0; height:100vh;
+    flex:0 0 320px;
+    background:linear-gradient(170deg,#0d0d0d 0%,#1a0505 100%);
+    border-right:1px solid rgba(255,255,255,.06);
+    padding:56px 40px;
+    position:sticky; top:0; height:100vh;
+    overflow:hidden;
   }
-  .reg-logo { font-family:'Poppins',sans-serif; font-weight:900; font-size:1.8rem; color:#fff; letter-spacing:-.02em; margin-bottom:28px; }
+  .register-panel-esq::before {
+    content:''; position:absolute; bottom:-80px; right:-80px;
+    width:260px; height:260px;
+    background:radial-gradient(circle,rgba(192,57,43,.18) 0%,transparent 70%);
+    pointer-events:none;
+  }
+  .reg-logo { display:block; font-family:'Poppins',sans-serif; font-weight:900; font-size:1.6rem; color:#fff; letter-spacing:-.03em; margin-bottom:32px; cursor:pointer; }
   .reg-logo span { color:#C0392B; }
-  .reg-tagline { font-size:1.4rem; font-weight:800; color:#fff; line-height:1.3; margin-bottom:10px; }
-  .reg-sub { font-size:.82rem; color:#888; margin-bottom:36px; line-height:1.6; }
-  .reg-benefits { list-style:none; padding:0; margin:0 0 40px; display:flex; flex-direction:column; gap:14px; }
-  .reg-benefits li { display:flex; align-items:center; gap:12px; font-size:.84rem; color:#ccc; }
-  .reg-benefits li .ico { width:28px; height:28px; background:rgba(192,57,43,.15); border:1px solid rgba(192,57,43,.3); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:.9rem; flex-shrink:0; }
-  .reg-trial-badge { background:rgba(192,57,43,.12); border:1px solid rgba(192,57,43,.25); border-radius:12px; padding:14px 18px; }
-  .reg-trial-badge strong { display:block; font-size:.88rem; color:#fff; font-weight:700; }
-  .reg-trial-badge span { font-size:.74rem; color:#888; }
-  .register-panel-dir .auth-container { padding:60px 48px 60px; align-items:center; justify-content:flex-start; min-height:auto; }
-  .register-panel-dir .auth-card { max-width:500px; }
+  .reg-tagline { display:block; font-size:1.25rem; font-weight:800; color:#fff; line-height:1.35; margin-bottom:8px; }
+  .reg-sub { display:block; font-size:.78rem; color:#777; margin-bottom:32px; line-height:1.65; }
+  .reg-benefits { display:flex; flex-direction:column; gap:12px; list-style:none; padding:0; margin:0 0 32px; }
+  .reg-benefits li { display:flex; align-items:center; gap:10px; font-size:.8rem; color:#bbb; }
+  .reg-benefits li .ico { width:26px; height:26px; background:rgba(192,57,43,.13); border:1px solid rgba(192,57,43,.25); border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:.82rem; flex-shrink:0; }
+  .reg-trial-badge { display:block; background:rgba(192,57,43,.1); border:1px solid rgba(192,57,43,.22); border-radius:10px; padding:12px 16px; }
+  .reg-trial-badge strong { display:block; font-size:.82rem; color:#fff; font-weight:700; margin-bottom:2px; }
+  .reg-trial-badge span { font-size:.7rem; color:#888; }
+
+  /* === PAINEL DIREITO: sem card, layout aberto === */
   .register-header-mobile { display:none !important; }
-  /* 2-col grid for paired fields */
-  .reg-row2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .register-panel-dir { overflow-y:auto; }
+  .register-panel-dir .auth-container {
+    padding:48px 56px 56px;
+    align-items:flex-start;
+    justify-content:flex-start;
+    min-height:100vh;
+  }
+  .register-panel-dir .auth-card {
+    background:transparent;
+    border:none;
+    border-radius:0;
+    padding:0;
+    max-width:100%;
+    width:100%;
+  }
+  .register-panel-dir h2 { font-size:1.6rem; margin-bottom:4px; }
+  .register-panel-dir .auth-sub { margin-bottom:32px; }
+
+  /* Tipo grid: 4 colunas no desktop */
+  #rtipo-grid { grid-template-columns:repeat(4,1fr) !important; }
+
+  /* 2-col grid para pares de campos */
+  .reg-row2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   .reg-row2 .form-group { margin-bottom:0; }
+
+  /* 3-col para linha de estado/cidade/doc */
+  .reg-row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+  .reg-row3 .form-group { margin-bottom:0; }
+
+  /* Senha + termos em linha */
+  .reg-senha-termos { display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:flex-start; }
+
+  /* Termos box ocupa sua coluna */
+  .reg-termos-box { margin-top:0 !important; }
+
+  /* Botão final */
+  .register-panel-dir .btn-primary.full { max-width:360px; margin-top:24px; padding:16px; font-size:1rem; }
 }
 .auth-sub { color:rgba(255,255,255,0.45); font-size:0.88rem; margin-bottom:28px; }
 .form-group { margin-bottom:16px; }
@@ -300,6 +348,9 @@ h3 { font-size:1.2rem; font-weight:700; color:#1a1a1a; }
 .form-group input::placeholder { color:rgba(255,255,255,0.25); }
 .auth-footer { text-align:center; margin-top:20px; font-size:0.86rem; color:rgba(255,255,255,0.4); }
 .auth-footer a { color:var(--red); cursor:pointer; font-weight:600; }
+.s-req { font-size:.7rem; color:#555; transition:color .2s; }
+.s-req.ok { color:#4caf7d; }
+.s-req.ok::first-letter { content:''; }
 
 /* DASHBOARD HEADER */
 .header-light {
@@ -1995,15 +2046,15 @@ canvas, [data-touch="free"] { touch-action: none !important; }
           <h2>Criar conta</h2>
           <p class="auth-sub">Grátis por 14 dias, sem cartão.</p>
 
-          <!-- Nome + Tel lado a lado no desktop -->
-          <div class="reg-row2">
+          <!-- Linha 1: Nome + Tel + Nome do estabelecimento -->
+          <div class="reg-row3">
             <div class="form-group"><label>Seu nome completo</label><input type="text" id="rnome" placeholder="João Silva"></div>
             <div class="form-group"><label>WhatsApp (com DDD)</label><input type="tel" id="rtel" placeholder="(99) 99999-9999" maxlength="15" oninput="mascaraTel(this)"></div>
+            <div class="form-group"><label>Nome do estabelecimento</label><input type="text" id="rn" placeholder="Ex: Burguer do Ze"></div>
           </div>
 
-          <div class="form-group" style="margin-top:16px"><label>Nome do estabelecimento</label><input type="text" id="rn" placeholder="Ex: Burguer do Ze"></div>
-
-          <div class="form-group">
+          <!-- Tipo do estabelecimento -->
+          <div class="form-group" style="margin-top:18px">
             <label>Tipo do estabelecimento</label>
             <div id="rtipo-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px">
               <!-- gerado via JS abaixo -->
@@ -2011,8 +2062,8 @@ canvas, [data-touch="free"] { touch-action: none !important; }
             <input type="hidden" id="rtipo" value="">
           </div>
 
-          <!-- Estado + Cidade lado a lado no desktop -->
-          <div class="reg-row2">
+          <!-- Linha 3: Estado + Cidade + CPF + Email (4 colunas) -->
+          <div class="reg-row2" style="margin-top:4px">
             <div class="form-group">
               <label>Estado</label>
               <div style="position:relative">
@@ -2033,42 +2084,59 @@ canvas, [data-touch="free"] { touch-action: none !important; }
             </div>
           </div>
 
-          <!-- CPF + Email lado a lado no desktop -->
+          <!-- Linha 4: CPF + Email -->
           <div class="reg-row2">
             <div class="form-group"><label>CPF ou CNPJ</label><input type="text" id="rdoc" placeholder="000.000.000-00" maxlength="18" oninput="mascaraDoc(this)"></div>
             <div class="form-group"><label>E-mail</label><input type="email" id="re" placeholder="seu@email.com"></div>
           </div>
 
-          <div class="form-group" style="margin-top:16px">
-            <label>Senha</label>
-            <div style="position:relative">
-              <input type="password" id="rp" placeholder="Minimo 6 caracteres" style="padding-right:42px">
-              <button type="button" onclick="toggleSenha('rp','olho-rp')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#aaa;font-size:1rem;padding:0;line-height:1" id="olho-rp">&#128065;</button>
+          <!-- Linha 5: Senha + Termos lado a lado -->
+          <div class="reg-senha-termos" style="margin-top:4px">
+            <div class="form-group" style="margin-bottom:0">
+              <label>Senha</label>
+              <div style="position:relative">
+                <input type="password" id="rp" placeholder="Ex: Minha@Senha123" style="padding-right:42px" oninput="avaliarSenha(this.value)">
+                <button type="button" onclick="toggleSenha('rp','olho-rp')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#aaa;font-size:1rem;padding:0;line-height:1" id="olho-rp">&#128065;</button>
+              </div>
+              <!-- Barra de força -->
+              <div style="display:flex;gap:4px;margin-top:8px" id="senha-barras">
+                <div class="s-bar" style="height:4px;flex:1;border-radius:4px;background:rgba(255,255,255,.1);transition:background .25s"></div>
+                <div class="s-bar" style="height:4px;flex:1;border-radius:4px;background:rgba(255,255,255,.1);transition:background .25s"></div>
+                <div class="s-bar" style="height:4px;flex:1;border-radius:4px;background:rgba(255,255,255,.1);transition:background .25s"></div>
+                <div class="s-bar" style="height:4px;flex:1;border-radius:4px;background:rgba(255,255,255,.1);transition:background .25s"></div>
+              </div>
+              <div id="senha-dica" style="font-size:.7rem;color:#666;margin-top:5px;line-height:1.5;min-height:1.2em"></div>
+              <!-- Requisitos visuais -->
+              <div id="senha-reqs" style="margin-top:8px;display:flex;flex-direction:column;gap:3px;display:none">
+                <div id="req-len"  class="s-req">✗ Mínimo 8 caracteres</div>
+                <div id="req-mai"  class="s-req">✗ Uma letra maiúscula</div>
+                <div id="req-num"  class="s-req">✗ Um número</div>
+                <div id="req-esp"  class="s-req">✗ Um caractere especial (!@#$...)</div>
+              </div>
+            </div>
+            <!-- Checkboxes de termos -->
+            <div class="reg-termos-box" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 16px;margin-top:8px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:flex-start;gap:10px">
+                <input type="checkbox" id="r-aceita-termos"
+                  style="width:18px;height:18px;min-width:18px;margin-top:2px;accent-color:var(--red);cursor:pointer;">
+                <label for="r-aceita-termos" style="font-size:.75rem;color:#aaa;line-height:1.5;cursor:pointer">
+                  Li e aceito os
+                  <span onclick="abrirTermos()" style="color:var(--red);font-weight:700;text-decoration:underline;cursor:pointer">Termos de Serviço</span>
+                  da PEDIWAY
+                </label>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:10px">
+                <input type="checkbox" id="r-aceita-responsabilidade"
+                  style="width:18px;height:18px;min-width:18px;margin-top:2px;accent-color:var(--red);cursor:pointer;">
+                <label for="r-aceita-responsabilidade" style="font-size:.75rem;color:#aaa;line-height:1.5;cursor:pointer">
+                  Li e aceito a
+                  <span onclick="abrirResponsabilidade()" style="color:var(--red);font-weight:700;text-decoration:underline;cursor:pointer">Política de Responsabilidade e Privacidade (LGPD)</span>
+                </label>
+              </div>
             </div>
           </div>
 
-          <!-- Checkboxes de termos -->
-          <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 16px;margin-top:8px;display:flex;flex-direction:column;gap:12px">
-            <div style="display:flex;align-items:flex-start;gap:10px">
-              <input type="checkbox" id="r-aceita-termos"
-                style="width:18px;height:18px;min-width:18px;margin-top:2px;accent-color:var(--red);cursor:pointer;">
-              <label for="r-aceita-termos" style="font-size:.78rem;color:#aaa;line-height:1.5;cursor:pointer">
-                Li e aceito os
-                <span onclick="abrirTermos()" style="color:var(--red);font-weight:700;text-decoration:underline;cursor:pointer">Termos de Serviço</span>
-                da PEDIWAY
-              </label>
-            </div>
-            <div style="display:flex;align-items:flex-start;gap:10px">
-              <input type="checkbox" id="r-aceita-responsabilidade"
-                style="width:18px;height:18px;min-width:18px;margin-top:2px;accent-color:var(--red);cursor:pointer;">
-              <label for="r-aceita-responsabilidade" style="font-size:.78rem;color:#aaa;line-height:1.5;cursor:pointer">
-                Li e aceito a
-                <span onclick="abrirResponsabilidade()" style="color:var(--red);font-weight:700;text-decoration:underline;cursor:pointer">Política de Responsabilidade e Privacidade (LGPD)</span>
-              </label>
-            </div>
-          </div>
-
-          <button class="btn-primary full" onclick="doRegister()" style="margin-top:18px">Criar conta grátis →</button>
+          <button class="btn-primary full" onclick="doRegister()" style="margin-top:20px">Criar conta grátis →</button>
           <div class="auth-footer">Já tem conta? <a onclick="goTo('s-login')">Entrar</a></div>
         </div>
       </div>
@@ -4266,6 +4334,43 @@ document.addEventListener('DOMContentLoaded', function() {
   window.carregarEstadosCadastro();
 });
 
+// ─── Força da senha ───────────────────────────────────────────────────────────
+window.avaliarSenha = function(v) {
+  const reqs = document.getElementById('senha-reqs');
+  const dica  = document.getElementById('senha-dica');
+  const barras = document.querySelectorAll('.s-bar');
+  if (!reqs) return;
+
+  const temLen = v.length >= 8;
+  const temMai = /[A-Z]/.test(v);
+  const temNum = /[0-9]/.test(v);
+  const temEsp = /[^A-Za-z0-9]/.test(v);
+
+  // Mostra requisitos assim que começa a digitar
+  reqs.style.display = v.length > 0 ? 'flex' : 'none';
+
+  function setReq(id, ok) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const texto = { 'req-len':'Mínimo 8 caracteres','req-mai':'Uma letra maiúscula','req-num':'Um número','req-esp':'Um caractere especial (!@#$...)' };
+    el.textContent = (ok ? '✓ ' : '✗ ') + texto[id];
+    el.classList.toggle('ok', ok);
+  }
+  setReq('req-len', temLen);
+  setReq('req-mai', temMai);
+  setReq('req-num', temNum);
+  setReq('req-esp', temEsp);
+
+  const score = [temLen, temMai, temNum, temEsp].filter(Boolean).length;
+  const cores  = ['#e74c3c','#e67e22','#f1c40f','#4caf7d'];
+  const labels = ['Fraca','Razoável','Boa','Forte 🔒'];
+  barras.forEach((b, i) => {
+    b.style.background = i < score ? cores[score - 1] : 'rgba(255,255,255,.1)';
+  });
+  dica.textContent = v.length > 0 ? labels[score - 1] || '' : '';
+  dica.style.color = score > 0 ? cores[score - 1] : '#666';
+};
+
 // ─── Modal de Termos de Serviço ───────────────────────────────────────────────
 window.abrirTermos = function() {
   document.getElementById('modal-termos').style.display = 'flex';
@@ -4323,6 +4428,25 @@ document.addEventListener('DOMContentLoaded', function() {
     // ── Validação de termos no registro ──────────────────────────────────────
     const _originalDoRegister = window.doRegister;
     window.doRegister = function() {
+      // Valida força da senha
+      const senhaVal = document.getElementById('rp')?.value || '';
+      const senhaForte = senhaVal.length >= 8
+        && /[A-Z]/.test(senhaVal)
+        && /[0-9]/.test(senhaVal)
+        && /[^A-Za-z0-9]/.test(senhaVal);
+      if (!senhaForte) {
+        // Dispara a avaliação visual
+        if (window.avaliarSenha) window.avaliarSenha(senhaVal);
+        const inp = document.getElementById('rp');
+        if (inp) {
+          inp.style.borderColor = '#e74c3c';
+          inp.focus();
+          setTimeout(() => inp.style.borderColor = '', 2000);
+        }
+        showToast?.('🔒 Crie uma senha forte: 8+ caracteres, maiúscula, número e símbolo.');
+        return;
+      }
+
       const cbTermos = document.getElementById('r-aceita-termos');
       const cbResp   = document.getElementById('r-aceita-responsabilidade');
       function pulsaCheckbox(el) {
