@@ -209,6 +209,26 @@ export async function doRegister() {
       // Não expõe dbErr.message em produção — pode conter info interna
     }
 
+    // ── Registrar aceite dos termos (para fins legais / LGPD) ─────────────────
+    try {
+      const aceitadoEm = new Date().toISOString();
+      await getSupa().from('aceites_termos').insert({
+        user_id:            userId,
+        email:              email,
+        nome_responsavel:   nomeP.slice(0, 120),
+        cpf_cnpj:           doc.replace(/\D/g,''),
+        estabelecimento:    nome.slice(0, 120),
+        versao_termos:      '2.0',
+        versao_privacidade: '1.0',
+        aceito_em:          aceitadoEm,
+        ip_hint:            null, // IP real só no servidor; aqui registramos null por segurança
+        user_agent:         navigator.userAgent.slice(0, 300),
+      });
+    } catch (_) {
+      // Falha silenciosa — não impede o cadastro, mas log interno
+      console.warn('[aceites_termos] falha ao registrar:', _?.message);
+    }
+
     goTo('s-sucesso');
 
   } catch (e) {
