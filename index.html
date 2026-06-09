@@ -352,36 +352,81 @@ h3 { font-size:1.2rem; font-weight:700; color:#1a1a1a; }
 .s-req.ok { color:#4caf7d; }
 
 /* ── WIZARD MULTI-STEP ── */
-.wiz-progress { margin-bottom:28px; }
-.wiz-bar-track { height:3px; background:rgba(255,255,255,.08); border-radius:4px; margin-bottom:16px; overflow:hidden; }
+.wiz-progress { margin-bottom:24px; }
+
+/* Barra de progresso */
+.wiz-bar-track { height:3px; background:rgba(255,255,255,.08); border-radius:4px; margin-bottom:14px; overflow:hidden; }
 .wiz-bar-fill  { height:100%; background:var(--red); border-radius:4px; transition:width .4s ease; width:25%; }
-.wiz-steps { display:flex; justify-content:space-between; }
-.wiz-step { display:flex; align-items:center; gap:7px; opacity:.35; transition:opacity .3s; }
-.wiz-step.on  { opacity:1; }
-.wiz-step.done { opacity:.7; }
-.ws-num { width:24px; height:24px; border-radius:50%; background:rgba(255,255,255,.1); border:1.5px solid rgba(255,255,255,.15); color:#fff; font-size:.68rem; font-weight:800; display:flex; align-items:center; justify-content:center; transition:all .3s; flex-shrink:0; }
-.wiz-step.on  .ws-num { background:var(--red); border-color:var(--red); }
+
+/* Abas estilo tab */
+.wiz-steps {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:6px;
+}
+.wiz-step {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:5px;
+  padding:9px 4px 8px;
+  border-radius:10px;
+  border:1.5px solid rgba(255,255,255,.07);
+  background:rgba(255,255,255,.03);
+  cursor:default;
+  transition:all .2s;
+  user-select:none;
+  min-width:0;
+}
+.wiz-step.done {
+  border-color:rgba(76,175,112,.35);
+  background:rgba(76,175,112,.06);
+  cursor:pointer;
+}
+.wiz-step.done:hover { background:rgba(76,175,112,.12); }
+.wiz-step.on {
+  border-color:var(--red);
+  background:rgba(192,57,43,.1);
+  cursor:default;
+}
+.ws-num {
+  width:22px; height:22px; border-radius:50%;
+  background:rgba(255,255,255,.08);
+  border:1.5px solid rgba(255,255,255,.12);
+  color:#666; font-size:.65rem; font-weight:800;
+  display:flex; align-items:center; justify-content:center;
+  transition:all .25s; flex-shrink:0;
+}
+.wiz-step.on  .ws-num { background:var(--red); border-color:var(--red); color:#fff; }
 .wiz-step.done .ws-num { background:rgba(76,175,112,.2); border-color:#4caf7d; color:#4caf7d; }
-.ws-label { font-size:.7rem; font-weight:600; color:#aaa; }
-.wiz-step.on .ws-label { color:#fff; }
+.ws-label { font-size:.62rem; font-weight:600; color:#555; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; transition:color .2s; }
+.wiz-step.on  .ws-label { color:#fff; }
+.wiz-step.done .ws-label { color:#4caf7d; }
 
+/* Conteúdo das etapas */
 .wiz-wrapper { overflow:hidden; }
+.wiz-etapa { animation:wiz-in .25s ease; }
+@keyframes wiz-in  { from { opacity:0; transform:translateX(16px); } to { opacity:1; transform:translateX(0); } }
+.wiz-etapa-back { animation:wiz-back .25s ease !important; }
+@keyframes wiz-back { from { opacity:0; transform:translateX(-16px); } to { opacity:1; transform:translateX(0); } }
 
-.wiz-etapa { animation:wiz-in .28s ease; }
-@keyframes wiz-in { from { opacity:0; transform:translateX(18px); } to { opacity:1; transform:translateX(0); } }
-.wiz-etapa-back { animation:wiz-back .28s ease; }
-@keyframes wiz-back { from { opacity:0; transform:translateX(-18px); } to { opacity:1; transform:translateX(0); } }
+.wiz-etapa-header { display:flex; align-items:center; gap:12px; margin-bottom:22px; margin-top:20px; }
+.wiz-etapa-icon { font-size:1.8rem; line-height:1; }
+.wiz-etapa-titulo { font-size:1.1rem; font-weight:800; color:#fff; line-height:1.25; }
+.wiz-etapa-sub { font-size:.72rem; color:#555; margin-top:2px; }
 
-.wiz-etapa-header { display:flex; align-items:center; gap:14px; margin-bottom:24px; }
-.wiz-etapa-icon { font-size:2rem; line-height:1; }
-.wiz-etapa-titulo { font-size:1.15rem; font-weight:800; color:#fff; line-height:1.2; }
-.wiz-etapa-sub { font-size:.74rem; color:#666; margin-top:2px; }
-
-.wiz-nav { display:flex; align-items:center; justify-content:space-between; margin-top:24px; gap:12px; }
-.wiz-btn-back { background:transparent; border:1.5px solid rgba(255,255,255,.12); color:#888; border-radius:10px; padding:11px 20px; font-family:'Poppins',sans-serif; font-size:.82rem; font-weight:600; cursor:pointer; transition:all .15s; }
-.wiz-btn-back:hover { border-color:rgba(255,255,255,.25); color:#ccc; }
-.wiz-btn-next { background:var(--red); color:#fff; border:none; border-radius:10px; padding:12px 28px; font-family:'Poppins',sans-serif; font-size:.88rem; font-weight:700; cursor:pointer; transition:background .15s; }
+.wiz-nav { display:flex; align-items:center; justify-content:space-between; margin-top:22px; gap:12px; }
+.wiz-btn-back { background:transparent; border:1.5px solid rgba(255,255,255,.1); color:#777; border-radius:10px; padding:11px 18px; font-family:'Poppins',sans-serif; font-size:.8rem; font-weight:600; cursor:pointer; transition:all .15s; }
+.wiz-btn-back:hover { border-color:rgba(255,255,255,.22); color:#ccc; }
+.wiz-btn-next { background:var(--red); color:#fff; border:none; border-radius:10px; padding:12px 26px; font-family:'Poppins',sans-serif; font-size:.88rem; font-weight:700; cursor:pointer; transition:background .15s; margin-left:auto; }
 .wiz-btn-next:hover { background:#a82820; }
+
+/* Mobile: cards de step menores mas sem quebrar */
+@media(max-width:440px){
+  .wiz-steps { gap:4px; }
+  .wiz-step  { padding:7px 2px 6px; border-radius:8px; }
+  .ws-label  { font-size:.55rem; }
+  .ws-num    { width:20px; height:20px; font-size:.6rem; }
+  .wiz-etapa-titulo { font-size:1rem; }
+}
 
 /* DASHBOARD HEADER */
 .header-light {
@@ -2080,10 +2125,10 @@ canvas, [data-touch="free"] { touch-action: none !important; }
           <div class="wiz-progress">
             <div class="wiz-bar-track"><div class="wiz-bar-fill" id="wiz-bar-fill"></div></div>
             <div class="wiz-steps">
-              <div class="wiz-step on"  id="ws1"><span class="ws-num">1</span><span class="ws-label">Você</span></div>
-              <div class="wiz-step"     id="ws2"><span class="ws-num">2</span><span class="ws-label">Negócio</span></div>
-              <div class="wiz-step"     id="ws3"><span class="ws-num">3</span><span class="ws-label">Localização</span></div>
-              <div class="wiz-step"     id="ws4"><span class="ws-num">4</span><span class="ws-label">Acesso</span></div>
+              <div class="wiz-step on" id="ws1" onclick="wizIrPara(1)"><span class="ws-num">1</span><span class="ws-label">Você</span></div>
+              <div class="wiz-step"    id="ws2" onclick="wizIrPara(2)"><span class="ws-num">2</span><span class="ws-label">Negócio</span></div>
+              <div class="wiz-step"    id="ws3" onclick="wizIrPara(3)"><span class="ws-num">3</span><span class="ws-label">Localização</span></div>
+              <div class="wiz-step"    id="ws4" onclick="wizIrPara(4)"><span class="ws-num">4</span><span class="ws-label">Acesso</span></div>
             </div>
           </div>
 
@@ -4492,6 +4537,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
   window.wizVoltar = function(de) {
     setEtapa(de - 1, 'back');
+  };
+
+  // Clique na aba: só permite ir para etapas JÁ concluídas (não pula para frente)
+  window.wizIrPara = function(n) {
+    if (n >= _etapaAtual) return; // só volta, não avança sem validar
+    setEtapa(n, 'back');
   };
 
   // Reseta wizard ao abrir a tela de registro
