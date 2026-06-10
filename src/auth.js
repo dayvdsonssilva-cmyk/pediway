@@ -423,6 +423,41 @@ window.recPasso2 = async function() {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CAPTURA DO LINK DE RECUPERAÇÃO (token na URL ao clicar no e-mail)
+// ─────────────────────────────────────────────────────────────────────────────
+(function detectarTokenRecuperacao() {
+  const hash = window.location.hash;
+  if (!hash) return;
+
+  const params = new URLSearchParams(hash.replace(/^#/, ''));
+  const tipo   = params.get('type');
+  const token  = params.get('access_token');
+
+  if (tipo === 'recovery' && token) {
+    // Limpa o hash da URL sem recarregar a página
+    history.replaceState(null, '', window.location.pathname);
+
+    // Estabelece a sessão com o token recebido
+    getSupa().auth.setSession({
+      access_token:  token,
+      refresh_token: params.get('refresh_token') || '',
+    }).then(({ error }) => {
+      if (error && import.meta.env.DEV) console.warn('[recovery setSession]', error.message);
+      // Vai direto para o passo 3 (nova senha)
+      if (typeof goTo === 'function') goTo('s-recuperar');
+      setTimeout(() => {
+        const fn = window.recAtivarStepPublic || null;
+        // Mostra passo 3 diretamente
+        [1,2,3].forEach(i => {
+          const d = document.getElementById('rec-passo' + i);
+          if (d) d.style.display = i === 3 ? 'block' : 'none';
+        });
+      }, 300);
+    });
+  }
+})();
+
 window.salvarNovaSenha = async function() {
   const nova = document.getElementById('rec-nova')?.value;
   const conf = document.getElementById('rec-conf')?.value;
