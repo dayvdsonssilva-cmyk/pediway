@@ -267,6 +267,11 @@ export async function doLogin() {
       registrarTentativa(chave); // conta tentativas só em caso de falha
       const msg = authErr.message || '';
       if (msg.includes('Invalid login credentials') || msg.includes('invalid_credentials')) {
+        // Incrementa contador para mostrar sugestão de recuperação após 2 falhas
+        const falhas = (_tentativas[chave] || []).length;
+        if (falhas >= 2) {
+          throw new Error('E-mail ou senha incorretos. Clique em "Esqueci minha senha" para redefinir.');
+        }
         throw new Error('E-mail ou senha incorretos. Verifique e tente novamente.');
       }
       if (msg.includes('Email not confirmed')) {
