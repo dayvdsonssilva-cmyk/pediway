@@ -71,9 +71,17 @@ const CAMPOS_ESTAB = [
 
 document.addEventListener('DOMContentLoaded', async () => {
 
-  // ── Se o usuário veio de um link de recuperação de senha, NÃO redireciona ──
-  // O auth.js já cuida de abrir o passo 3 via onAuthStateChange
-  if (typeof window._isPasswordRecovery === 'function' && window._isPasswordRecovery()) {
+  // ── Detecta link de recuperação de senha ─────────────────────────────────
+  // O Supabase coloca o token na URL como hash: #access_token=...&type=recovery
+  // Verifica isso ANTES de qualquer getSession para não entrar no dashboard
+  const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
+  const isRecoveryUrl = hashParams.get('type') === 'recovery';
+  const isRecoverySession = sessionStorage.getItem('pw_recovery_pending') === '1';
+
+  if (isRecoveryUrl || isRecoverySession) {
+    // Marca a flag para o auth.js usar
+    sessionStorage.setItem('pw_recovery_pending', '1');
+    // Não faz mais nada — o onAuthStateChange do auth.js vai abrir o passo 3
     return;
   }
 
@@ -84,10 +92,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (sessErr) throw sessErr;
 
     if (session?.user) {
-      // Dupla checagem: se durante o getSession a flag apareceu, sai
-      if (typeof window._isPasswordRecovery === 'function' && window._isPasswordRecovery()) {
-        return;
-      }
+      // Checagem extra: se a flag apareceu durante o getSession, sai
+      if (sessionStorage.getItem('pw_recovery_pending') === '1') return;
 
       const { data: estab, error: dbErr } = await getSupa()
         .from('estabelecimentos')
@@ -112,7 +118,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   } catch(e) {
     console.warn('[main] Erro ao restaurar sessão:', e);
-    // Limpa dados inconsistentes e vai para login
     localStorage.removeItem('pw_estab');
     localStorage.removeItem('pw_tela_atual');
     goTo('s-login');
