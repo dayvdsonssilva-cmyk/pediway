@@ -367,18 +367,17 @@ window.recPasso1 = async function() {
   registrarTentativa('recovery');
 
   const btn = document.querySelector('[onclick="recPasso1()"]');
-  if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
 
   try {
+    // Salva o e-mail para uso no passo 2 — NÃO envia o link ainda
+    // O link só é enviado após validação do WhatsApp no recPasso2
     _recEmailVerificado = email;
-    await enviarLinkRecuperacao(email);
-    const disp = document.getElementById('rec-email-display');
-    if (disp) disp.textContent = email;
     recAtivarStep(2);
   } catch(e) {
-    showToast('Erro ao enviar. Tente novamente.', 'error');
+    showToast('Erro. Tente novamente.', 'error');
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Enviar link de recuperação →'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Continuar →'; }
   }
 };
 
@@ -443,51 +442,89 @@ window.recPasso2 = async function() {
 // ─────────────────────────────────────────────────────────────────────────────
 // CAPTURA DO LINK DE RECUPERAÇÃO via onAuthStateChange
 // ─────────────────────────────────────────────────────────────────────────────
+
+// Sinaliza que o usuário veio de um link de recuperação (persiste entre reloads)
+// Isso é necessário porque quando o usuário clica no link do e-mail,
+// a página recarrega do zero e precisamos saber que deve abrir o passo 3.
+const _REC_FLAG = 'pw_recovery_pending';
+
+function abrirPasso3Recuperacao() {
+  // Tenta abrir — se o DOM ainda não estiver pronto, tenta de novo em 80ms
+  const tela = document.querySelector('[data-screen="s-recuperar"]');
+  const p3   = document.getElementById('rec-passo3');
+
+  if (!tela || !p3) {
+    setTimeout(abrirPasso3Recuperacao, 80);
+    return;
+  }
+
+  // Limpa a flag
+  sessionStorage.removeItem(_REC_FLAG);
+
+  // Navega para a tela de recuperação
+  goTo('s-recuperar');
+
+  // Aguarda a tela estar visível antes de manipular os passos
+  setTimeout(() => {
+    // Esconde passos 1 e 2, mostra só o passo 3
+    [1, 2, 3].forEach(i => {
+      const d = document.getElementById('rec-passo' + i);
+      if (d) d.style.display = i === 3 ? 'block' : 'none';
+    });
+
+    // Atualiza os indicadores visuais (dots e linhas)
+    [1, 2, 3].forEach(i => {
+      const dot  = document.getElementById('step-dot-' + i);
+      const line = document.getElementById('step-line-' + i);
+      if (dot) {
+        dot.style.background = 'var(--red)';
+        dot.style.color      = '#fff';
+        dot.style.opacity    = i < 3 ? '0.55' : '1';
+        dot.textContent      = i < 3 ? '✓' : '3';
+      }
+      if (line) line.style.background = i < 3 ? 'var(--red)' : '#2a2a2a';
+    });
+  }, 120);
+}
+
 getSupa().auth.onAuthStateChange((event, session) => {
   if (event === 'PASSWORD_RECOVERY') {
-    // Limpa hash/query da URL para não vazar o token
+    // Limpa o token da URL para não vazar
     history.replaceState(null, '', window.location.pathname);
 
-    function abrirRecuperacao() {
-      // Garante que a tela de recuperação existe antes de navegar
-      const telaRec = document.getElementById('rec-passo3') ||
-                      document.querySelector('[data-screen="s-recuperar"]');
-      if (!telaRec) {
-        // DOM ainda não tem a tela — tenta novamente em 100ms
-        setTimeout(abrirRecuperacao, 100);
-        return;
-      }
+    // Salva flag na sessionStorage — sobrevive ao redirect mas não a novas abas
+    sessionStorage.setItem(_REC_FLAG, '1');
 
-      goTo('s-recuperar');
-
-      setTimeout(() => {
-        // Mostra só o passo 3 (nova senha)
-        [1, 2, 3].forEach(i => {
-          const d = document.getElementById('rec-passo' + i);
-          if (d) d.style.display = i === 3 ? 'block' : 'none';
-        });
-        // Atualiza indicadores visuais dos steps
-        [1, 2, 3].forEach(i => {
-          const dot = document.getElementById('step-dot-' + i);
-          if (dot) {
-            dot.style.background = 'var(--red)';
-            dot.style.opacity    = i < 3 ? '0.6' : '1';
-            dot.style.color      = '#fff';
-            dot.textContent      = i < 3 ? '✓' : '3';
-          }
-          const line = document.getElementById('step-line-' + i);
-          if (line) line.style.background = i < 3 ? 'var(--red)' : '#2a2a2a';
-        });
-      }, 150);
-    }
-
+    // Abre o passo 3 (com retry automático até o DOM estar pronto)
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', abrirRecuperacao, { once: true });
+      document.addEventListener('DOMContentLoaded', abrirPasso3Recuperacao, { once: true });
     } else {
-      abrirRecuperacao();
+      abrirPasso3Recuperacao();
     }
   }
 });
+
+// ── Verifica na inicialização se há uma recuperação pendente ─────────────────
+// Cobre o caso em que o Supabase faz redirect e o evento já disparou
+// antes deste listener ser registrado
+(function verificarRecuperacaoPendente() {
+  if (!sessionStorage.getItem(_REC_FLAG)) return;
+
+  // Checa se há sessão ativa com tipo recovery
+  getSupa().auth.getSession().then(({ data: { session } }) => {
+    // Se há sessão válida E a flag está setada, é uma recuperação em andamento
+    if (session?.user) {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', abrirPasso3Recuperacao, { once: true });
+      } else {
+        abrirPasso3Recuperacao();
+      }
+    } else {
+      // Sem sessão — limpa a flag
+      sessionStorage.removeItem(_REC_FLAG);
+    }
+  }).catch(() => sessionStorage.removeItem(_REC_FLAG));
+})();
 
 window.salvarNovaSenha = async function() {
   const nova = document.getElementById('rec-nova')?.value;
