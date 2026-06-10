@@ -58,17 +58,44 @@ window.atualizarCfgLink = function(val) {
   if (el) el.textContent = `pediway.vercel.app/${slug || 'meu-link'}`;
 };
 
+// Campos públicos do estabelecimento — mesma lista do auth.js
+const CAMPOS_ESTAB = [
+  'id','nome','slug','cidade','status','plano',
+  'cor_primaria','logo_url','descricao','faz_entrega',
+  'faz_retirada','taxa_entrega','tempo_entrega','aberto',
+  'assinatura_vencimento','num_mesas','aceita_pix',
+  'aceita_cartao','aceita_dinheiro','instagram','tiktok',
+  'site','msg_nota','taxa_servico','perc_servico',
+  'created_at','pagamento_status',
+].join(',');
+
 document.addEventListener('DOMContentLoaded', async () => {
-  // Restaura sessão via Supabase Auth (import estático já no topo via main.js)
+
+  // ── Se o usuário veio de um link de recuperação de senha, NÃO redireciona ──
+  // O auth.js já cuida de abrir o passo 3 via onAuthStateChange
+  if (typeof window._isPasswordRecovery === 'function' && window._isPasswordRecovery()) {
+    return;
+  }
+
+  // ── Restaura sessão via Supabase Auth ─────────────────────────────────────
   try {
-    const { data: { session } } = await getSupa().auth.getSession();
+    const { data: { session }, error: sessErr } = await getSupa().auth.getSession();
+
+    if (sessErr) throw sessErr;
 
     if (session?.user) {
-      const { data: estab } = await getSupa()
+      // Dupla checagem: se durante o getSession a flag apareceu, sai
+      if (typeof window._isPasswordRecovery === 'function' && window._isPasswordRecovery()) {
+        return;
+      }
+
+      const { data: estab, error: dbErr } = await getSupa()
         .from('estabelecimentos')
-        .select('*')
+        .select(CAMPOS_ESTAB)
         .eq('user_id', session.user.id)
         .maybeSingle();
+
+      if (dbErr) throw dbErr;
 
       if (estab) {
         window._estab = estab;
@@ -78,12 +105,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         await initDashboard();
         return;
       }
+
+      // Sessão válida mas sem estabelecimento — vai para login
+      goTo('s-login');
+      return;
     }
   } catch(e) {
-    console.warn('Erro ao restaurar sessão:', e);
+    console.warn('[main] Erro ao restaurar sessão:', e);
+    // Limpa dados inconsistentes e vai para login
+    localStorage.removeItem('pw_estab');
+    localStorage.removeItem('pw_tela_atual');
+    goTo('s-login');
+    return;
   }
 
-  // Fallback: localStorage
+  // ── Sem sessão ativa: fallback no localStorage ────────────────────────────
   const saved = localStorage.getItem('pw_estab');
   if (saved) {
     try { window._estab = JSON.parse(saved); } catch(e) { localStorage.removeItem('pw_estab'); }
