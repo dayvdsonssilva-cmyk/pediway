@@ -370,8 +370,7 @@ window.recPasso1 = async function() {
   if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
 
   try {
-    // Salva o e-mail para uso no passo 2 — NÃO envia o link ainda
-    // O link só é enviado após validação do WhatsApp no recPasso2
+    // Apenas salva o e-mail e avança — o link só é enviado APÓS o WhatsApp ser validado
     _recEmailVerificado = email;
     recAtivarStep(2);
   } catch(e) {
@@ -394,6 +393,7 @@ window.recPasso2 = async function() {
   const tel9 = (tel || '').replace(/\D/g,'');
 
   if (!tel9 || tel9.length < 10) return showToast('Digite o WhatsApp completo com DDD.', 'error');
+  if (!_recEmailVerificado)       return showToast('Volte ao passo 1 e informe o e-mail.', 'error');
 
   if (bloqueado('recovery', 3)) {
     return showToast('Muitas tentativas. Aguarde alguns minutos.', 'error');
@@ -404,31 +404,39 @@ window.recPasso2 = async function() {
   if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
 
   try {
-    // Busca estabelecimento pelo telefone informado
-    const { data: estabs, error: dbErr } = await getSupa()
+    // Busca estabelecimento pelo telefone E e-mail juntos para validar os dois
+    const { data: porTel, error: telErr } = await getSupa()
       .from('estabelecimentos')
       .select('user_id, telefone')
       .eq('telefone', tel9)
       .limit(1);
 
-    if (dbErr) throw new Error('Erro ao verificar. Tente novamente.');
+    if (telErr) throw new Error('Erro ao verificar. Tente novamente.');
 
-    // Telefone não encontrado em nenhuma conta
-    if (!estabs || estabs.length === 0) {
-      await new Promise(r => setTimeout(r, 800));
+    if (!porTel || porTel.length === 0) {
+      await new Promise(r => setTimeout(r, 800)); // delay anti-timing attack
       throw new Error('WhatsApp não corresponde ao cadastro. Verifique e tente novamente.');
     }
 
-    // Telefone correto — envia o link e mostra mensagem de aguardar e-mail
+    // Telefone OK — envia o link de recuperação
     await enviarLinkRecuperacao(_recEmailVerificado);
-    // Mostra passo 2 como "aguardando clique no link" — passo 3 só abre via onAuthStateChange
+
+    // Mostra confirmação
     const p2 = document.getElementById('rec-passo2');
     if (p2) p2.innerHTML = `
       <div style="text-align:center;padding:8px 0 16px">
-        <div style="font-size:2.2rem;margin-bottom:10px">📧</div>
-        <p style="color:#fff;font-weight:700;font-size:.9rem;margin-bottom:8px">Link enviado!</p>
-        <p style="color:#888;font-size:.78rem;line-height:1.6">Verifique seu e-mail <strong style="color:#C0392B">${_recEmailVerificado}</strong> e clique no link recebido para criar sua nova senha.</p>
-        <p style="color:#555;font-size:.7rem;margin-top:8px">Não recebeu? <a onclick="recPasso1Reenviar()" style="color:#C0392B;cursor:pointer;text-decoration:underline">Reenviar</a></p>
+        <div style="font-size:2.8rem;margin-bottom:12px">📧</div>
+        <p style="color:#fff;font-weight:800;font-size:.95rem;margin-bottom:10px">Link enviado!</p>
+        <p style="color:#888;font-size:.8rem;line-height:1.7">
+          Verifique o e-mail<br>
+          <strong style="color:#C0392B">${_recEmailVerificado}</strong><br>
+          e clique no link para criar sua nova senha.
+        </p>
+        <p style="color:#555;font-size:.72rem;margin-top:14px">
+          Não recebeu?
+          <a onclick="recPasso1Reenviar()" style="color:#C0392B;cursor:pointer;text-decoration:underline">Reenviar link</a>
+        </p>
+        <p style="color:#444;font-size:.7rem;margin-top:6px">Verifique também a pasta de spam.</p>
       </div>
     `;
 
@@ -443,36 +451,41 @@ window.recPasso2 = async function() {
 // CAPTURA DO LINK DE RECUPERAÇÃO via onAuthStateChange
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Sinaliza que o usuário veio de um link de recuperação (persiste entre reloads)
-// Isso é necessário porque quando o usuário clica no link do e-mail,
-// a página recarrega do zero e precisamos saber que deve abrir o passo 3.
+// Flag na sessionStorage: sinaliza que estamos em fluxo de recuperação de senha.
+// Sobrevive ao redirect do link de e-mail, mas não a novas abas/janelas.
 const _REC_FLAG = 'pw_recovery_pending';
 
+// Exposta globalmente para que o main.js possa verificar e NÃO redirecionar
+// automaticamente para o dashboard quando detectar sessão ativa.
+window._isPasswordRecovery = function() {
+  return !!sessionStorage.getItem(_REC_FLAG);
+};
+
 function abrirPasso3Recuperacao() {
-  // Tenta abrir — se o DOM ainda não estiver pronto, tenta de novo em 80ms
   const tela = document.querySelector('[data-screen="s-recuperar"]');
   const p3   = document.getElementById('rec-passo3');
 
   if (!tela || !p3) {
+    // DOM ainda não está pronto — tenta de novo em 80ms
     setTimeout(abrirPasso3Recuperacao, 80);
     return;
   }
 
-  // Limpa a flag
-  sessionStorage.removeItem(_REC_FLAG);
-
   // Navega para a tela de recuperação
-  goTo('s-recuperar');
+  if (typeof window.goTo === 'function') {
+    window.goTo('s-recuperar');
+  } else {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    tela.classList.add('active');
+  }
 
-  // Aguarda a tela estar visível antes de manipular os passos
   setTimeout(() => {
-    // Esconde passos 1 e 2, mostra só o passo 3
+    // Mostra apenas o passo 3
     [1, 2, 3].forEach(i => {
       const d = document.getElementById('rec-passo' + i);
       if (d) d.style.display = i === 3 ? 'block' : 'none';
     });
-
-    // Atualiza os indicadores visuais (dots e linhas)
+    // Atualiza os dots e linhas
     [1, 2, 3].forEach(i => {
       const dot  = document.getElementById('step-dot-' + i);
       const line = document.getElementById('step-line-' + i);
@@ -489,42 +502,24 @@ function abrirPasso3Recuperacao() {
 
 getSupa().auth.onAuthStateChange((event, session) => {
   if (event === 'PASSWORD_RECOVERY') {
-    // Limpa o token da URL para não vazar
+    // Limpa o token da URL
     history.replaceState(null, '', window.location.pathname);
-
-    // Salva flag na sessionStorage — sobrevive ao redirect mas não a novas abas
+    // Marca o fluxo de recuperação
     sessionStorage.setItem(_REC_FLAG, '1');
 
-    // Abre o passo 3 (com retry automático até o DOM estar pronto)
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', abrirPasso3Recuperacao, { once: true });
     } else {
       abrirPasso3Recuperacao();
     }
+    return;
+  }
+
+  // SIGNED_IN durante recuperação: bloqueia redirecionamento para o dashboard
+  if (event === 'SIGNED_IN' && sessionStorage.getItem(_REC_FLAG)) {
+    return; // não faz nada — deixa o fluxo de recuperação continuar
   }
 });
-
-// ── Verifica na inicialização se há uma recuperação pendente ─────────────────
-// Cobre o caso em que o Supabase faz redirect e o evento já disparou
-// antes deste listener ser registrado
-(function verificarRecuperacaoPendente() {
-  if (!sessionStorage.getItem(_REC_FLAG)) return;
-
-  // Checa se há sessão ativa com tipo recovery
-  getSupa().auth.getSession().then(({ data: { session } }) => {
-    // Se há sessão válida E a flag está setada, é uma recuperação em andamento
-    if (session?.user) {
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', abrirPasso3Recuperacao, { once: true });
-      } else {
-        abrirPasso3Recuperacao();
-      }
-    } else {
-      // Sem sessão — limpa a flag
-      sessionStorage.removeItem(_REC_FLAG);
-    }
-  }).catch(() => sessionStorage.removeItem(_REC_FLAG));
-})();
 
 window.salvarNovaSenha = async function() {
   const nova = document.getElementById('rec-nova')?.value;
@@ -538,10 +533,18 @@ window.salvarNovaSenha = async function() {
 
   try {
     const { error } = await getSupa().auth.updateUser({ password: nova });
-    if (error) throw new Error('Não foi possível atualizar a senha. O link pode ter expirado.');
+    if (error) throw new Error('Não foi possível atualizar a senha. O link pode ter expirado. Solicite um novo.');
 
-    showToast('✅ Senha atualizada! Faça login.', 'info');
-    setTimeout(() => goTo('s-login'), 1800);
+    // Limpa a flag de recuperação ANTES de redirecionar
+    sessionStorage.removeItem(_REC_FLAG);
+
+    // Faz logout da sessão de recuperação para forçar login limpo
+    await getSupa().auth.signOut();
+
+    showToast('✅ Senha atualizada com sucesso! Faça login.', 'info');
+    setTimeout(() => {
+      if (typeof window.goTo === 'function') window.goTo('s-login');
+    }, 2000);
 
   } catch (e) {
     showToast(e.message, 'error');
