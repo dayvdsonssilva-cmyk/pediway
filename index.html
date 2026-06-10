@@ -2289,7 +2289,7 @@ canvas, [data-touch="free"] { touch-action: none !important; }
         <p style="color:#666;font-size:.8rem;margin:0">Confirme sua identidade para redefinir</p>
       </div>
 
-      <!-- Indicador de passos -->
+      <!-- Indicador de passos: 3 passos -->
       <div style="display:flex;align-items:center;gap:0;margin-bottom:24px" id="rec-steps">
         <div id="step-dot-1" style="width:28px;height:28px;border-radius:50%;background:var(--red);color:#fff;font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
         <div style="flex:1;height:2px;background:#2a2a2a" id="step-line-1"></div>
@@ -2305,7 +2305,8 @@ canvas, [data-touch="free"] { touch-action: none !important; }
           <label style="color:#aaa;font-size:.78rem;font-weight:600">E-mail cadastrado</label>
           <input type="email" id="rec-email" placeholder="seu@email.com"
             style="background:#111;border:1.5px solid #2a2a2a;color:#fff;border-radius:10px;padding:12px 14px;width:100%;font-family:inherit;font-size:.9rem;outline:none;transition:border-color .2s"
-            onfocus="this.style.borderColor='#C0392B'" onblur="this.style.borderColor='#2a2a2a'">
+            onfocus="this.style.borderColor='#C0392B'" onblur="this.style.borderColor='#2a2a2a'"
+            onkeydown="if(event.key==='Enter') recPasso1()">
         </div>
         <button onclick="recPasso1()" style="width:100%;background:var(--red);color:#fff;border:none;border-radius:10px;padding:13px;font-family:inherit;font-weight:800;font-size:.9rem;cursor:pointer">
           Continuar →
@@ -2315,15 +2316,16 @@ canvas, [data-touch="free"] { touch-action: none !important; }
         </div>
       </div>
 
-      <!-- PASSO 2: Telefone completo -->
+      <!-- PASSO 2: WhatsApp (verificação real) -->
       <div id="rec-passo2" style="display:none">
-        <p style="color:#888;font-size:.78rem;margin-bottom:14px">Confirme o WhatsApp vinculado à conta.</p>
+        <p style="color:#888;font-size:.78rem;margin-bottom:14px">Confirme o WhatsApp vinculado à sua conta para provar sua identidade.</p>
         <div class="form-group" style="margin-bottom:16px">
           <label style="color:#aaa;font-size:.78rem;font-weight:600">WhatsApp cadastrado (com DDD)</label>
           <input type="tel" id="rec-tel" placeholder="(99) 99999-9999" maxlength="15" oninput="mascaraTel(this)"
             style="background:#111;border:1.5px solid #2a2a2a;color:#fff;border-radius:10px;padding:12px 14px;width:100%;font-family:inherit;font-size:.95rem;font-weight:700;letter-spacing:.04em;outline:none;transition:border-color .2s"
-            onfocus="this.style.borderColor='#C0392B'" onblur="this.style.borderColor='#2a2a2a'">
-          <div style="font-size:.68rem;color:#555;margin-top:5px">Digite o número exato cadastrado na sua conta.</div>
+            onfocus="this.style.borderColor='#C0392B'" onblur="this.style.borderColor='#2a2a2a'"
+            onkeydown="if(event.key==='Enter') recPasso2()">
+          <div style="font-size:.68rem;color:#555;margin-top:5px">⚠️ Precisa ser o número exato cadastrado na conta.</div>
         </div>
         <button onclick="recPasso2()" style="width:100%;background:var(--red);color:#fff;border:none;border-radius:10px;padding:13px;font-family:inherit;font-weight:800;font-size:.9rem;cursor:pointer">
           Confirmar identidade →
@@ -2335,8 +2337,8 @@ canvas, [data-touch="free"] { touch-action: none !important; }
 
       <!-- PASSO 3: Nova senha -->
       <div id="rec-passo3" style="display:none">
-        <div style="background:#16a34a18;border:1px solid #16a34a40;border-radius:10px;padding:10px 12px;margin-bottom:16px;font-size:.78rem;color:#22c55e;display:flex;align-items:center;gap:8px">
-          <span>✅</span> Identidade confirmada! Crie sua nova senha.
+        <div style="background:rgba(192,57,43,0.1);border:1px solid rgba(192,57,43,0.35);border-radius:10px;padding:10px 12px;margin-bottom:16px;font-size:.78rem;color:#e99;display:flex;align-items:center;gap:8px">
+          <span>✅</span> Identidade confirmada! Verifique seu e-mail e crie sua nova senha.
         </div>
         <div class="form-group" style="margin-bottom:12px">
           <label style="color:#aaa;font-size:.78rem;font-weight:600">Nova senha</label>
@@ -4689,40 +4691,6 @@ window.fecharResponsabilidade = function() {
 // Wrapper que normaliza o WhatsApp antes de comparar (fix: máscara vs sem máscara)
 document.addEventListener('DOMContentLoaded', function() {
   setTimeout(function() {
-
-    // ── Fix recPasso2: normaliza ambos os lados antes de comparar ────────────
-    const _originalRecPasso2 = window.recPasso2;
-    window.recPasso2 = async function() {
-      // Normaliza o que o usuário digitou (remove tudo que não é dígito)
-      const inputEl = document.getElementById('rec-tel');
-      if (inputEl) {
-        const raw = inputEl.value.replace(/\D/g, '');
-        // Guarda o valor original e substitui temporariamente pelo normalizado
-        // para que o auth.js compare dígitos vs dígitos
-        const original = inputEl.value;
-        inputEl.value = raw;
-        // Também precisamos normalizar o estab.whatsapp antes da comparação.
-        // Como não temos acesso direto, vamos patch no supabase result via _recEstab
-        const _origGetEstab = window._recEstab;
-        if (window._recEstab?.whatsapp) {
-          window._recEstab = {
-            ...window._recEstab,
-            whatsapp: window._recEstab.whatsapp.replace(/\D/g, '')
-          };
-        }
-        try {
-          if (typeof _originalRecPasso2 === 'function') await _originalRecPasso2();
-        } finally {
-          // Restaura valor com máscara se a validação falhou (campo ainda visível)
-          if (document.getElementById('rec-passo2')?.style.display !== 'none') {
-            inputEl.value = original;
-          }
-          if (_origGetEstab !== undefined) window._recEstab = _origGetEstab;
-        }
-      } else {
-        if (typeof _originalRecPasso2 === 'function') await _originalRecPasso2();
-      }
-    };
 
     // ── Validação de termos no registro ──────────────────────────────────────
     const _originalDoRegister = window.doRegister;
