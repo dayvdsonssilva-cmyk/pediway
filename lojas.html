@@ -307,17 +307,17 @@ html,body{touch-action:manipulation !important;}
 input,select,textarea{font-size:16px !important;touch-action:manipulation;}
 *{-webkit-text-size-adjust:100%;}
 @keyframes floatBurger{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+
+/* ── SPLASH ── */
+#splash-screen{position:fixed;inset:0;z-index:99999;background:#000;transition:opacity .35s ease;}
+#splash-screen.hide{opacity:0;pointer-events:none;}
+#splash-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
 </style>
 </head>
 <body>
 
 <!-- ══ SPLASH SCREEN ══════════════════════════════════════════════════════════ -->
-<div id="splash-screen" style="
-  position:fixed;inset:0;z-index:99999;
-  background:#000;
-  display:flex;align-items:center;justify-content:center;
-  transition:opacity .4s ease;
-">
+<div id="splash-screen">
   <video
     id="splash-video"
     src="/splash.mp4"
@@ -325,55 +325,30 @@ input,select,textarea{font-size:16px !important;touch-action:manipulation;}
     muted
     playsinline
     preload="auto"
-    style="
-      position:absolute;inset:0;
-      width:100%;height:100%;
-      object-fit:cover;
-      opacity:0;
-      transition:opacity .3s ease;
-    "
   ></video>
 </div>
-
-<style>
-#splash-screen.hide {
-  opacity:0;
-  pointer-events:none;
-}
-</style>
-
 <script>
 (function() {
-  const splash = document.getElementById('splash-screen');
-  const video  = document.getElementById('splash-video');
-  let _hidden = false;
+  var splash = document.getElementById('splash-screen');
+  var video  = document.getElementById('splash-video');
+  var _hidden = false;
 
   function esconder() {
     if (_hidden) return;
     _hidden = true;
     splash.classList.add('hide');
-    setTimeout(() => splash.remove(), 420);
+    setTimeout(function(){ splash.remove(); }, 370);
   }
 
-  // Mostra o vídeo assim que o primeiro frame estiver pronto
-  video.addEventListener('canplay', function() {
-    video.style.opacity = '1';
-  }, { once: true });
-
-  // Se demorar mais de 800ms para ter o primeiro frame, mostra mesmo assim
-  setTimeout(() => { video.style.opacity = '1'; }, 800);
-
-  // Esconde ao terminar o vídeo
   video.addEventListener('ended', esconder);
+  video.addEventListener('error', function(){ setTimeout(esconder, 300); });
 
-  // Fallback: esconde após 4s
-  setTimeout(esconder, 4000);
+  // Fallback de segurança: remove após 5s no máximo
+  setTimeout(esconder, 5000);
 
-  // Se não carregar (offline/erro), esconde em 500ms
-  video.addEventListener('error', () => setTimeout(esconder, 500));
-
-  // Força play imediato
-  video.play().catch(() => esconder());
+  // Força play — se o browser bloquear (política autoplay), fecha o splash
+  var p = video.play();
+  if (p && typeof p.catch === 'function') p.catch(esconder);
 })();
 </script>
 <!-- ══ FIM SPLASH ══════════════════════════════════════════════════════════════ -->
