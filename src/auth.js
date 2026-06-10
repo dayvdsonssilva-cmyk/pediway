@@ -429,39 +429,41 @@ window.recPasso2 = async function() {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CAPTURA DO LINK DE RECUPERAÇÃO (token na URL ao clicar no e-mail)
+// CAPTURA DO LINK DE RECUPERAÇÃO via onAuthStateChange
 // ─────────────────────────────────────────────────────────────────────────────
-(function detectarTokenRecuperacao() {
-  const hash = window.location.hash;
-  if (!hash) return;
-
-  const params = new URLSearchParams(hash.replace(/^#/, ''));
-  const tipo   = params.get('type');
-  const token  = params.get('access_token');
-
-  if (tipo === 'recovery' && token) {
-    // Limpa o hash da URL sem recarregar a página
+getSupa().auth.onAuthStateChange((event, session) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    // Limpa hash da URL
     history.replaceState(null, '', window.location.pathname);
-
-    // Estabelece a sessão com o token recebido
-    getSupa().auth.setSession({
-      access_token:  token,
-      refresh_token: params.get('refresh_token') || '',
-    }).then(({ error }) => {
-      if (error && import.meta.env.DEV) console.warn('[recovery setSession]', error.message);
-      // Vai direto para o passo 3 (nova senha)
-      if (typeof goTo === 'function') goTo('s-recuperar');
+    // Aguarda DOM estar pronto e navega para tela de recuperação no passo 3
+    const abrir = () => {
+      goTo('s-recuperar');
       setTimeout(() => {
-        const fn = window.recAtivarStepPublic || null;
-        // Mostra passo 3 diretamente
         [1,2,3].forEach(i => {
           const d = document.getElementById('rec-passo' + i);
           if (d) d.style.display = i === 3 ? 'block' : 'none';
         });
-      }, 300);
-    });
+        // Atualiza indicadores visuais dos steps
+        [1,2,3].forEach(i => {
+          const dot = document.getElementById('step-dot-' + i);
+          if (dot) {
+            dot.style.background = i < 3 ? 'var(--red)' : 'var(--red)';
+            dot.style.opacity    = i < 3 ? '0.6' : '1';
+            dot.style.color      = '#fff';
+            dot.textContent      = i < 3 ? '✓' : '3';
+          }
+          const line = document.getElementById('step-line-' + i);
+          if (line) line.style.background = i < 3 ? 'var(--red)' : '#2a2a2a';
+        });
+      }, 150);
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', abrir, { once: true });
+    } else {
+      abrir();
+    }
   }
-})();
+});
 
 window.salvarNovaSenha = async function() {
   const nova = document.getElementById('rec-nova')?.value;
