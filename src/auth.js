@@ -270,7 +270,9 @@ export async function doLogin() {
         throw new Error('E-mail ou senha incorretos. Verifique e tente novamente.');
       }
       if (msg.includes('Email not confirmed')) {
-        throw new Error('Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada.');
+        // Reenvia o e-mail de confirmação automaticamente
+        await getSupa().auth.resend({ type: 'signup', email });
+        throw new Error('⚠️ Seu e-mail ainda não foi confirmado. Reenviamos o link para ' + email + '. Verifique sua caixa de entrada (e spam).');
       }
       if (msg.includes('Too many requests')) {
         throw new Error('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
