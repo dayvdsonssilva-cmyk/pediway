@@ -103,44 +103,6 @@ input, select, textarea { max-width:100%; box-sizing:border-box; }
 @media(max-width:480px){ .pedi-ai-chat{width:calc(100vw - 24px)} #pedi-ai-modal{padding:0 12px 90px} }
 
 /* ══ ONBOARDING ══════════════════════════════════════════════════════════════ */
-#onboarding-modal {
-  display: none; position: fixed; inset: 0; z-index: 4000;
-  background: rgba(0,0,0,.7); backdrop-filter: blur(6px);
-  align-items: center; justify-content: center; padding: 16px;
-}
-#onboarding-modal.show { display: flex; }
-.ob-box {
-  background: #fff; border-radius: 24px; width: 100%; max-width: 480px;
-  max-height: 90vh; overflow-y: auto;
-  box-shadow: 0 32px 80px rgba(0,0,0,.25);
-  animation: slideUp .25s ease;
-}
-.ob-header { background: var(--red); border-radius: 24px 24px 0 0; padding: 24px 28px 20px; }
-.ob-step-indicator { display: flex; gap: 6px; justify-content: center; margin-bottom: 14px; }
-.ob-step-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.35); transition: all .3s; }
-.ob-step-dot.active { background: #fff; width: 24px; border-radius: 4px; }
-.ob-header h2 { font-size: 1.15rem; font-weight: 900; color: #fff; }
-.ob-header p  { font-size: .75rem; color: rgba(255,255,255,.8); margin-top: 4px; }
-.ob-body { padding: 24px 28px; }
-.ob-field { margin-bottom: 16px; }
-.ob-field label { display: block; font-size: .72rem; font-weight: 800; color: #555; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
-.ob-input { width: 100%; border: 1.5px solid #e5e5e5; border-radius: 10px; padding: 12px 14px; font-family: 'Poppins',sans-serif; font-size: .9rem; outline: none; transition: border-color .2s; }
-.ob-input:focus { border-color: var(--red); }
-.ob-tipos { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
-.ob-tipo { border: 2px solid #e5e5e5; border-radius: 12px; padding: 12px 8px; text-align: center; cursor: pointer; transition: all .2s; background: #fafafa; }
-.ob-tipo:hover { border-color: var(--red); }
-.ob-tipo.selected { border-color: var(--red); background: #fff0f0; }
-.ob-tipo-em  { font-size: 1.6rem; display: block; margin-bottom: 4px; }
-.ob-tipo-nm  { font-size: .68rem; font-weight: 700; color: #333; }
-.ob-btn { width: 100%; background: var(--red); color: #fff; border: none; border-radius: 12px; padding: 14px; font-family: 'Poppins',sans-serif; font-size: .95rem; font-weight: 800; cursor: pointer; transition: background .15s; margin-top: 8px; }
-.ob-btn:hover { background: #C0001A; }
-.ob-btn-sec { width: 100%; background: none; border: 1.5px solid #e5e5e5; border-radius: 12px; padding: 12px; font-family: 'Poppins',sans-serif; font-size: .88rem; font-weight: 700; color: #888; cursor: pointer; margin-top: 8px; }
-.ob-ai-msg { background: #fff8f8; border: 1.5px solid #ffe0e0; border-radius: 12px; padding: 14px; font-size: .8rem; color: #444; line-height: 1.6; margin-bottom: 16px; }
-.ob-ai-msg strong { color: var(--red); }
-.ob-ai-typing { display: flex; gap: 4px; padding: 4px 0; }
-.ob-progress { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
-.ob-progress-bar { flex: 1; height: 4px; background: #f0f0f0; border-radius: 2px; overflow: hidden; }
-.ob-progress-fill { height: 100%; background: var(--red); border-radius: 2px; transition: width .4s ease; }
 
 /* Dashboard mobile */
 @media(max-width:600px) {
@@ -5180,61 +5142,17 @@ window.goTo = function(screen) {
 </div>
 
 <!-- ══ ONBOARDING — Primeiros passos ════════════════════════════════════════ -->
-<div id="onboarding-modal">
-  <div class="ob-box">
-    <div class="ob-header">
-      <div class="ob-step-indicator">
-        <div class="ob-step-dot active" id="ob-dot-1"></div>
-        <div class="ob-step-dot" id="ob-dot-2"></div>
-        <div class="ob-step-dot" id="ob-dot-3"></div>
-      </div>
-      <h2 id="ob-title">👋 Bem-vindo ao PEDIWAY!</h2>
-      <p id="ob-subtitle">Vamos deixar sua loja pronta em 3 passos rápidos</p>
-    </div>
-    <div class="ob-body" id="ob-body">
-      <!-- Conteúdo injetado via JS -->
-    </div>
-  </div>
-</div>
-
 
 <script>
 (function() {
-  var _obFired = false;
-
   function onDashActive() {
-    // Botão PEDI-AI
     var btn = document.getElementById('pedi-ai-btn');
     if (btn) btn.classList.add('show');
-
-    // Onboarding — roda só uma vez
-    if (_obFired) return;
-    _obFired = true;
-
-    var tries = 0;
-    var poll = setInterval(function() {
-      tries++;
-      var estab = (typeof getEstab === 'function') ? getEstab() : null;
-      if (estab && estab.id) {
-        clearInterval(poll);
-        var key = 'pw_ob_' + estab.id;
-        if (!localStorage.getItem(key)) {
-          localStorage.setItem(key, '1');
-          setTimeout(function() {
-            if (typeof mostrarOnboarding === 'function') mostrarOnboarding(estab);
-          }, 800);
-        }
-      }
-      if (tries > 80) clearInterval(poll);
-    }, 100);
   }
-
   function onDashInactive() {
     var btn = document.getElementById('pedi-ai-btn');
     if (btn) btn.classList.remove('show');
   }
-
-  // Observa a tela s-dash ganhar/perder classe active
   var obs = new MutationObserver(function(mutations) {
     mutations.forEach(function(m) {
       if (m.target.dataset && m.target.dataset.screen === 's-dash') {
@@ -5243,13 +5161,10 @@ window.goTo = function(screen) {
       }
     });
   });
-
   document.addEventListener('DOMContentLoaded', function() {
-    // Observa TODAS as screens
     document.querySelectorAll('.screen').forEach(function(el) {
       obs.observe(el, { attributes: true, attributeFilter: ['class'] });
     });
-    // Checa estado inicial (caso já esteja ativo)
     var dash = document.querySelector('[data-screen="s-dash"].active');
     if (dash) onDashActive();
   });
