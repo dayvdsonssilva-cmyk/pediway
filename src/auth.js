@@ -6,7 +6,7 @@ import { goTo, showToast, gerarSlug } from './utils.js';
 // RATE LIMITING LOCAL (proteção contra brute force no frontend)
 // Não substitui o rate limit do Supabase, mas adiciona uma camada extra
 // ─────────────────────────────────────────────────────────────────────────────
-const _tentativas = {};           
+const _tentativas = {};
 
 function registrarTentativa(chave) {
   const agora = Date.now();
@@ -397,24 +397,22 @@ window.recPasso2 = async function() {
   if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
 
   try {
-    // Busca estabelecimento pelo e-mail verificado no passo 1
+    // Busca estabelecimento pelo telefone informado
     const { data: estabs, error: dbErr } = await getSupa()
       .from('estabelecimentos')
-      .select('telefone')
-      .eq('email', _recEmailVerificado)
+      .select('user_id, telefone')
+      .eq('telefone', tel9)
       .limit(1);
 
     if (dbErr) throw new Error('Erro ao verificar. Tente novamente.');
 
-    // Verifica se o telefone informado bate com o cadastrado
-    const telCadastrado = (estabs?.[0]?.telefone || '').replace(/\D/g,'');
-    if (!telCadastrado || tel9 !== telCadastrado) {
-      // Simula delay para evitar enumeração por timing
+    // Telefone não encontrado em nenhuma conta
+    if (!estabs || estabs.length === 0) {
       await new Promise(r => setTimeout(r, 800));
       throw new Error('WhatsApp não corresponde ao cadastro. Verifique e tente novamente.');
     }
 
-    // Telefone correto — envia o link de recuperação
+    // Telefone encontrado — envia o link de recuperação para o e-mail informado
     await enviarLinkRecuperacao(_recEmailVerificado);
     recAtivarStep(3);
 
