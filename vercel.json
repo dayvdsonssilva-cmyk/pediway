@@ -118,6 +118,10 @@
       "destination": "/quiz.html"
     },
     {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
       "source": "/:slug",
       "destination": "/cliente.html"
     }
