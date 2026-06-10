@@ -323,6 +323,7 @@ export async function doLogin() {
 let _recEmailVerificado = null;
 
 function recAtivarStep(n) {
+  // Fluxo simplificado: só 2 passos (1=e-mail, 2=confirmação enviada)
   [1,2,3].forEach(i => {
     const d   = document.getElementById('rec-passo' + i);
     const dot = document.getElementById('step-dot-' + i);
@@ -333,29 +334,60 @@ function recAtivarStep(n) {
       dot.style.opacity    = i < n ? '0.6' : '1';
       dot.textContent      = i < n ? '✓' : String(i);
     }
-    if (i < 3) {
-      const line = document.getElementById('step-line-' + i);
-      if (line) line.style.background = i < n ? 'var(--red)' : '#2a2a2a';
-    }
+    const line = document.getElementById('step-line-' + i);
+    if (line) line.style.background = i < n ? 'var(--red)' : '#2a2a2a';
   });
 }
 
 window.recVoltar = function(passo) { recAtivarStep(passo); };
 
-window.recPasso1 = function() {
+async function enviarLinkRecuperacao(email) {
+  const { error } = await getSupa().auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin,
+  });
+  if (error && import.meta.env.DEV) console.warn('[resetPassword]', error.message);
+  // Sempre avança — não revela se o e-mail existe ou não
+}
+
+window.recPasso1 = async function() {
   const email = document.getElementById('rec-email')?.value.trim().toLowerCase();
   if (!email || !validarEmail(email)) return showToast('Digite um e-mail válido.', 'error');
-  _recEmailVerificado = email;
-  recAtivarStep(2);
+
+  if (bloqueado('recovery', 5)) {
+    return showToast('Muitas tentativas. Aguarde alguns minutos.', 'error');
+  }
+  registrarTentativa('recovery');
+
+  const btn = document.querySelector('[onclick="recPasso1()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+
+  try {
+    _recEmailVerificado = email;
+    await enviarLinkRecuperacao(email);
+    const disp = document.getElementById('rec-email-display');
+    if (disp) disp.textContent = email;
+    recAtivarStep(2);
+  } catch(e) {
+    showToast('Erro ao enviar. Tente novamente.', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Enviar link de recuperação →'; }
+  }
+};
+
+window.recPasso1Reenviar = async function() {
+  if (!_recEmailVerificado) return recAtivarStep(1);
+  if (bloqueado('recovery', 5)) return showToast('Muitas tentativas. Aguarde alguns minutos.', 'error');
+  registrarTentativa('recovery');
+  await enviarLinkRecuperacao(_recEmailVerificado);
+  showToast('✅ Link reenviado! Verifique seu e-mail.', 'info');
 };
 
 window.recPasso2 = async function() {
   const tel  = document.getElementById('rec-tel')?.value.trim();
-  const tel9 = tel.replace(/\D/g,'');
+  const tel9 = (tel || '').replace(/\D/g,'');
 
   if (!tel9 || tel9.length < 10) return showToast('Digite o WhatsApp completo com DDD.', 'error');
 
-  // ── Rate limiting: máx 3 tentativas de recuperação ─────
   if (bloqueado('recovery', 3)) {
     return showToast('Muitas tentativas. Aguarde alguns minutos.', 'error');
   }
@@ -365,38 +397,33 @@ window.recPasso2 = async function() {
   if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
 
   try {
+    // Busca estabelecimento pelo e-mail verificado no passo 1
     const { data: estabs, error: dbErr } = await getSupa()
       .from('estabelecimentos')
-      .select('id')          // só confirma existência — sem expor user_id ou telefone
-      .eq('telefone', tel9)
+      .select('telefone')
+      .eq('email', _recEmailVerificado)
       .limit(1);
 
     if (dbErr) throw new Error('Erro ao verificar. Tente novamente.');
 
-    // ── IMPORTANTE: resposta igual independente de encontrar ou não ──
-    // Isso evita enumeração: atacante não sabe se o telefone existe
-    const { error: resetErr } = await getSupa().auth.resetPasswordForEmail(
-      _recEmailVerificado,
-      { redirectTo: window.location.origin }
-    );
-
-    // Não lança erro mesmo se resetErr existir — evita confirmar se e-mail está cadastrado
-    if (resetErr && import.meta.env.DEV) {
-      console.warn('[recPasso2] resetPasswordForEmail:', resetErr.message);
-    }
-
-    // Avança sempre — se o telefone/e-mail não existir, o usuário simplesmente não recebe e-mail
-    if (!estabs || estabs.length === 0) {
-      // Simula delay para não revelar por timing que o telefone não existe
+    // Verifica se o telefone informado bate com o cadastrado
+    const telCadastrado = (estabs?.[0]?.telefone || '').replace(/\D/g,'');
+    if (!telCadastrado || tel9 !== telCadastrado) {
+      // Simula delay para evitar enumeração por timing
       await new Promise(r => setTimeout(r, 800));
+      throw new Error('WhatsApp não corresponde ao cadastro. Verifique e tente novamente.');
     }
 
+    // Telefone correto — envia o link de recuperação
+    await enviarLinkRecuperacao(_recEmailVerificado);
     recAtivarStep(3);
 
   } catch (e) {
     showToast(e.message, 'error');
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Confirmar identidade →'; }
+  }
+};
   }
 };
 
