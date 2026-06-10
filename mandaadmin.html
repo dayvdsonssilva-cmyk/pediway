@@ -592,67 +592,39 @@
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-// ── SERVICE KEY — cole aqui sua service_role key do Supabase ─────────────────
-// Onde achar: Supabase → Project Settings → API → service_role key
-const SRK_HARDCODED = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tdHRram1mYXpjaXBlZmVha2t4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDcxMzc2NCwiZXhwIjoyMDkwMjg5NzY0fQ.s_d-eKhQdXK1nzYoy8Wbxw0nQ-dHoe3fUdGOCbmsfeI';
-
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const SURL      = 'https://nmttkjmfazcipefeakkx.supabase.co';
 const SKEY_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tdHRram1mYXpjaXBlZmVha2t4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MTM3NjQsImV4cCI6MjA5MDI4OTc2NH0.MMTX_6iQJk7Uv3HPSk0m32_BihvqsWhHJ_qiRkw0WYo';
-const db = createClient(SURL, SKEY_ANON); // anon: leitura pública
+const db = createClient(SURL, SKEY_ANON);
 
-// Service key fica só no sessionStorage — nunca no código
-const _SRK = 'pw_srk';
+// ── PROXY SEGURO — SRK fica só no servidor (variável de ambiente Vercel) ──────
+const ADMIN_API = '/api/admin-query';
 
-function getServiceKey() {
-  // Usa key hardcoded no arquivo (só você tem acesso ao link do admin)
-  const k = SRK_HARDCODED || sessionStorage.getItem(_SRK) || '';
-  if (!k || k === 'COLE_SUA_SERVICE_ROLE_KEY_AQUI') {
-    throw new Error('Configure a SRK_HARDCODED no início do arquivo mandaadmin.html');
-  }
-  return k;
-}
-
-function setServiceKey(key) {
-  if (key && key.startsWith('eyJ')) sessionStorage.setItem(_SRK, key);
-}
-
-// Chamada direta à REST API do Supabase com service_role (bypassa RLS 100%)
 async function adminRest(method, table, body, query) {
-  const srk = getServiceKey();
-  const url  = SURL + '/rest/v1/' + table + (query || '');
-  const opts = {
-    method,
-    headers: {
-      'apikey': srk,
-      'Authorization': 'Bearer ' + srk,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation'
-    }
-  };
-  if (body) opts.body = JSON.stringify(body);
-  const res  = await fetch(url, opts);
+  // Remove o '?' inicial se vier, pois o endpoint monta a query string
+  const q = (query || '').replace(/^\?/, '');
+  const res  = await fetch(ADMIN_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ method, table, query: q, body: body || undefined }),
+  });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || data.hint || data.error || ('Erro HTTP ' + res.status));
+  if (!res.ok) throw new Error(data.error || 'Erro HTTP ' + res.status);
   return Array.isArray(data) ? data : [data];
 }
 
-// Atalhos por operação
 async function adminUpdate(table, body, filter) { return adminRest('PATCH', table, body, filter); }
-async function adminUpsert(table, body)         {
-  const srk = getServiceKey();
-  const url  = SURL + '/rest/v1/' + table;
-  const res  = await fetch(url, {
+async function adminUpsert(table, body) {
+  const res  = await fetch(ADMIN_API, {
     method: 'POST',
-    headers: { 'apikey': srk, 'Authorization': 'Bearer ' + srk,
-               'Content-Type': 'application/json', 'Prefer': 'return=representation,resolution=merge-duplicates' },
-    body: JSON.stringify(body)
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ method: 'POST', table, body, query: 'on_conflict=id' }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message || data.hint || data.error || ('Erro HTTP ' + res.status));
-  return data;
+  if (!res.ok) throw new Error(data.error || 'Erro HTTP ' + res.status);
+  return Array.isArray(data) ? data[0] : data;
 }
-async function adminDelete(table, filter)       { return adminRest('DELETE', table, null, filter); }
+async function adminDelete(table, filter) { return adminRest('DELETE', table, null, filter); }
 
 const CFG_KEY = 'pw_ceo_cfg_v2';
 let cfg = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
@@ -1489,11 +1461,21 @@ async function carregarTermos() {
   const tbody = gel('termos-tbody');
   if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="empty-row">Carregando...</td></tr>';
 
-  const { data, error } = await adminRest('GET', 'aceites_termos', null,
-    'order=aceito_em.desc&limit=1000');
+  let data;
+  try {
+    data = await adminRest('GET', 'aceites_termos', null,
+      '?order=aceito_em.desc&limit=1000');
+  } catch(e) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="9" class="empty-row" style="color:#e74c3c">Erro: ${esc(e.message)}</td></tr>`;
+    return;
+  }
 
-  if (error || !data) {
-    if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="empty-row" style="color:#e74c3c">Erro ao carregar. Verifique se a tabela existe.</td></tr>';
+  if (!data || !data.length) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="empty-row">Nenhum aceite registrado ainda.</td></tr>';
+    gel('t-total')  && (gel('t-total').textContent  = 0);
+    gel('t-hoje')   && (gel('t-hoje').textContent   = 0);
+    gel('t-semana') && (gel('t-semana').textContent = 0);
+    gel('t-mes')    && (gel('t-mes').textContent    = 0);
     return;
   }
 
