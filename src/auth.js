@@ -347,8 +347,11 @@ function recAtivarStep(n) {
 window.recVoltar = function(passo) { recAtivarStep(passo); };
 
 async function enviarLinkRecuperacao(email) {
+  // IMPORTANTE: redirectTo deve apontar para /index.html (onde está o onAuthStateChange).
+  // A raiz "/" no Vercel vai para cliente.html via /:slug — o token se perderia.
+  const redirectTo = window.location.origin + '/index.html';
   const { error } = await getSupa().auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin,
+    redirectTo,
   });
   if (error && import.meta.env.DEV) console.warn('[resetPassword]', error.message);
   // Sempre avança — não revela se o e-mail existe ou não
@@ -442,21 +445,32 @@ window.recPasso2 = async function() {
 // ─────────────────────────────────────────────────────────────────────────────
 getSupa().auth.onAuthStateChange((event, session) => {
   if (event === 'PASSWORD_RECOVERY') {
-    // Limpa hash da URL
+    // Limpa hash/query da URL para não vazar o token
     history.replaceState(null, '', window.location.pathname);
-    // Aguarda DOM estar pronto e navega para tela de recuperação no passo 3
-    const abrir = () => {
+
+    function abrirRecuperacao() {
+      // Garante que a tela de recuperação existe antes de navegar
+      const telaRec = document.getElementById('rec-passo3') ||
+                      document.querySelector('[data-screen="s-recuperar"]');
+      if (!telaRec) {
+        // DOM ainda não tem a tela — tenta novamente em 100ms
+        setTimeout(abrirRecuperacao, 100);
+        return;
+      }
+
       goTo('s-recuperar');
+
       setTimeout(() => {
-        [1,2,3].forEach(i => {
+        // Mostra só o passo 3 (nova senha)
+        [1, 2, 3].forEach(i => {
           const d = document.getElementById('rec-passo' + i);
           if (d) d.style.display = i === 3 ? 'block' : 'none';
         });
         // Atualiza indicadores visuais dos steps
-        [1,2,3].forEach(i => {
+        [1, 2, 3].forEach(i => {
           const dot = document.getElementById('step-dot-' + i);
           if (dot) {
-            dot.style.background = i < 3 ? 'var(--red)' : 'var(--red)';
+            dot.style.background = 'var(--red)';
             dot.style.opacity    = i < 3 ? '0.6' : '1';
             dot.style.color      = '#fff';
             dot.textContent      = i < 3 ? '✓' : '3';
@@ -465,11 +479,12 @@ getSupa().auth.onAuthStateChange((event, session) => {
           if (line) line.style.background = i < 3 ? 'var(--red)' : '#2a2a2a';
         });
       }, 150);
-    };
+    }
+
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', abrir, { once: true });
+      document.addEventListener('DOMContentLoaded', abrirRecuperacao, { once: true });
     } else {
-      abrir();
+      abrirRecuperacao();
     }
   }
 });
