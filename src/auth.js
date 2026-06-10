@@ -6,7 +6,7 @@ import { goTo, showToast, gerarSlug } from './utils.js';
 // RATE LIMITING LOCAL (proteção contra brute force no frontend)
 // Não substitui o rate limit do Supabase, mas adiciona uma camada extra
 // ─────────────────────────────────────────────────────────────────────────────
-const _tentativas = {};
+const _tentativas = {};           
 
 function registrarTentativa(chave) {
   const agora = Date.now();
