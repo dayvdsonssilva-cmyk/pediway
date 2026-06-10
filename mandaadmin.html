@@ -1527,7 +1527,7 @@ function renderTermos(lista) {
   if (rodape) rodape.textContent = `${lista.length} registro${lista.length!==1?'s':''} encontrado${lista.length!==1?'s':''}`;
 }
 
-function filtrarTermos(q) {
+window.filtrarTermos = function filtrarTermos(q) {
   if (!q) { renderTermos(_termosCache); return; }
   const t = q.toLowerCase();
   renderTermos(_termosCache.filter(r =>
@@ -1538,7 +1538,7 @@ function filtrarTermos(q) {
   ));
 }
 
-function exportarTermosCSV() {
+window.exportarTermosCSV = function exportarTermosCSV() {
   if (!_termosCache.length) { alert('Nenhum dado para exportar.'); return; }
   const cols = ['#','Data/Hora','Nome','Email','CPF_CNPJ','Estabelecimento','Versao_Termos','Versao_Privacidade','User_Agent'];
   const rows = _termosCache.map((r, i) => [
@@ -1562,7 +1562,7 @@ function exportarTermosCSV() {
   URL.revokeObjectURL(url);
 }
 
-function imprimirTermo(idx) {
+window.imprimirTermo = function imprimirTermo(idx) {
   const r = _termosCache[idx];
   if (!r) return;
 
