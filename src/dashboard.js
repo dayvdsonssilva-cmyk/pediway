@@ -279,6 +279,8 @@ function preencherConfig(estab) {
   const set = (id, val) => { const el = $(id); if (el && val != null) el.value = val; };
   set('cfg-nome',      estab.nome);
   set('cfg-slug',      estab.slug);
+  // Atualiza preview do link imediatamente ao carregar
+  if (typeof window.atualizarCfgLink === 'function') window.atualizarCfgLink(estab.slug || '');
   set('cfg-whats',     estab.whatsapp || '');
   set('cfg-desc', estab.descricao || '');
   const descCount = document.getElementById('cfg-desc-count');
@@ -392,14 +394,27 @@ window.atualizarStatusLoja = function(aberto) { atualizarBadgeLoja(aberto); };
 
 // ─── Sanitização do slug em tempo real ───────────────────────────────────────
 function slugify(v) {
+  const mapa = {
+    'á':'a','à':'a','â':'a','ã':'a','ä':'a','å':'a',
+    'é':'e','è':'e','ê':'e','ë':'e',
+    'í':'i','ì':'i','î':'i','ï':'i',
+    'ó':'o','ò':'o','ô':'o','õ':'o','ö':'o',
+    'ú':'u','ù':'u','û':'u','ü':'u',
+    'ç':'c','ñ':'n',
+    'Á':'a','À':'a','Â':'a','Ã':'a','Ä':'a',
+    'É':'e','È':'e','Ê':'e','Ë':'e',
+    'Í':'i','Ì':'i','Î':'i','Ï':'i',
+    'Ó':'o','Ò':'o','Ô':'o','Õ':'o','Ö':'o',
+    'Ú':'u','Ù':'u','Û':'u','Ü':'u',
+    'Ç':'c','Ñ':'n',
+  };
   return v
-    .normalize('NFD')                        // separa letras de acentos (ã → a + ~)
-    .replace(/[̀-ͯ]/g, '')         // remove os acentos
+    .split('').map(c => mapa[c] || c).join('')
     .toLowerCase()
-    .replace(/\s+/g, '-')                    // espaço → hífen
-    .replace(/[^a-z0-9-]/g, '')             // remove tudo que não for letra, número ou hífen
-    .replace(/-{2,}/g, '-')                  // hífens duplos → um só
-    .replace(/^-+|-+$/g, '');               // remove hífens no início/fim
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 window.atualizarCfgLink = function(val) {
