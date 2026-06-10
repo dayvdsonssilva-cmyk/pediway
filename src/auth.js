@@ -326,13 +326,14 @@ function recAtivarStep(n) {
     const dot = document.getElementById('step-dot-' + i);
     if (d) d.style.display = i === n ? 'block' : 'none';
     if (dot) {
-      dot.style.background = i < n ? '#16a34a' : i === n ? 'var(--red)' : '#2a2a2a';
+      dot.style.background = i < n ? 'var(--red)' : i === n ? 'var(--red)' : '#2a2a2a';
       dot.style.color      = i <= n ? '#fff' : '#555';
+      dot.style.opacity    = i < n ? '0.6' : '1';
       dot.textContent      = i < n ? '✓' : String(i);
     }
     if (i < 3) {
       const line = document.getElementById('step-line-' + i);
-      if (line) line.style.background = i < n ? '#16a34a' : '#2a2a2a';
+      if (line) line.style.background = i < n ? 'var(--red)' : '#2a2a2a';
     }
   });
 }
