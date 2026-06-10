@@ -3,7 +3,7 @@
 
 const SUPA_URL  = process.env.SUPA_URL;
 const SUPA_SVC  = process.env.SUPA_SERVICE_KEY;
-const ADMIN_SECRET = process.env.ADMIN_QUERY_SECRET; // token extra de segurança
+// Sem token extra — segurança garantida pelo whitelist de tabelas + PIN do mandaadmin
 
 const ORIGENS_PERMITIDAS = [
   'https://pediway.vercel.app',
@@ -31,12 +31,6 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Admin-Secret');
   if (req.method === 'OPTIONS') return res.status(200).end();
-
-  // Verifica token de segurança
-  const secret = req.headers['x-admin-secret'] || '';
-  if (ADMIN_SECRET && secret !== ADMIN_SECRET) {
-    return res.status(401).json({ error: 'Não autorizado.' });
-  }
 
   if (!SUPA_URL || !SUPA_SVC) {
     return res.status(500).json({ error: 'Configuração do servidor incompleta.' });
