@@ -417,9 +417,18 @@ window.recPasso2 = async function() {
       throw new Error('WhatsApp não corresponde ao cadastro. Verifique e tente novamente.');
     }
 
-    // Telefone encontrado — envia o link de recuperação para o e-mail informado
+    // Telefone correto — envia o link e mostra mensagem de aguardar e-mail
     await enviarLinkRecuperacao(_recEmailVerificado);
-    recAtivarStep(3);
+    // Mostra passo 2 como "aguardando clique no link" — passo 3 só abre via onAuthStateChange
+    const p2 = document.getElementById('rec-passo2');
+    if (p2) p2.innerHTML = `
+      <div style="text-align:center;padding:8px 0 16px">
+        <div style="font-size:2.2rem;margin-bottom:10px">📧</div>
+        <p style="color:#fff;font-weight:700;font-size:.9rem;margin-bottom:8px">Link enviado!</p>
+        <p style="color:#888;font-size:.78rem;line-height:1.6">Verifique seu e-mail <strong style="color:#C0392B">${_recEmailVerificado}</strong> e clique no link recebido para criar sua nova senha.</p>
+        <p style="color:#555;font-size:.7rem;margin-top:8px">Não recebeu? <a onclick="recPasso1Reenviar()" style="color:#C0392B;cursor:pointer;text-decoration:underline">Reenviar</a></p>
+      </div>
+    `;
 
   } catch (e) {
     showToast(e.message, 'error');
