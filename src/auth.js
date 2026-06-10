@@ -424,8 +424,6 @@ window.recPasso2 = async function() {
     if (btn) { btn.disabled = false; btn.textContent = 'Confirmar identidade →'; }
   }
 };
-  }
-};
 
 window.salvarNovaSenha = async function() {
   const nova = document.getElementById('rec-nova')?.value;
