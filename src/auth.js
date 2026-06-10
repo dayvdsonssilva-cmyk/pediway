@@ -26,7 +26,7 @@ function bloqueado(chave, max = 5) {
 // VALIDAÇÕES
 // ─────────────────────────────────────────────────────────────────────────────
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const LIMITES = { nome: 120, cidade: 80, email: 200, telefone: 15 };
+const LIMITES = { nome: 120, cidade: 80, email: 200, telefone: 15 };     
 
 function validarEmail(e) {
   return EMAIL_REGEX.test(String(e).trim().toLowerCase());
