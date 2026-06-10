@@ -390,6 +390,40 @@ function atualizarBadgeLoja(aberto) {
 
 window.atualizarStatusLoja = function(aberto) { atualizarBadgeLoja(aberto); };
 
+// ─── Sanitização do slug em tempo real ───────────────────────────────────────
+function slugify(v) {
+  return v
+    .normalize('NFD')                        // separa letras de acentos (ã → a + ~)
+    .replace(/[̀-ͯ]/g, '')         // remove os acentos
+    .toLowerCase()
+    .replace(/\s+/g, '-')                    // espaço → hífen
+    .replace(/[^a-z0-9-]/g, '')             // remove tudo que não for letra, número ou hífen
+    .replace(/-{2,}/g, '-')                  // hífens duplos → um só
+    .replace(/^-+|-+$/g, '');               // remove hífens no início/fim
+}
+
+window.atualizarCfgLink = function(val) {
+  const input   = document.getElementById('cfg-slug');
+  const preview = document.getElementById('cfg-link-preview');
+  const garcom  = document.getElementById('cfg-link-garcom');
+
+  // Guarda posição do cursor
+  const pos = input?.selectionStart;
+
+  const limpo = slugify(val);
+
+  // Atualiza o input com valor sanitizado sem perder o cursor
+  if (input && input.value !== limpo) {
+    input.value = limpo;
+    try { input.setSelectionRange(pos, pos); } catch(e) {}
+  }
+
+  // Atualiza previews
+  const base = 'pediway.com.br/';
+  if (preview) preview.textContent = base + (limpo || 'meu-estabelecimento');
+  if (garcom)  garcom.textContent  = base + 'comandas/' + (limpo || 'meu-estabelecimento');
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // LOGO
 // ─────────────────────────────────────────────────────────────────────────────
@@ -618,7 +652,7 @@ export async function salvarConfig() {
   const estab = getEstab(); if (!estab) return;
 
   const nome     = $('cfg-nome')?.value.trim();
-  const slug     = $('cfg-slug')?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'-');
+  const slug     = slugify($('cfg-slug')?.value || '');
   const whats    = ($('cfg-whats')?.value || '').replace(/\D/g,''); // salva só dígitos → evita bug na recuperação de senha
   const desc     = $('cfg-desc')?.value.trim();
   const estado   = $('cfg-estado')?.value || null;
