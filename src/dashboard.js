@@ -3627,37 +3627,51 @@ function renderCardapioComanda(mesaKey, prods) {
     cats[cat].push(p);
   });
 
-  el.innerHTML = Object.entries(cats).map(([cat, items]) => {
-    const itemsHtml = items.map(p => {
+  el.innerHTML = Object.entries(cats).map(([cat, items], idx) => {
+    const catId = 'cmdcat-' + idx;
+    const cardsHtml = items.map(p => {
       const nomeEnc  = p.nome.replace(/"/g, '&quot;');
       const precoFmt = Number(p.preco).toFixed(2).replace('.',',');
-      return `<div class="cmd-item" onclick="tcmdItem(this)"
+      const imgHtml  = p.imagem
+        ? `<img class="cmd-card-img" src="${p.imagem}" alt="${nomeEnc}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+          + `<div class="cmd-card-emoji" style="display:none">${p.emoji||'🍽️'}</div>`
+        : `<div class="cmd-card-emoji">${p.emoji||'🍽️'}</div>`;
+      return `<div class="cmd-card" onclick="tcmdItem(this)"
         data-pid="${p.id}"
         data-nome="${nomeEnc}"
         data-preco="${p.preco}"
         data-emoji="${p.emoji||'🍽️'}"
         data-setor="${p.setor||''}"
         data-mesa="${mesaKey}">
-        <span class="cmd-item-emoji">${p.emoji||'🍽️'}</span>
-        <span class="cmd-item-nome">${p.nome}</span>
-        <span class="cmd-item-preco">R$ ${precoFmt}</span>
+        ${imgHtml}
+        <span class="cmd-card-nome">${p.nome}</span>
+        <span class="cmd-card-preco">R$ ${precoFmt}</span>
       </div>`;
     }).join('');
-    return '<div style="margin-bottom:12px">'
-      + '<div style="font-size:.6rem;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.08em;padding:8px 0 4px;border-bottom:1px solid #f0ebe4;margin-bottom:4px">' + cat + '</div>'
-      + itemsHtml
-      + '</div>';
+
+    return `<div style="margin-bottom:6px">
+      <div class="cmd-cat-header" onclick="toggleComandaCat('${catId}')">
+        <span class="cmd-cat-title">${cat} <span style="color:#bbb;font-weight:600">(${items.length})</span></span>
+        <span class="cmd-cat-arrow" id="arrow-${catId}">▶</span>
+      </div>
+      <div class="cmd-cat-body" id="${catId}">
+        <div class="cmd-grid">${cardsHtml}</div>
+      </div>
+    </div>`;
   }).join('');
 }
 
 window.toggleComandaCat = function(catId) {
   if (!catId) return;
-  var el = document.getElementById(catId);
+  var el    = document.getElementById(catId);
   var arrow = document.getElementById('arrow-' + catId);
   if (!el) return;
-  var aberto = el.style.display !== 'none';
-  el.style.display = aberto ? 'none' : 'block';
-  if (arrow) arrow.textContent = aberto ? '▶' : '▼';
+  var aberto = el.classList.contains('open');
+  el.classList.toggle('open', !aberto);
+  if (arrow) {
+    arrow.textContent = aberto ? '▶' : '▶';
+    arrow.classList.toggle('open', !aberto);
+  }
 };
 
 
