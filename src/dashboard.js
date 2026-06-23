@@ -3453,7 +3453,7 @@ async function carregarCardapioComanda() {
   if (_cardapioCache) return _cardapioCache;
   const estab = getEstab(); if (!estab) return [];
   const { data } = await getSupa()
-    .from('produtos').select('id,nome,preco,emoji,categoria,disponivel,grupo_adicional_id')
+    .from('produtos').select('id,nome,preco,emoji,categoria,disponivel,grupo_adicional_id,foto_url,setor')
     .eq('estabelecimento_id', estab.id)
     .eq('disponivel', true)
     .order('categoria');
@@ -3597,7 +3597,8 @@ async function abrirComanda(num) {
   const numEl = document.getElementById('comanda-num-mesa');
   if (numEl) numEl.textContent = num;
 
-  // Carrega cardápio
+  // Carrega cardápio (invalida cache para garantir foto_url atualizado)
+  _cardapioCache = null;
   const prods = await carregarCardapioComanda();
   renderCardapioComanda(key, prods);
   renderPedidosComanda(key);
@@ -3628,12 +3629,13 @@ function renderCardapioComanda(mesaKey, prods) {
   });
 
   el.innerHTML = Object.entries(cats).map(([cat, items], idx) => {
-    const catId = 'cmdcat-' + idx;
+    const catId   = 'cmdcat-' + idx;
+    const isFirst = idx === 0;   // primeira categoria abre por padrão
     const cardsHtml = items.map(p => {
       const nomeEnc  = p.nome.replace(/"/g, '&quot;');
       const precoFmt = Number(p.preco).toFixed(2).replace('.',',');
-      const imgHtml  = p.imagem
-        ? `<img class="cmd-card-img" src="${p.imagem}" alt="${nomeEnc}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+      const imgHtml  = p.foto_url
+        ? `<img class="cmd-card-img" src="${p.foto_url}" alt="${nomeEnc}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
           + `<div class="cmd-card-emoji" style="display:none">${p.emoji||'🍽️'}</div>`
         : `<div class="cmd-card-emoji">${p.emoji||'🍽️'}</div>`;
       return `<div class="cmd-card" onclick="tcmdItem(this)"
@@ -3649,12 +3651,12 @@ function renderCardapioComanda(mesaKey, prods) {
       </div>`;
     }).join('');
 
-    return `<div style="margin-bottom:6px">
+    return `<div class="cmd-cat-wrap">
       <div class="cmd-cat-header" onclick="toggleComandaCat('${catId}')">
-        <span class="cmd-cat-title">${cat} <span style="color:#bbb;font-weight:600">(${items.length})</span></span>
-        <span class="cmd-cat-arrow" id="arrow-${catId}">▶</span>
+        <span class="cmd-cat-title">${cat}<span class="cmd-cat-count">(${items.length})</span></span>
+        <span class="cmd-cat-arrow${isFirst?' open':''}" id="arrow-${catId}">▶</span>
       </div>
-      <div class="cmd-cat-body" id="${catId}">
+      <div class="cmd-cat-body${isFirst?' open':''}" id="${catId}">
         <div class="cmd-grid">${cardsHtml}</div>
       </div>
     </div>`;
