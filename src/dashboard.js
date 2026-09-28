@@ -900,11 +900,7 @@ export function previewFoto(e) { previewFotos(e); }
 
 // ── CROP DE FOTO DO PRODUTO ────────────────────────────────────────────────
 let _cropFotoFile  = null;
-let _cropFotoUrl   = null;
-let _cropFotoPosX  = 50;
-let _cropFotoPosY  = 50;
-let _cropFotoDragAtivo = false;
-let _cropFotoDragX = 0, _cropFotoDragY = 0;
+let _fotoQueue     = [];   // fila de fotos aguardando ajuste (upload múltiplo)
 
 window.abrirCropFoto = function(file) {
   _cropFotoFile = file;
@@ -920,7 +916,6 @@ window.abrirCropFoto = function(file) {
     setTimeout(() => { crpApplyMinScale(); crpDraw(); }, 50);
   };
   img.src = url;
-  _cropFotoUrl = url;
 };
 
 window.confirmarCropFoto = function() {
@@ -982,32 +977,20 @@ window.adicionarFotos = function(event) {
   const files = Array.from(event.target.files || []);
   if (!files.length) return;
   event.target.value = '';
-  // Processa um arquivo de cada vez via fila
-  let idx = 0;
-  const next = () => {
-    if (!(idx < files.length)) return;
-    _cropFotoFile = files[idx++];
-    window.abrirCropFoto(_cropFotoFile);
-    // Após confirmar, se houver mais arquivos, o próximo será aberto
-    // via _fotoQueue que guardamos aqui
-    _fotoQueue = files.slice(idx);
-  };
+  // Abre o ajuste da 1ª foto; as demais ficam na fila e abrem após confirmar cada uma
   _fotoQueue = files.slice(1);
-  window.abrirCropFoto(files[0]);
   _cropFotoFile = files[0];
+  window.abrirCropFoto(files[0]);
 };
-
-let _fotoQueue = [];
 
 window.fecharCropFoto = function() {
   const m = $('modal-crop-foto'); if (m) m.classList.remove('open');
   document.body.style.overflow = '';
   _cropFotoFile = null;
+  _fotoQueue = [];        // cancelar interrompe as fotos restantes da fila
+  window._cropFotoEditIdx = null;
   crpCleanup();
 };
-
-// Drag no modal de crop
-
 
 function renderFotosGrid() {
   const grid = $('fotos-grid'); if (!grid) return;
@@ -1056,37 +1039,6 @@ function renderFotosGrid() {
   fotosFiles.forEach((_, i) => iniciarDragFoto(null, i, true));
 }
 
-window.adicionarFotos = function(event) {
-  const files = Array.from(event.target.files || []);
-  if (!files.length) return;
-  event.target.value = '';
-  // Processa um arquivo de cada vez via fila
-  let idx = 0;
-  const next = () => {
-    if (!(idx < files.length)) return;
-    _cropFotoFile = files[idx++];
-    window.abrirCropFoto(_cropFotoFile);
-    // Após confirmar, se houver mais arquivos, o próximo será aberto
-    // via _fotoQueue que guardamos aqui
-    _fotoQueue = files.slice(idx);
-  };
-  _fotoQueue = files.slice(1);
-  window.abrirCropFoto(files[0]);
-  _cropFotoFile = files[0];
-};
-
-window.fecharCropFoto = function() {
-  const m = $('modal-crop-foto'); if (m) m.classList.remove('open');
-  document.body.style.overflow = '';
-  _cropFotoFile = null;
-  crpCleanup();
-};
-
-// Drag no modal de crop
-
-
-
-
 let _fotoDrag = { ativo:false, idx:-1, startX:0, startY:0 };
 
 function iniciarDragFoto(event, i, apenasSetup) {
@@ -1113,7 +1065,6 @@ document.addEventListener('mousemove', _moveDragFoto, { passive: true });
 document.addEventListener('touchmove', _moveDragFoto, { passive: true });
 document.addEventListener('mouseup',   () => { _fotoDrag.ativo = false; });
 document.addEventListener('touchend',  () => { _fotoDrag.ativo = false; });
-document.addEventListener('touchend',  () => _fotoDrag.ativo = false);
 
 function _moveDragFoto(e) {
   if (!_fotoDrag.ativo) return;
