@@ -2244,8 +2244,10 @@ window.finalizarPedido = async function(lid) {
 
   const endereco = op==='entrega' ? [rua, num?'Nº '+num:'', compl].filter(Boolean).join(', ').slice(0,300) : 'Retirada no local';
 
-  // ── Total sempre recalculado — nunca aceita preço do carrinho sem validar ─
-  const itens = c.itens.map(i=>({
+  // ── Itens só p/ exibição otimista — o TOTAL de verdade é recalculado no
+  // servidor (api/criar-pedido.js), a partir do preço real de cada produto
+  // no banco. Nunca confiamos no preço que vem do carrinho do navegador.
+  const itensOtimista = c.itens.map(i=>({
     id:    i.id,
     nome:  String(i.nome||'').slice(0,120),
     preco: Number(i.preco)||0,
@@ -2256,31 +2258,35 @@ window.finalizarPedido = async function(lid) {
       preco: Number(a.preco)||0,
     })),
   }));
-  const sub = itens.reduce((s,i)=>s+i.preco*i.qtd+(i.adicionais||[]).reduce((sa,a)=>sa+a.preco*i.qtd,0),0);
-  const taxa = op==='retirada' ? 0 : parseFloat(l.taxa_entrega||0);
-  const total = Math.round((sub+taxa)*100)/100;
 
   const btn=document.querySelector(`[onclick="finalizarPedido('${lid}')"]`);
   if(btn){btn.disabled=true;btn.textContent='Enviando...';}
 
   try {
-    // INSERT retornando o ID direto
-    const {data:insertData, error} = await db.from('pedidos').insert({
-      estabelecimento_id: lid,
-      cliente_nome: nome,
-      cliente_whats: whats,
-      observacao: obs,
-      itens, total,
-      status: 'novo',
-      endereco,
-      pagamento: d.pag==='cartao'
-        ? `cartao-${d.tipoCartao||'credito'}-${d.bandeira||'visa'}`
-        : (d.pag||'pix'),
-      taxa_entrega: taxa,
-    }).select('id').single();
-    if(error) throw new Error('Erro ao registrar pedido. Tente novamente.');
+    const resp = await fetch('/api/criar-pedido', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        estabelecimento_id: lid,
+        itens: itensOtimista,
+        cliente_nome: nome,
+        cliente_whats: whats,
+        observacao: obs,
+        endereco,
+        opcao_entrega: op,
+        pagamento: d.pag==='cartao'
+          ? `cartao-${d.tipoCartao||'credito'}-${d.bandeira||'visa'}`
+          : (d.pag||'pix'),
+      }),
+    });
+    const resultado = await resp.json().catch(()=>({}));
+    if(!resp.ok) throw new Error(resultado?.error || 'Erro ao registrar pedido. Tente novamente.');
 
-    const pedId = insertData?.id || ('local_'+Date.now());
+    // Usa o total e os itens confirmados pelo servidor (fonte da verdade),
+    // não os do carrinho local.
+    const itens = resultado.itens || itensOtimista;
+    const total = resultado.total;
+    const pedId = resultado?.id || ('local_'+Date.now());
 
 
 
