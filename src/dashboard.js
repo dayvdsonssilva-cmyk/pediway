@@ -388,9 +388,39 @@ function atualizarBadgeLoja(aberto) {
   const b = $('loja-status-badge'); if (!b) return;
   b.className = 'loja-status-badge ' + (aberto ? 'loja-aberta' : 'loja-fechada');
   b.textContent = aberto ? 'Aberta' : 'Fechada';
+  const btnRapido = $('btn-toggle-loja-rapido');
+  if (btnRapido) btnRapido.textContent = aberto ? 'Fechar loja' : 'Abrir loja';
 }
 
 window.atualizarStatusLoja = function(aberto) { atualizarBadgeLoja(aberto); };
+
+// Botão rápido da Visão Geral — muda e já salva no banco na hora,
+// sem precisar abrir Configurações e clicar em Salvar.
+window.toggleLojaAbertaRapido = async function() {
+  const estab = window._estab; if (!estab) return;
+  const novoValor = !(estab.aberto !== false);
+  const btn = $('btn-toggle-loja-rapido');
+  if (btn) btn.disabled = true;
+
+  try {
+    const { error } = await getSupa().from('estabelecimentos')
+      .update({ aberto: novoValor }).eq('id', estab.id);
+    if (error) throw new Error(error.message);
+
+    window._estab = { ...estab, aberto: novoValor };
+    localStorage.setItem('pw_estab', JSON.stringify(window._estab));
+
+    atualizarBadgeLoja(novoValor);
+    const cbAberto = $('cfg-aberto');           // mantém a Config sincronizada
+    if (cbAberto) cbAberto.checked = novoValor;
+
+    showToast(novoValor ? 'Loja aberta! ✅' : 'Loja fechada 🔒');
+  } catch (e) {
+    showToast('Erro ao atualizar: ' + e.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+};
 
 // ─── Sanitização do slug em tempo real ───────────────────────────────────────
 function slugify(v) {
