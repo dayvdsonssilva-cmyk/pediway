@@ -2552,10 +2552,10 @@ canvas, [data-touch="free"] { touch-action: none !important; }
           <div class="stat-label">STATUS DA LOJA</div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px">
             <div id="loja-status-badge" class="loja-status-badge loja-aberta">Aberta</div>
-            <button id="btn-toggle-loja-rapido" onclick="toggleLojaAbertaRapido()"
-              style="background:none;border:1px solid var(--border);border-radius:50px;padding:3px 10px;font-family:'Poppins',sans-serif;font-size:.68rem;font-weight:700;color:#555;cursor:pointer">
-              Fechar loja
-            </button>
+            <label class="toggle-switch">
+              <input type="checkbox" id="chk-toggle-loja-rapido" checked onchange="toggleLojaAbertaRapido(this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
           </div>
         </div>
       </div>
