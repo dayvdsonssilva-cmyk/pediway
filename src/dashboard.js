@@ -247,6 +247,8 @@ export async function initDashboard() {
   atualizarBadgeLoja(estab.aberto !== false);
   const cbAberto = $('cfg-aberto');
   if (cbAberto) cbAberto.checked = estab.aberto !== false;
+  const chkRapido = $('chk-toggle-loja-rapido');
+  if (chkRapido) chkRapido.checked = estab.aberto !== false;
   // Taxa entrega
   const tw = document.getElementById('taxa-entrega-wrap');
   if (tw) tw.style.display = estab.faz_entrega !== false ? 'block' : 'none';
@@ -388,19 +390,18 @@ function atualizarBadgeLoja(aberto) {
   const b = $('loja-status-badge'); if (!b) return;
   b.className = 'loja-status-badge ' + (aberto ? 'loja-aberta' : 'loja-fechada');
   b.textContent = aberto ? 'Aberta' : 'Fechada';
-  const btnRapido = $('btn-toggle-loja-rapido');
-  if (btnRapido) btnRapido.textContent = aberto ? 'Fechar loja' : 'Abrir loja';
+  const chkRapido = $('chk-toggle-loja-rapido');
+  if (chkRapido) chkRapido.checked = aberto;
 }
 
 window.atualizarStatusLoja = function(aberto) { atualizarBadgeLoja(aberto); };
 
-// Botão rápido da Visão Geral — muda e já salva no banco na hora,
+// Interruptor rápido da Visão Geral — muda e já salva no banco na hora,
 // sem precisar abrir Configurações e clicar em Salvar.
-window.toggleLojaAbertaRapido = async function() {
+window.toggleLojaAbertaRapido = async function(novoValor) {
   const estab = window._estab; if (!estab) return;
-  const novoValor = !(estab.aberto !== false);
-  const btn = $('btn-toggle-loja-rapido');
-  if (btn) btn.disabled = true;
+  const chk = $('chk-toggle-loja-rapido');
+  if (chk) chk.disabled = true;
 
   try {
     const { error } = await getSupa().from('estabelecimentos')
@@ -416,9 +417,10 @@ window.toggleLojaAbertaRapido = async function() {
 
     showToast(novoValor ? 'Loja aberta! ✅' : 'Loja fechada 🔒');
   } catch (e) {
+    if (chk) chk.checked = !novoValor;           // desfaz visualmente se der erro
     showToast('Erro ao atualizar: ' + e.message, 'error');
   } finally {
-    if (btn) btn.disabled = false;
+    if (chk) chk.disabled = false;
   }
 };
 
