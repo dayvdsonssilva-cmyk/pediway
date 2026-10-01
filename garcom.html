@@ -30,6 +30,7 @@
     @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(22,163,74,.1)}50%{box-shadow:0 0 0 8px rgba(22,163,74,0)}}
     .mesa-dot{width:8px;height:8px;border-radius:50%;position:absolute;top:9px;right:9px}
     .mesa-dot.livre{background:#d1d5db}.mesa-dot.ocup{background:#16a34a;animation:blink 1.2s ease-in-out infinite}
+    .mesa-card.gc-destaque{border-color:#2563eb!important;box-shadow:0 0 0 3px rgba(37,99,235,.25);animation:none}
     @keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
     .mesa-num{font-size:1.8rem;font-weight:800;line-height:1}
     .mesa-lbl{font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#bbb}
@@ -188,8 +189,22 @@
     <div class="stat-box"><div class="stat-label">Pedidos</div><div class="stat-num" id="gc-peds">0</div></div>
     <div class="stat-box"><div class="stat-label">Total</div><div class="stat-num green" id="gc-total">R$0</div></div>
   </div>
-  <div class="section-title">Mesas</div>
+  <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+    <span>Mesas</span>
+    <input type="text" inputmode="numeric" id="gc-busca-mesa" placeholder="Buscar nº..."
+      oninput="gcBuscarMesa(this.value)"
+      style="border:1.5px solid var(--border);border-radius:8px;padding:5px 10px;font-family:'Poppins',sans-serif;font-size:.78rem;width:110px;outline:none">
+  </div>
   <div class="mesas-grid" id="gc-grid"></div>
+
+  <div id="gc-livres-wrap" style="display:none;margin-top:4px">
+    <button id="gc-livres-toggle" onclick="gcToggleLivres()"
+      style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:#faf8f5;border:1.5px dashed var(--border);border-radius:10px;padding:10px;font-family:'Poppins',sans-serif;font-size:.78rem;font-weight:700;color:#888;cursor:pointer">
+      <span id="gc-livres-label">Ver mesas livres</span>
+      <span id="gc-livres-arrow">▾</span>
+    </button>
+    <div class="mesas-grid" id="gc-grid-livres" style="display:none;margin-top:10px"></div>
+  </div>
 </div>
 <div id="gc-modal">
   <div id="gc-sheet">
@@ -477,6 +492,21 @@ function numMesas(){
   return parseInt(estab?.num_mesas||localStorage.getItem('pw_num_mesas_'+(estab?.id||''))||'10',10);
 }
 
+const GC_LIMITE_SEMPRE_EXPANDIDO=30;
+let _gcLivresExpandido=false;
+
+function gcCardMesa(num){
+  const key='Mesa '+num,peds=pedMesas[key]||[],fech=fechadas.has(key);
+  const ativos=peds.filter(p=>['novo','preparo'].includes(p.status));
+  const t=ativos.reduce((s,p)=>s+Number(p.total||0),0);
+  const q=ativos.reduce((s,p)=>s+(Array.isArray(p.itens)?p.itens.reduce((a,i)=>a+(i.qtd||1),0):0),0);
+  const ativ2=ativos.length>0;
+  let cls='',dot='livre',info='<span class="mesa-lbl">Livre</span>';
+  if(fech){cls='fechando';info='<span class="mesa-lbl" style="color:var(--red)">✗ Fechada</span>';}
+  else if(ativ2){cls='ocupada';dot='ocup';info='<span class="mesa-total">'+fmtR(t)+'</span><span class="mesa-qtd">'+peds.length+' ped &#183; '+q+' itens</span>';}
+  return '<div class="mesa-card '+cls+'" data-mesa-num="'+num+'" onclick="gcAbrir('+num+')"><div class="mesa-dot '+dot+'"></div><div class="mesa-num">'+num+'</div><div style="display:flex;flex-direction:column;align-items:center;gap:3px">'+info+'</div></div>';
+}
+
 function renderMesas(){
   const n=numMesas();const grid=$('gc-grid');if(!grid)return;
   const allP=Object.values(pedMesas).flat();
@@ -484,18 +514,46 @@ function renderMesas(){
   const mOcup=Object.keys(pedMesas).filter(k=>pedMesas[k].some(p=>['novo','preparo','pronto'].includes(p.status))).length;
   const tot=allAtivos.reduce((s,p)=>s+Number(p.total||0),0);
   $('gc-ocup').textContent=mOcup;$('gc-peds').textContent=allP.length;$('gc-total').textContent='R$'+tot.toFixed(0);
-  grid.innerHTML=Array.from({length:n},(_,i)=>{
-    const num=i+1,key='Mesa '+num,peds=pedMesas[key]||[],ativ=peds.filter(function(p){return['novo','preparo','pronto'].includes(p.status);}).length>0,fech=fechadas.has(key);
-    const ativos=peds.filter(p=>['novo','preparo'].includes(p.status));
-    const t=ativos.reduce((s,p)=>s+Number(p.total||0),0);
-    const q=ativos.reduce((s,p)=>s+(Array.isArray(p.itens)?p.itens.reduce((a,i)=>a+(i.qtd||1),0):0),0);
-    const ativ2=ativos.length>0;
-    let cls='',dot='livre',info='<span class="mesa-lbl">Livre</span>';
-    if(fech){cls='fechando';info='<span class="mesa-lbl" style="color:var(--red)">✗ Fechada</span>';}
-    else if(ativ2){cls='ocupada';dot='ocup';info='<span class="mesa-total">'+fmtR(t)+'</span><span class="mesa-qtd">'+peds.length+' ped &#183; '+q+' itens</span>';}
-    return '<div class="mesa-card '+cls+'" onclick="gcAbrir('+num+')"><div class="mesa-dot '+dot+'"></div><div class="mesa-num">'+num+'</div><div style="display:flex;flex-direction:column;align-items:center;gap:3px">'+info+'</div></div>';
-  }).join('');
+
+  // Com muitas mesas, mostra só as ocupadas/recém-fechadas; livres recolhem
+  // — mesma solução usada no painel do dono, pra não poluir a tela do garçom.
+  const todas=Array.from({length:n},(_,i)=>i+1);
+  const wrapLivres=$('gc-livres-wrap'),gridLivres=$('gc-grid-livres');
+
+  if(n<=GC_LIMITE_SEMPRE_EXPANDIDO){
+    grid.innerHTML=todas.map(gcCardMesa).join('');
+    if(wrapLivres)wrapLivres.style.display='none';
+  } else {
+    const temPedido=num=>{const key='Mesa '+num;return (pedMesas[key]||[]).length>0||fechadas.has(key);};
+    const ativasNs=todas.filter(temPedido);
+    const livresNs=todas.filter(num=>!temPedido(num));
+    grid.innerHTML=ativasNs.map(gcCardMesa).join('')
+      ||'<div style="grid-column:1/-1;color:#aaa;font-size:.8rem;text-align:center;padding:18px">Nenhuma mesa ocupada no momento</div>';
+    const label=$('gc-livres-label');
+    if(wrapLivres&&gridLivres&&label){
+      wrapLivres.style.display=livresNs.length?'block':'none';
+      label.textContent=(_gcLivresExpandido?'Ocultar':'Ver')+' mesas livres ('+livresNs.length+')';
+      gridLivres.style.display=_gcLivresExpandido?'grid':'none';
+      const arrow=$('gc-livres-arrow');if(arrow)arrow.textContent=_gcLivresExpandido?'▴':'▾';
+      if(_gcLivresExpandido)gridLivres.innerHTML=livresNs.map(gcCardMesa).join('');
+    }
+  }
 }
+
+window.gcToggleLivres=function(){ _gcLivresExpandido=!_gcLivresExpandido; renderMesas(); };
+
+window.gcBuscarMesa=function(valor){
+  const num=parseInt(String(valor||'').replace(/\D/g,''),10);
+  document.querySelectorAll('.mesa-card.gc-destaque').forEach(el=>el.classList.remove('gc-destaque'));
+  if(!num)return;
+  let card=document.querySelector('#gc-grid [data-mesa-num="'+num+'"]');
+  if(!card){
+    const gridLivres=$('gc-grid-livres');
+    if(gridLivres&&!_gcLivresExpandido){ _gcLivresExpandido=true; renderMesas(); }
+    card=document.querySelector('#gc-grid-livres [data-mesa-num="'+num+'"]');
+  }
+  if(card){ card.classList.add('gc-destaque'); card.scrollIntoView({behavior:'smooth',block:'center'}); }
+};
 
 window.gcAbrir=async function(num){
   mesaAtual='Mesa '+num;if(!carrinhos[mesaAtual])carrinhos[mesaAtual]=[];
