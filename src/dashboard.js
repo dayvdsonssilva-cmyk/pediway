@@ -3405,8 +3405,11 @@ function renderMesas() {
     }).join('');
   }
 
-  grid.innerHTML = Array.from({ length: n }, (_, i) => {
-    const num    = i + 1;
+  // Separa mesas ativas (com pedido/recém-fechada) das livres — com muitas
+  // mesas (ex: 200), mostrar tudo junto deixa a tela poluída e enterra o
+  // histórico lá embaixo. As livres só aparecem expandidas se o dono quiser.
+  const LIMITE_SEMPRE_EXPANDIDO = 30;
+  const htmlCard = (num) => {
     const key    = 'Mesa ' + num;
     const peds   = _pedidosMesas[key] || [];
     const ativa  = peds.length > 0;
@@ -3423,13 +3426,69 @@ function renderMesas() {
       info = '<span class="mesa-total">' + fmt(total) + '</span><span class="mesa-qtd">' + peds.length + ' ped · ' + qtdIt + ' itens</span>';
     }
 
-    return '<div class="mesa-card ' + cls + '" onclick="abrirComanda(' + num + ')">' +
+    return '<div class="mesa-card ' + cls + '" data-mesa-num="' + num + '" onclick="abrirComanda(' + num + ')">' +
       '<div class="mesa-status-dot ' + dot + '"></div>' +
       '<div class="mesa-num">' + num + '</div>' +
       '<div style="display:flex;flex-direction:column;align-items:center;gap:3px">' + info + '</div>' +
       '</div>';
-  }).join('');
+  };
+
+  const todas    = Array.from({ length: n }, (_, i) => i + 1);
+  const wrapLivres = document.getElementById('mesas-livres-wrap');
+  const gridLivres = document.getElementById('mesas-grid-livres');
+
+  if (n <= LIMITE_SEMPRE_EXPANDIDO) {
+    // Poucas mesas: comportamento clássico, tudo numa grade só, sem recolher
+    grid.innerHTML = todas.map(htmlCard).join('');
+    if (wrapLivres) wrapLivres.style.display = 'none';
+  } else {
+    const ativasNs = todas.filter(num => {
+      const key = 'Mesa ' + num;
+      return (_pedidosMesas[key] || []).length > 0 || _mesasFechadas.has(key);
+    });
+    const livresNs = todas.filter(num => !ativasNs.includes(num));
+
+    grid.innerHTML = ativasNs.map(htmlCard).join('')
+      || '<div style="grid-column:1/-1;color:#aaa;font-size:.8rem;text-align:center;padding:18px">Nenhuma mesa ocupada no momento</div>';
+
+    const label = document.getElementById('mesas-livres-label');
+    if (wrapLivres && gridLivres && label) {
+      wrapLivres.style.display = livresNs.length ? 'block' : 'none';
+      label.textContent = (_mesasLivresExpandido ? 'Ocultar' : 'Ver') + ' mesas livres (' + livresNs.length + ')';
+      gridLivres.style.display = _mesasLivresExpandido ? 'grid' : 'none';
+      const arrow = document.getElementById('mesas-livres-arrow');
+      if (arrow) arrow.textContent = _mesasLivresExpandido ? '▴' : '▾';
+      if (_mesasLivresExpandido) gridLivres.innerHTML = livresNs.map(htmlCard).join('');
+    }
+  }
 }
+
+let _mesasLivresExpandido = false;
+window.toggleMesasLivres = function() {
+  _mesasLivresExpandido = !_mesasLivresExpandido;
+  renderMesas();
+};
+
+// Busca rápida por número de mesa — expande as livres se precisar e destaca o card
+window.buscarMesa = function(valor) {
+  const num = parseInt(String(valor || '').replace(/\D/g, ''), 10);
+  document.querySelectorAll('.mesa-card.mesa-card-destaque').forEach(el => el.classList.remove('mesa-card-destaque'));
+  if (!num) return;
+
+  let card = document.querySelector('#mesas-grid [data-mesa-num="' + num + '"]');
+  if (!card) {
+    const gridLivres = document.getElementById('mesas-grid-livres');
+    if (gridLivres && !_mesasLivresExpandido) {
+      _mesasLivresExpandido = true;
+      renderMesas();
+    }
+    card = document.querySelector('#mesas-grid-livres [data-mesa-num="' + num + '"]');
+  }
+  if (card) {
+    card.classList.add('mesa-card-destaque');
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+};
 
 // ── Carrega cardápio para seleção no modo garçom ──────────────────────────────
 async function carregarCardapioComanda() {
