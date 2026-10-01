@@ -51,12 +51,23 @@
     .mtab.on{color:var(--red);border-bottom-color:var(--red);font-weight:700}
     .panel{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0}
     #gc-cardapio{overflow-y:auto;flex:1;padding:8px 12px;-webkit-overflow-scrolling:touch}
-    .cat-lbl{font-size:.6rem;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.08em;padding:8px 0 4px;display:block}
-    .prod-item{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:10px;cursor:pointer;transition:background .15s;margin-bottom:2px;user-select:none}
-    .prod-item:active{background:#f0e9e0;transform:scale(.98)}
-    .prod-emoji{font-size:1.4rem;width:34px;text-align:center;flex-shrink:0}
-    .prod-nome{font-size:.86rem;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .prod-preco{font-size:.85rem;font-weight:800;color:var(--red);flex-shrink:0}
+    /* Cardápio em grid com foto — mesmo padrão visual da Comanda no dashboard */
+    #gc-cardapio .cmd-cat-wrap { border-bottom:1px solid #f0ebe4; }
+    #gc-cardapio .cmd-cat-header { display:flex;align-items:center;justify-content:space-between;padding:10px 4px;cursor:pointer;background:var(--bg,#fff);transition:background .15s;user-select:none;position:sticky;top:0;z-index:1; }
+    #gc-cardapio .cmd-cat-header:active { background:#f5f0eb; }
+    #gc-cardapio .cmd-cat-title { font-size:.65rem;font-weight:800;color:#777;text-transform:uppercase;letter-spacing:.08em; }
+    #gc-cardapio .cmd-cat-count { font-size:.6rem;font-weight:600;color:#bbb;margin-left:4px; }
+    #gc-cardapio .cmd-cat-arrow { font-size:.65rem;color:#ccc;transition:transform .22s ease;display:inline-block; }
+    #gc-cardapio .cmd-cat-arrow.open { transform:rotate(90deg); }
+    #gc-cardapio .cmd-cat-body { display:none;padding:8px 2px 14px; }
+    #gc-cardapio .cmd-cat-body.open { display:block; }
+    #gc-cardapio .cmd-grid { display:grid;grid-template-columns:repeat(3, 1fr);gap:8px; }
+    #gc-cardapio .cmd-card { display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 6px;border-radius:12px;cursor:pointer;border:1.5px solid #eee;background:#fff;transition:all .15s;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.04);user-select:none; }
+    #gc-cardapio .cmd-card:active { transform:scale(.95);background:#faeae7; }
+    #gc-cardapio .cmd-card-img { width:56px;height:56px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#f5f0eb; }
+    #gc-cardapio .cmd-card-emoji { width:56px;height:56px;border-radius:10px;background:#f5f0eb;display:flex;align-items:center;justify-content:center;font-size:1.7rem;flex-shrink:0; }
+    #gc-cardapio .cmd-card-nome { font-size:.66rem;font-weight:700;color:#333;line-height:1.3;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
+    #gc-cardapio .cmd-card-preco { font-size:.7rem;font-weight:800;color:var(--red);margin-top:auto; }
     .carr-sep{border-top:2px dashed var(--border);background:#faf8f5;flex-shrink:0}
     .carr-top{padding:8px 14px;display:flex;justify-content:space-between;align-items:center}
     .carr-top-lbl{font-size:.68rem;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.05em}
@@ -388,7 +399,7 @@ async function init(){
     return;
   }
   estab=est;$('gc-loja-nome').textContent=est.nome;document.title='Garcom - '+est.nome;var b=$('gc-badge-nome');if(b)b.textContent='🍽️ '+est.nome;
-  const{data:prods}=await db.from('produtos').select('id,nome,preco,emoji,categoria,disponivel').eq('estabelecimento_id',est.id).eq('disponivel',true).order('categoria');
+  const{data:prods}=await db.from('produtos').select('id,nome,preco,emoji,categoria,disponivel,foto_url').eq('estabelecimento_id',est.id).eq('disponivel',true).order('categoria');
   produtos=prods||[];
   await loadPedidos();iniciarRealtime();
   $('gc-loading').style.display='none';
@@ -502,33 +513,64 @@ function renderCardapio(){
   if(!produtos.length){el.innerHTML='<div style="color:#aaa;text-align:center;padding:24px;font-size:.82rem">Nenhum produto disponivel</div>';return;}
   const cats={};
   produtos.forEach(p=>{const cat=p.categoria||'Outros';if(!cats[cat])cats[cat]=[];cats[cat].push(p);});
-  el.innerHTML=Object.entries(cats).map(([cat,items])=>
-    `<span class="cat-lbl">${esc(cat)}</span>` +
-    items.map(p=>{
+  el.innerHTML=Object.entries(cats).map(([cat,items],idx)=>{
+    const catId='gccat-'+idx;
+    const isFirst=idx===0; // primeira categoria já aberta
+    const cardsHtml=items.map(p=>{
       // Usa data-id para evitar injeção de código no onclick
       const em=esc(p.emoji||'🍽️');
-      return `<div class="prod-item" data-pid="${esc(p.id)}" data-pnome="${esc(p.nome)}" data-ppreco="${Number(p.preco)||0}" data-pem="${em}" onclick="gcAddPorData(this)">
-        <span class="prod-emoji">${em}</span>
-        <span class="prod-nome">${esc(p.nome)}</span>
-        <span class="prod-preco">R$ ${Number(p.preco).toFixed(2).replace('.',',')}</span>
+      const nomeEnc=esc(p.nome);
+      const precoFmt=Number(p.preco).toFixed(2).replace('.',',');
+      const imgHtml=p.foto_url
+        ? `<img class="cmd-card-img" src="${p.foto_url}" alt="${nomeEnc}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+          + `<div class="cmd-card-emoji" style="display:none">${em}</div>`
+        : `<div class="cmd-card-emoji">${em}</div>`;
+      return `<div class="cmd-card" data-pid="${esc(p.id)}" data-pnome="${nomeEnc}" data-ppreco="${Number(p.preco)||0}" data-pem="${em}" onclick="gcAddPorData(this)">
+        ${imgHtml}
+        <span class="cmd-card-nome">${p.nome}</span>
+        <span class="cmd-card-preco">R$ ${precoFmt}</span>
       </div>`;
-    }).join('')
-  ).join('');
+    }).join('');
+    return `<div class="cmd-cat-wrap">
+      <div class="cmd-cat-header" onclick="toggleGcCat('${catId}')">
+        <span class="cmd-cat-title">${esc(cat)}<span class="cmd-cat-count">(${items.length})</span></span>
+        <span class="cmd-cat-arrow${isFirst?' open':''}" id="arrow-${catId}">▶</span>
+      </div>
+      <div class="cmd-cat-body${isFirst?' open':''}" id="${catId}">
+        <div class="cmd-grid">${cardsHtml}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
+
+window.toggleGcCat=function(catId){
+  const el=document.getElementById(catId);if(!el)return;
+  const arrow=document.getElementById('arrow-'+catId);
+  const aberto=el.classList.contains('open');
+  el.classList.toggle('open',!aberto);
+  if(arrow)arrow.classList.toggle('open',!aberto);
+};
 
 window.gcBuscar=function(termo){
   const t=(termo||'').toLowerCase().trim();
-  const items=document.querySelectorAll('#gc-cardapio .prod-item');
-  const labels=document.querySelectorAll('#gc-cardapio .cat-lbl');
-  items.forEach(el=>{
-    const txt=el.querySelector('.prod-nome')?.textContent?.toLowerCase()||'';
-    el.style.display=(!t||txt.includes(t))?'':'none';
-  });
-  // Esconde categoria se todos os itens estão ocultos
-  labels.forEach(lbl=>{
-    let next=lbl.nextElementSibling;let algumVisivel=false;
-    while(next&&next.classList.contains('prod-item')){if(next.style.display!=='none')algumVisivel=true;next=next.nextElementSibling;}
-    lbl.style.display=algumVisivel?'':'none';
+  const cats=document.querySelectorAll('#gc-cardapio .cmd-cat-wrap');
+  cats.forEach(catWrap=>{
+    const cards=catWrap.querySelectorAll('.cmd-card');
+    let algumVisivel=false;
+    cards.forEach(card=>{
+      const txt=card.querySelector('.cmd-card-nome')?.textContent?.toLowerCase()||'';
+      const visivel=!t||txt.includes(t);
+      card.style.display=visivel?'':'none';
+      if(visivel)algumVisivel=true;
+    });
+    catWrap.style.display=algumVisivel?'':'none';
+    // Com busca ativa, abre a categoria pra mostrar o resultado direto
+    if(t&&algumVisivel){
+      const body=catWrap.querySelector('.cmd-cat-body');
+      const arrow=catWrap.querySelector('.cmd-cat-arrow');
+      if(body)body.classList.add('open');
+      if(arrow)arrow.classList.add('open');
+    }
   });
 };
 
