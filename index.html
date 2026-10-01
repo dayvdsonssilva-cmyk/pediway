@@ -1334,6 +1334,7 @@ h3 { font-size:1.2rem; font-weight:700; color:#1a1a1a; }
     .mesa-status-dot { width:9px;height:9px;border-radius:50%;position:absolute;top:10px;right:10px; }
     .mesa-status-dot.livre { background:#e0dbd5; }
     .mesa-status-dot.ocup  { background:#16a34a;animation:dot-pulse 1.2s ease-in-out infinite; }
+    .mesa-card.mesa-card-destaque { border-color:#2563eb !important;box-shadow:0 0 0 3px rgba(37,99,235,.25);animation:none; }
     @keyframes dot-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
 
     /* Modal comanda modo garçom */
@@ -2704,7 +2705,11 @@ canvas, [data-touch="free"] { touch-action: none !important; }
         <div style="display:flex;align-items:center;gap:7px;font-size:.74rem;color:#888;font-weight:600">
           <div style="width:12px;height:12px;border-radius:50%;background:var(--red);flex-shrink:0"></div>Recém fechada
         </div>
-        <div style="margin-left:auto;font-size:.72rem;color:#aaa">Clique em uma mesa para ver a comanda</div>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+          <input type="text" inputmode="numeric" id="mesas-busca" placeholder="Buscar mesa nº..."
+            oninput="buscarMesa(this.value)"
+            style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-family:'Poppins',sans-serif;font-size:.76rem;width:140px;outline:none">
+        </div>
       </div>
 
       <!-- Pedidos novos de mesa — card destacado igual aba Pedidos -->
@@ -2726,8 +2731,17 @@ canvas, [data-touch="free"] { touch-action: none !important; }
         </div>
       </div>
 
-      <!-- Grid de mesas -->
+      <!-- Grid de mesas: ocupadas/recém-fechadas sempre visíveis; livres recolhem quando há muitas mesas -->
       <div class="mesas-grid" id="mesas-grid"></div>
+
+      <div id="mesas-livres-wrap" style="display:none;margin-top:4px">
+        <button id="mesas-livres-toggle" onclick="toggleMesasLivres()"
+          style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:#faf8f5;border:1.5px dashed var(--border);border-radius:10px;padding:10px;font-family:'Poppins',sans-serif;font-size:.78rem;font-weight:700;color:#888;cursor:pointer">
+          <span id="mesas-livres-label">Ver mesas livres</span>
+          <span id="mesas-livres-arrow">▾</span>
+        </button>
+        <div class="mesas-grid" id="mesas-grid-livres" style="display:none;margin-top:10px"></div>
+      </div>
 
       <!-- Histórico de pedidos das mesas (todos do dia) -->
       <div style="margin-top:20px">
