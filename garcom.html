@@ -703,7 +703,7 @@ window.gcConfirmarFechamento=async function(){
   if(!mesaAtual)return;
   const peds=pedMesas[mesaAtual]||[];
   const total=peds.reduce((s,p)=>s+Number(p.total||0),0);
-  if(peds.length)await db.from('pedidos').update({status:'pronto',pagamento:_gcPagamento}).in('id',peds.map(p=>p.id));
+  if(peds.length)await db.from('pedidos').update({status:'finalizado',pagamento:_gcPagamento}).in('id',peds.map(p=>p.id));
   delete pedMesas[mesaAtual];delete carrinhos[mesaAtual];fechadas.add(mesaAtual);
   const mf=mesaAtual;setTimeout(()=>{fechadas.delete(mf);renderMesas();},5000);
   _gcPagamento=null;
